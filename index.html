@@ -27,16 +27,17 @@
     }
     h1{margin:0 0 10px;font-size:22px}
 
-    /* ===== Pills: always 1 line ===== */
+    /* ===== Pills: 1 line + swipe scroll ===== */
     .bar{
       display:flex;
       gap:8px;
       align-items:center;
       margin:8px 0 8px;
       flex-wrap:nowrap;
-      overflow-x:auto;
+      overflow-x:auto;                 /* swipe */
       -webkit-overflow-scrolling:touch;
       scrollbar-width:none;
+      padding-bottom:2px;
     }
     .bar::-webkit-scrollbar{ display:none; }
 
@@ -48,12 +49,12 @@
       font-size:13px;
       background:#eee;
       white-space:nowrap;
-      flex:0 0 auto;
+      flex:0 0 auto;                   /* don't shrink */
     }
     .pill.ok{background:#e7f7ec}
     .pill.bad{background:#fdecec}
 
-    /* ===== Timezone line ===== */
+    /* ===== Timezone line (right aligned) ===== */
     .metaRight{
       margin:0 0 10px;
       color:#777;
@@ -85,8 +86,9 @@
       align-items:center;
     }
     .gameLine2 span{ white-space:nowrap; }
+    a{color:inherit}
 
-    /* ===== Text ===== */
+    /* ===== Form ===== */
     p.sub{margin:10px 0 14px;color:#555;line-height:1.35}
     label{display:block;font-weight:600;margin:14px 0 8px}
     input,select{
@@ -119,7 +121,6 @@
     .smallbtn{width:auto;padding:8px 10px;margin-top:0;border-radius:10px;font-size:13px}
     .teamtitle{font-weight:800;margin:0 0 6px}
     .list{margin:0;padding-left:18px}
-    a{color:inherit}
   </style>
 </head>
 
@@ -159,18 +160,17 @@
 <body>
   <div class="wrap">
     <div class="card">
-      <!-- Title (single line) -->
       <h1>Friday Ultimate Signup</h1>
 
-      <!-- Pills (always same row) -->
-      <div class="bar">
+      <!-- Pills (swipe if needed) -->
+      <div class="bar" aria-label="Status pills (swipe)">
         <span id="countPill" class="pill">Loading...</span>
         <span id="statusPill" class="pill">Loading...</span>
         <span id="timeLeftPill" class="pill">Loading...</span>
       </div>
 
-      <!-- Timezone (right aligned, small) -->
-      <div id="tzLine" class="metaRight">Timezone: Asia/Riyadh (Jeddah local time)</div>
+      <!-- Timezone (right aligned) -->
+      <div id="tzLine" class="metaRight"></div>
 
       <!-- Game info (compact) -->
       <div class="teambox">
@@ -178,7 +178,8 @@
         <div class="gameLine2" id="gameInfoLine2"></div>
       </div>
 
-      <p class="sub" id="cutoffText"></p>
+      <!-- NOTE: removed the extra repeated cutoff paragraph -->
+      <!-- <p class="sub" id="cutoffText"></p> -->
 
       <form id="form">
         <label for="name">Name / Nickname *</label>
@@ -276,7 +277,6 @@
     function showOverlay(){
       submitting = true;
       overlay.style.display = "block";
-
       overlayMsg.textContent = "Submitting to Google Sheets…";
 
       slowTimer1 = setTimeout(()=>{
@@ -302,7 +302,6 @@
     const statusPill = document.getElementById("statusPill");
     const timeLeftPill = document.getElementById("timeLeftPill");
     const tzLine = document.getElementById("tzLine");
-    const cutoffText = document.getElementById("cutoffText");
 
     const form = document.getElementById("form");
     const btn = document.getElementById("btn");
@@ -327,14 +326,6 @@
 
     const LS_NAME = "frisbee_last_name";
     const LS_REGID = "frisbee_last_regid";
-
-    function fmtLocal(iso) {
-      const d = new Date(iso);
-      return new Intl.DateTimeFormat(undefined, {
-        weekday:"short", year:"numeric", month:"short", day:"2-digit",
-        hour:"2-digit", minute:"2-digit"
-      }).format(d);
-    }
 
     function timeLeftText(cutoffIso) {
       const now = Date.now();
@@ -369,12 +360,6 @@
       }
 
       timeLeftPill.textContent = timeLeftText(data.cutoffIso);
-
-      // Right aligned timezone (explicit text you requested)
-      tzLine.textContent = `Timezone: ${CFG.timezoneLabel} (Jeddah local time)`;
-
-      cutoffText.innerHTML =
-        `Registration closes at <b>Friday 3:00 PM</b> (local). Next cutoff: <b>${fmtLocal(data.cutoffIso)}</b>.`;
 
       if (data.isFull) {
         btn.disabled = true;
@@ -414,14 +399,17 @@
     function renderGameInfo() {
       const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
 
-      // Line 1: Time + Location
+      // Line 1: time + location
       gameInfoLine1.innerHTML = `${CFG.gameTimeText} · ${loc}`;
 
-      // Line 2: Bring (emoji) + Format (same line)
+      // Line 2: bring + format (same line)
       gameInfoLine2.innerHTML = `
-        <span>💧🥿 Bring: water, cleats</span>
-        <span>🎽 Format: after cutoff</span>
+        <span> Bring: 💧 👟 🥏</span>
+        <span> Format: 5-5, 6-6 or .7-7 after cutoff</span>
       `;
+
+      // Timezone (right aligned)
+      tzLine.textContent = `Timezone: ${CFG.timezoneLabel} (Jeddah local time)`;
 
       fourTeamMin.textContent = CFG.teamsMinForFour;
     }
@@ -580,10 +568,7 @@
           return false;
         }
 
-        const genTime = data.generatedAt ? new Date(data.generatedAt) : null;
-        const genText = genTime ? fmtLocal(genTime.toISOString()) : "unknown";
-
-        teamsStatus.innerHTML = `✅ Teams ready (${data.nTeams} teams / ${data.nPlayers} players). <span class="hint">Generated: ${genText}</span>`;
+        teamsStatus.innerHTML = `✅ Teams ready (${data.nTeams} teams / ${data.nPlayers} players).`;
         teamsStatus.classList.add("okText");
 
         const teamsText = data.teamsText || "";
@@ -613,6 +598,7 @@
         data.teams.forEach(t => {
           const div = document.createElement("div");
           div.className = "teambox";
+          div.style.marginTop = "10px";
           div.innerHTML = `
             <div class="teamtitle">${t.name} <span class="hint">(avg ${t.avg})</span></div>
             <ul class="list">
