@@ -7,12 +7,8 @@
   <script src="./config.js"></script>
   <style>
     .spinner{
-      width:36px;
-      height:36px;
-      margin:auto;
-      border-radius:50%;
-      border:4px solid #ddd;
-      border-top-color:#111;
+      width:36px;height:36px;margin:auto;border-radius:50%;
+      border:4px solid #ddd;border-top-color:#111;
       animation: spin 1s linear infinite;
     }
     @keyframes spin{ to{ transform: rotate(360deg); } }
@@ -21,93 +17,84 @@
     .wrap{max-width:680px;margin:0 auto}
     .card{background:#fff;border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
     h1{margin:0 0 6px;font-size:22px}
+
     .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0 6px}
     .pill{display:inline-block;padding:6px 10px;border-radius:999px;font-size:13px;background:#eee}
     .pill.ok{background:#e7f7ec}
     .pill.bad{background:#fdecec}
+
     .meta{margin:0 0 14px;color:#666;font-size:12px}
-    p.sub{margin:0 0 14px;color:#555;line-height:1.35}
+
     label{display:block;font-weight:600;margin:14px 0 8px}
     input,select{width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;font-size:16px;box-sizing:border-box;background:#fff}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .hint{margin-top:6px;font-size:13px;color:#666}
+
     button{width:100%;margin-top:16px;padding:12px 14px;border:0;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;background:#111;color:#fff}
     button.secondary{background:#444}
     button:disabled{opacity:.55;cursor:not-allowed}
+
     .status{margin-top:12px;font-size:14px}
     .okText{color:#0a7a2f}
     .badText{color:#b00020}
     .hr{height:1px;background:#eee;margin:18px 0}
+
     details{margin-top:6px}
+
     .footer{margin-top:14px;font-size:12px;color:#777;text-align:center}
     code{background:#f3f3f3;padding:2px 6px;border-radius:6px}
+
     .inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
     .smallbtn{width:auto;padding:8px 10px;margin-top:0;border-radius:10px;font-size:13px}
+
     .teambox{background:#fafafa;border:1px solid #eee;border-radius:14px;padding:12px;margin-top:10px}
     .teamtitle{font-weight:800;margin:0 0 6px}
     .list{margin:0;padding-left:18px}
     a{color:inherit}
-    .compact{
-      padding:14px;
-    }
 
-    .compactMeta{
-      margin-top:6px;
-      font-size:12px;
-      color:#777;
-    }
-
-    .gameRow{
-      font-size:15px;
-      margin-bottom:4px;
-    }
-
-    .gameRow b{
-      font-weight:700;
-    }
-
-    .gameSub{
-      font-size:13px;
-      color:#666;
-    }
+    /* ===== Compact top area ===== */
+    .compact{ padding:14px; margin-top:10px; }
+    .compactMeta{ margin-top:6px; font-size:12px; color:#777; }
+    .gameRow{ font-size:15px; margin-bottom:4px; }
+    .gameRow b{ font-weight:800; }
+    .gameSub{ font-size:13px; color:#666; }
   </style>
 </head>
 
-<body>
-
-  <!-- Overlay loading (MOVED inside body + kept your UI) -->
-  <div id="overlay" style="
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.45);
-    z-index:9999;
+<!-- Overlay loading -->
+<div id="overlay" style="
+display:none;
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.45);
+z-index:9999;
+">
+  <div style="
+    max-width:420px;
+    margin:18vh auto;
+    background:#fff;
+    border-radius:16px;
+    padding:20px;
+    box-shadow:0 20px 60px rgba(0,0,0,.25);
+    text-align:center;
   ">
-    <div style="
-      max-width:420px;
-      margin:18vh auto;
-      background:#fff;
-      border-radius:16px;
-      padding:20px;
-      box-shadow:0 20px 60px rgba(0,0,0,.25);
-      text-align:center;
-    ">
-      <div class="spinner"></div>
+    <div class="spinner"></div>
 
-      <div style="font-weight:900; margin-top:12px; font-size:16px;">
-        Submitting registration…
-      </div>
+    <div style="font-weight:900; margin-top:12px; font-size:16px;">
+      Submitting registration…
+    </div>
 
-      <div id="overlayMsg" style="color:#666; font-size:13px; margin-top:6px;">
-        Please keep this page open.
-      </div>
+    <div id="overlayMsg" style="color:#666; font-size:13px; margin-top:6px;">
+      Please keep this page open.
+    </div>
 
-      <div style="color:#999; font-size:12px; margin-top:10px;">
-        Do not close until you see confirmation.
-      </div>
+    <div style="color:#999; font-size:12px; margin-top:10px;">
+      Do not close until you see confirmation.
     </div>
   </div>
+</div>
 
+<body>
   <div class="wrap">
     <div class="card">
       <h1>Friday Ultimate Signup</h1>
@@ -117,11 +104,11 @@
         <span id="statusPill" class="pill">Loading...</span>
         <span id="timeLeftPill" class="pill">Loading...</span>
       </div>
-      <div id="tzLine" class="meta"></div>
 
+      <!-- Compact game info box (no repeated cutoff lines) -->
       <div class="teambox compact">
         <div id="gameInfoText"></div>
-        <div id="tzLine" class="meta compactMeta"></div>
+        <div id="tzLine" class="compactMeta"></div>
       </div>
 
       <form id="form">
@@ -210,10 +197,12 @@
   </div>
 
   <script>
-    // ===== Overlay helpers (FIXED) =====
+    const CFG = window.SIGNUP_CONFIG;
+    const ENDPOINT = CFG.endpoint;
+
+    // overlay
     const overlay = document.getElementById("overlay");
     const overlayMsg = document.getElementById("overlayMsg");
-
     let submitting = false;
     let slowTimer1 = null;
     let slowTimer2 = null;
@@ -221,7 +210,6 @@
     function showOverlay(){
       submitting = true;
       overlay.style.display = "block";
-
       overlayMsg.textContent = "Submitting to Google Sheets…";
 
       slowTimer1 = setTimeout(()=>{
@@ -240,15 +228,11 @@
       clearTimeout(slowTimer2);
     }
 
-    // ===== App =====
-    const CFG = window.SIGNUP_CONFIG;
-    const ENDPOINT = CFG.endpoint;
-
+    // DOM refs
     const countPill = document.getElementById("countPill");
     const statusPill = document.getElementById("statusPill");
     const timeLeftPill = document.getElementById("timeLeftPill");
     const tzLine = document.getElementById("tzLine");
-    const cutoffText = document.getElementById("cutoffText");
 
     const form = document.getElementById("form");
     const btn = document.getElementById("btn");
@@ -285,13 +269,13 @@
       const now = Date.now();
       const cut = new Date(cutoffIso).getTime();
       const diff = cut - now;
-      if (Number.isNaN(cut)) return "Time left: —";
-      if (diff <= 0) return "Time left: 0m";
+      if (Number.isNaN(cut)) return "—";
+      if (diff <= 0) return "0m left";
       const mins = Math.floor(diff/60000);
       const h = Math.floor(mins/60);
       const m = mins%60;
-      if (h<=0) return `Time left: ${m}m`;
-      return `Time left: ${h}h ${m}m`;
+      if (h<=0) return `${m}m left`;
+      return `${h}h ${m}m left`;
     }
 
     async function getStatus() {
@@ -314,9 +298,8 @@
       }
 
       timeLeftPill.textContent = timeLeftText(data.cutoffIso);
-      tzLine.textContent = `Timezone: ${CFG.timezoneLabel}`;
-      cutoffText.innerHTML = `Registration closes at <b>Friday 3:00 PM</b> (local time). Next cutoff: <b>${fmtLocal(data.cutoffIso)}</b>.`;
 
+      // button state
       if (data.isFull) {
         btn.disabled = true;
         btn.textContent = "Full";
@@ -353,59 +336,48 @@
     }
 
     function renderGameInfo() {
-
-      const loc =
-        `<a href="${CFG.googleMapsLink}" target="_blank">${CFG.locationText}</a>`;
-
+      const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
       gameInfoText.innerHTML = `
-        <div class="gameRow">
-          <b>${CFG.gameTimeText}</b> · ${loc}
-        </div>
-
-        <div class="gameSub">
-          Bring cleats, water
-        </div>
+        <div class="gameRow"><b>${CFG.gameTimeText}</b> · ${loc}</div>
+        <div class="gameSub">Bring: cleats, water · Format: depends on players (after cutoff)</div>
       `;
+      tzLine.textContent = `Timezone: ${CFG.timezoneLabel}`;
+      fourTeamMin.textContent = CFG.teamsMinForFour;
+    }
 
-      tzLine.textContent =
-        `Timezone: ${CFG.timezoneLabel}`;
+    async function refresh() {
+      try {
+        const data = await getStatus();
+        if (!data.ok) throw new Error("status not ok");
+        setPills(data);
+        return data;
+      } catch {
+        countPill.textContent = "Status unavailable";
+        statusPill.textContent = "UNKNOWN";
+        timeLeftPill.textContent = "";
+        return null;
+      }
+    }
 
-      fourTeamMin.textContent =
-        CFG.teamsMinForFour;
-        }
-        async function refresh() {
-          try {
-            const data = await getStatus();
-            if (!data.ok) throw new Error("status not ok");
-            setPills(data);
-            return data;
-          } catch {
-            countPill.textContent = "Status unavailable";
-            statusPill.textContent = "UNKNOWN";
-            timeLeftPill.textContent = "";
-            return null;
-          }
-        }  
+    // load saved reg
+    (function initSaved(){
+      const n = localStorage.getItem(LS_NAME) || "";
+      const r = localStorage.getItem(LS_REGID) || "";
+      if (n) cancelName.value = n;
+      if (r) cancelId.value = r;
+    })();
 
-        // load saved reg
-        (function initSaved(){
-          const n = localStorage.getItem(LS_NAME) || "";
-          const r = localStorage.getItem(LS_REGID) || "";
-          if (n) cancelName.value = n;
-          if (r) cancelId.value = r;
-        })();
+    copyRegBtn.addEventListener("click", async () => {
+      const regId = localStorage.getItem(LS_REGID) || "";
+      if (!regId) {
+        regSavedNote.textContent = "No RegID saved yet.";
+        return;
+      }
+      const ok = await copyText(regId);
+      regSavedNote.textContent = ok ? "RegID copied ✅" : "Copy failed ❌";
+    });
 
-        copyRegBtn.addEventListener("click", async () => {
-          const regId = localStorage.getItem(LS_REGID) || "";
-          if (!regId) {
-            regSavedNote.textContent = "No RegID saved yet.";
-            return;
-          }
-          const ok = await copyText(regId);
-          regSavedNote.textContent = ok ? "RegID copied ✅" : "Copy failed ❌";
-        });
-
-        form.addEventListener("submit", async (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
       statusEl.textContent = "";
       statusEl.className = "status";
@@ -429,7 +401,9 @@
 
       btn.disabled = true;
       btn.textContent = "Submitting...";
-      showOverlay(); // ====== (ADDED) ======
+
+      // show overlay to prevent early exit
+      showOverlay();
 
       try {
         const res = await fetch(ENDPOINT, {
@@ -455,8 +429,7 @@
         statusEl.textContent = "❌ Network error: " + err;
         statusEl.classList.add("badText");
       } finally {
-        hideOverlay(); // ====== (ADDED) ======
-        // restore button state based on latest status
+        hideOverlay();
         await refresh();
       }
     });
