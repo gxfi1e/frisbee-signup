@@ -6,10 +6,14 @@
   <title>Friday Ultimate Signup</title>
   <style>
     body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:#f6f7fb; margin:0; padding:24px; color:#111; }
-    .wrap { max-width: 560px; margin: 0 auto; }
+    .wrap { max-width: 640px; margin: 0 auto; }
     .card { background:#fff; border-radius:16px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.08); }
     h1 { margin:0 0 6px; font-size:22px; }
-    p.sub { margin:0 0 16px; color:#555; line-height:1.35; }
+    .bar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:8px 0 16px; }
+    .pill { display:inline-block; padding:6px 10px; border-radius:999px; font-size:13px; background:#eee; }
+    .pill.ok { background:#e7f7ec; }
+    .pill.bad { background:#fdecec; }
+    p.sub { margin:0 0 14px; color:#555; line-height:1.35; }
     label { display:block; font-weight:600; margin:14px 0 8px; }
     input, select { width:100%; padding:12px; border:1px solid #ddd; border-radius:12px; font-size:16px; box-sizing:border-box; background:#fff; }
     .row { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
@@ -17,9 +21,12 @@
     button { width:100%; margin-top:16px; padding:12px 14px; border:0; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer; background:#111; color:#fff; }
     button:disabled { opacity:.55; cursor:not-allowed; }
     .status { margin-top:12px; font-size:14px; }
-    .ok { color:#0a7a2f; }
-    .bad { color:#b00020; }
+    .okText { color:#0a7a2f; }
+    .badText { color:#b00020; }
+    .hr { height:1px; background:#eee; margin:18px 0; }
+    details { margin-top: 6px; }
     .footer { margin-top:14px; font-size:12px; color:#777; text-align:center; }
+    code { background:#f3f3f3; padding:2px 6px; border-radius:6px; }
   </style>
 </head>
 
@@ -27,9 +34,15 @@
   <div class="wrap">
     <div class="card">
       <h1>Friday Ultimate Signup</h1>
+
+      <div class="bar">
+        <span id="countPill" class="pill">Loading...</span>
+        <span id="statusPill" class="pill">Loading...</span>
+        <span id="cutoffPill" class="pill">Loading...</span>
+      </div>
+
       <p class="sub">
-        Please register for this Friday’s game.  
-        Information is used for team balancing only.
+        Register for this Friday’s game. Registration automatically closes at <b>Friday 3:00 PM</b> (local time).
       </p>
 
       <form id="form">
@@ -80,7 +93,22 @@
         <div id="status" class="status"></div>
       </form>
 
-      <div class="footer">If you made a mistake, just submit again with the correct info.</div>
+      <div class="hr"></div>
+
+      <details>
+        <summary><b>Cancel registration</b> (cost: buy Maojin a coffee ☕)</summary>
+        <div style="margin-top:10px;">
+          <label for="cancelName">Name / Nickname *</label>
+          <input id="cancelName" placeholder="must match your signup name" />
+          <label for="cancelId">RegID *</label>
+          <input id="cancelId" placeholder="e.g., FRI-20260212-ABCDEF12" />
+          <button id="cancelBtn" type="button">Cancel my registration</button>
+          <div id="cancelStatus" class="status"></div>
+          <div class="hint">Your RegID will be shown after successful signup.</div>
+        </div>
+      </details>
+
+      <div class="footer">Tip: Keep your <code>RegID</code> if you may cancel later.</div>
     </div>
   </div>
 
@@ -91,12 +119,56 @@
     const btn = document.getElementById("btn");
     const statusEl = document.getElementById("status");
 
+    const countPill = document.getElementById("countPill");
+    const statusPill = document.getElementById("statusPill");
+    const cutoffPill = document.getElementById("cutoffPill");
+
+    const cancelBtn = document.getElementById("cancelBtn");
+    const cancelStatus = document.getElementById("cancelStatus");
+
+    function fmtLocal(iso) {
+      try {
+        const d = new Date(iso);
+        return new Intl.DateTimeFormat(undefined, {
+          weekday: "short", year: "numeric", month: "short", day: "2-digit",
+          hour: "2-digit", minute: "2-digit"
+        }).format(d);
+      } catch {
+        return iso;
+      }
+    }
+
+    async function refreshStatus() {
+      try {
+        const res = await fetch(ENDPOINT, { method: "GET" });
+        const data = await res.json();
+
+        if (!data.ok) throw new Error("status not ok");
+
+        countPill.textContent = `${data.count} / ${data.max} registered`;
+        cutoffPill.textContent = `Cutoff: ${fmtLocal(data.cutoffIso)}`;
+
+        const open = !!data.open;
+        statusPill.textContent = open ? "OPEN" : "CLOSED";
+        statusPill.className = "pill " + (open ? "ok" : "bad");
+
+        btn.disabled = !open;
+        if (!open) btn.textContent = "Registration closed";
+        else btn.textContent = "Submit";
+      } catch (e) {
+        countPill.textContent = "Status unavailable";
+        statusPill.textContent = "UNKNOWN";
+        cutoffPill.textContent = "";
+      }
+    }
+
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       statusEl.textContent = "";
       statusEl.className = "status";
 
       const payload = {
+        action: "register",
         name: document.getElementById("name").value.trim(),
         gender: document.getElementById("gender").value,
         skill: document.getElementById("skill").value,
@@ -106,7 +178,7 @@
 
       if (!payload.name || !payload.gender || !payload.skill || !payload.preference) {
         statusEl.textContent = "Please complete all required fields.";
-        statusEl.classList.add("bad");
+        statusEl.classList.add("badText");
         return;
       }
 
@@ -126,21 +198,71 @@
         try { data = JSON.parse(text); } catch { data = { ok: false, error: text }; }
 
         if (data.ok) {
-          statusEl.textContent = "✅ Submitted! See you on Friday.";
-          statusEl.classList.add("ok");
+          statusEl.innerHTML = `✅ Submitted! Your RegID: <code>${data.regId}</code> (keep it for cancellation).`;
+          statusEl.classList.add("okText");
           form.reset();
+          await refreshStatus();
         } else {
-          statusEl.textContent = "❌ Submit failed: " + (data.error || "Unknown error");
-          statusEl.classList.add("bad");
+          statusEl.textContent = "❌ " + (data.error || "Submit failed");
+          statusEl.classList.add("badText");
+          await refreshStatus();
         }
       } catch (err) {
         statusEl.textContent = "❌ Network error: " + err;
-        statusEl.classList.add("bad");
+        statusEl.classList.add("badText");
       } finally {
         btn.disabled = false;
-        btn.textContent = "Submit";
+        await refreshStatus();
       }
     });
+
+    cancelBtn.addEventListener("click", async () => {
+      cancelStatus.textContent = "";
+      cancelStatus.className = "status";
+
+      const name = document.getElementById("cancelName").value.trim();
+      const regId = document.getElementById("cancelId").value.trim();
+
+      if (!name || !regId) {
+        cancelStatus.textContent = "Please provide both Name and RegID.";
+        cancelStatus.classList.add("badText");
+        return;
+      }
+
+      cancelBtn.disabled = true;
+      cancelBtn.textContent = "Cancelling...";
+
+      try {
+        const res = await fetch(ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "cancel", name, regId }),
+          redirect: "follow"
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          cancelStatus.textContent = "✅ Cancelled. Please buy Maojin a coffee ☕";
+          cancelStatus.classList.add("okText");
+          document.getElementById("cancelName").value = "";
+          document.getElementById("cancelId").value = "";
+          await refreshStatus();
+        } else {
+          cancelStatus.textContent = "❌ " + (data.error || "Cancel failed");
+          cancelStatus.classList.add("badText");
+        }
+      } catch (e) {
+        cancelStatus.textContent = "❌ Network error: " + e;
+        cancelStatus.classList.add("badText");
+      } finally {
+        cancelBtn.disabled = false;
+        cancelBtn.textContent = "Cancel my registration";
+      }
+    });
+
+    refreshStatus();
+    // optional: refresh every 30s
+    setInterval(refreshStatus, 30000);
   </script>
 </body>
 </html>
