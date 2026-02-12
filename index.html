@@ -7,18 +7,16 @@
   <script src="./config.js"></script>
   <style>
     .spinner{
-    width:36px;
-    height:36px;
-    margin:auto;
-    border-radius:50%;
-    border:4px solid #ddd;
-    border-top-color:#111;
-    animation: spin 1s linear infinite;
+      width:36px;
+      height:36px;
+      margin:auto;
+      border-radius:50%;
+      border:4px solid #ddd;
+      border-top-color:#111;
+      animation: spin 1s linear infinite;
     }
+    @keyframes spin{ to{ transform: rotate(360deg); } }
 
-    @keyframes spin{
-    to{ transform: rotate(360deg); }
-    }
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f6f7fb;margin:0;padding:24px;color:#111}
     .wrap{max-width:680px;margin:0 auto}
     .card{background:#fff;border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
@@ -52,40 +50,41 @@
   </style>
 </head>
 
-<!-- Overlay loading -->
-<div id="overlay" style="
-display:none;
-position:fixed;
-inset:0;
-background:rgba(0,0,0,.45);
-z-index:9999;
-">
-  <div style="
-    max-width:420px;
-    margin:18vh auto;
-    background:#fff;
-    border-radius:16px;
-    padding:20px;
-    box-shadow:0 20px 60px rgba(0,0,0,.25);
-    text-align:center;
+<body>
+
+  <!-- Overlay loading (MOVED inside body + kept your UI) -->
+  <div id="overlay" style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.45);
+    z-index:9999;
   ">
-    <div class="spinner"></div>
+    <div style="
+      max-width:420px;
+      margin:18vh auto;
+      background:#fff;
+      border-radius:16px;
+      padding:20px;
+      box-shadow:0 20px 60px rgba(0,0,0,.25);
+      text-align:center;
+    ">
+      <div class="spinner"></div>
 
-    <div style="font-weight:900; margin-top:12px; font-size:16px;">
-      Submitting registration…
-    </div>
+      <div style="font-weight:900; margin-top:12px; font-size:16px;">
+        Submitting registration…
+      </div>
 
-    <div id="overlayMsg" style="color:#666; font-size:13px; margin-top:6px;">
-      Please keep this page open.
-    </div>
+      <div id="overlayMsg" style="color:#666; font-size:13px; margin-top:6px;">
+        Please keep this page open.
+      </div>
 
-    <div style="color:#999; font-size:12px; margin-top:10px;">
-      Do not close until you see confirmation.
+      <div style="color:#999; font-size:12px; margin-top:10px;">
+        Do not close until you see confirmation.
+      </div>
     </div>
   </div>
-</div>
-  
-<body>
+
   <div class="wrap">
     <div class="card">
       <h1>Friday Ultimate Signup</h1>
@@ -190,6 +189,7 @@ z-index:9999;
   </div>
 
   <script>
+    // ===== Overlay helpers (FIXED) =====
     const overlay = document.getElementById("overlay");
     const overlayMsg = document.getElementById("overlayMsg");
 
@@ -201,29 +201,25 @@ z-index:9999;
       submitting = true;
       overlay.style.display = "block";
 
-      overlayMsg.textContent =
-        "Submitting to Google Sheets…";
+      overlayMsg.textContent = "Submitting to Google Sheets…";
 
       slowTimer1 = setTimeout(()=>{
-        if(submitting)
-          overlayMsg.textContent =
-            "Still working… Google may be slow. Please wait.";
-      },4000);
+        if(submitting) overlayMsg.textContent = "Still working… Google may be slow. Please wait.";
+      }, 4000);
 
       slowTimer2 = setTimeout(()=>{
-        if(submitting)
-          overlayMsg.textContent =
-            "Almost done… Please keep this page open.";
-      },9000);
+        if(submitting) overlayMsg.textContent = "Almost done… Please keep this page open.";
+      }, 9000);
     }
 
     function hideOverlay(){
       submitting = false;
       overlay.style.display = "none";
-
       clearTimeout(slowTimer1);
       clearTimeout(slowTimer2);
     }
+
+    // ===== App =====
     const CFG = window.SIGNUP_CONFIG;
     const ENDPOINT = CFG.endpoint;
 
@@ -402,6 +398,7 @@ z-index:9999;
 
       btn.disabled = true;
       btn.textContent = "Submitting...";
+      showOverlay(); // ====== (ADDED) ======
 
       try {
         const res = await fetch(ENDPOINT, {
@@ -427,6 +424,8 @@ z-index:9999;
         statusEl.textContent = "❌ Network error: " + err;
         statusEl.classList.add("badText");
       } finally {
+        hideOverlay(); // ====== (ADDED) ======
+        // restore button state based on latest status
         await refresh();
       }
     });
@@ -561,7 +560,6 @@ z-index:9999;
     async function autoTeamsIfClosed() {
       const st = await refresh();
       if (st && st.ok && !st.open) {
-        // after cutoff: keep trying until generated
         await fetchAndRenderTeams(true);
       }
     }
