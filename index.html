@@ -6,36 +6,36 @@
   <title>Friday Ultimate Signup</title>
   <script src="./config.js"></script>
   <style>
-    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:#f6f7fb; margin:0; padding:24px; color:#111; }
-    .wrap { max-width: 680px; margin: 0 auto; }
-    .card { background:#fff; border-radius:16px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.08); }
-    h1 { margin:0 0 6px; font-size:22px; }
-    .bar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:8px 0 6px; }
-    .pill { display:inline-block; padding:6px 10px; border-radius:999px; font-size:13px; background:#eee; }
-    .pill.ok { background:#e7f7ec; }
-    .pill.bad { background:#fdecec; }
-    .meta { margin: 0 0 14px; color:#666; font-size:12px; }
-    p.sub { margin:0 0 14px; color:#555; line-height:1.35; }
-    label { display:block; font-weight:600; margin:14px 0 8px; }
-    input, select { width:100%; padding:12px; border:1px solid #ddd; border-radius:12px; font-size:16px; box-sizing:border-box; background:#fff; }
-    .row { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
-    .hint { margin-top:6px; font-size:13px; color:#666; }
-    button { width:100%; margin-top:16px; padding:12px 14px; border:0; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer; background:#111; color:#fff; }
-    button.secondary { background:#444; }
-    button:disabled { opacity:.55; cursor:not-allowed; }
-    .status { margin-top:12px; font-size:14px; }
-    .okText { color:#0a7a2f; }
-    .badText { color:#b00020; }
-    .hr { height:1px; background:#eee; margin:18px 0; }
-    details { margin-top: 6px; }
-    .footer { margin-top:14px; font-size:12px; color:#777; text-align:center; }
-    code { background:#f3f3f3; padding:2px 6px; border-radius:6px; }
-    .inline { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .smallbtn { width:auto; padding:8px 10px; margin-top:0; border-radius:10px; font-size:13px; }
-    .teambox { background:#fafafa; border:1px solid #eee; border-radius:14px; padding:12px; margin-top:10px; }
-    .teamtitle { font-weight:800; margin:0 0 6px; }
-    .list { margin:0; padding-left:18px; }
-    a { color: inherit; }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f6f7fb;margin:0;padding:24px;color:#111}
+    .wrap{max-width:680px;margin:0 auto}
+    .card{background:#fff;border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+    h1{margin:0 0 6px;font-size:22px}
+    .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0 6px}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;font-size:13px;background:#eee}
+    .pill.ok{background:#e7f7ec}
+    .pill.bad{background:#fdecec}
+    .meta{margin:0 0 14px;color:#666;font-size:12px}
+    p.sub{margin:0 0 14px;color:#555;line-height:1.35}
+    label{display:block;font-weight:600;margin:14px 0 8px}
+    input,select{width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;font-size:16px;box-sizing:border-box;background:#fff}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .hint{margin-top:6px;font-size:13px;color:#666}
+    button{width:100%;margin-top:16px;padding:12px 14px;border:0;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;background:#111;color:#fff}
+    button.secondary{background:#444}
+    button:disabled{opacity:.55;cursor:not-allowed}
+    .status{margin-top:12px;font-size:14px}
+    .okText{color:#0a7a2f}
+    .badText{color:#b00020}
+    .hr{height:1px;background:#eee;margin:18px 0}
+    details{margin-top:6px}
+    .footer{margin-top:14px;font-size:12px;color:#777;text-align:center}
+    code{background:#f3f3f3;padding:2px 6px;border-radius:6px}
+    .inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .smallbtn{width:auto;padding:8px 10px;margin-top:0;border-radius:10px;font-size:13px}
+    .teambox{background:#fafafa;border:1px solid #eee;border-radius:14px;padding:12px;margin-top:10px}
+    .teamtitle{font-weight:800;margin:0 0 6px}
+    .list{margin:0;padding-left:18px}
+    a{color:inherit}
   </style>
 </head>
 
@@ -51,7 +51,7 @@
       </div>
       <div id="tzLine" class="meta"></div>
 
-      <div id="gameInfo" class="teambox" style="margin-top:10px;">
+      <div class="teambox" style="margin-top:10px;">
         <div class="teamtitle">Game info</div>
         <div id="gameInfoText"></div>
       </div>
@@ -129,16 +129,17 @@
       <div class="hr"></div>
 
       <div id="teamsSection">
-        <div class="teamtitle">Teams (available after cutoff)</div>
+        <div class="teamtitle">Teams (auto after cutoff)</div>
         <div class="hint" style="margin-top:6px;">
-          After Friday 15:00, click to generate teams. If players ≥ <b id="fourTeamMin"></b> → 4 teams; otherwise 2 teams.
+          After Friday 15:00, teams are automatically generated and shown here.
+          If players ≥ <b id="fourTeamMin"></b> → 4 teams; otherwise 2 teams.
         </div>
-        <button id="genTeamsBtn" type="button" class="secondary">Generate Teams</button>
+        <button id="refreshTeamsBtn" type="button" class="secondary">Refresh Teams</button>
         <div id="teamsStatus" class="status"></div>
         <div id="teamsOutput"></div>
       </div>
 
-      <div class="footer">Keep your <code>RegID</code>. Duplicate signups will update your info (no extra row).</div>
+      <div class="footer">Keep your <code>RegID</code>. Duplicate signups update your info (no extra row).</div>
     </div>
   </div>
 
@@ -168,7 +169,7 @@
     const gameInfoText = document.getElementById("gameInfoText");
     const fourTeamMin = document.getElementById("fourTeamMin");
 
-    const genTeamsBtn = document.getElementById("genTeamsBtn");
+    const refreshTeamsBtn = document.getElementById("refreshTeamsBtn");
     const teamsStatus = document.getElementById("teamsStatus");
     const teamsOutput = document.getElementById("teamsOutput");
 
@@ -178,8 +179,8 @@
     function fmtLocal(iso) {
       const d = new Date(iso);
       return new Intl.DateTimeFormat(undefined, {
-        weekday: "short", year: "numeric", month: "short", day: "2-digit",
-        hour: "2-digit", minute: "2-digit"
+        weekday:"short", year:"numeric", month:"short", day:"2-digit",
+        hour:"2-digit", minute:"2-digit"
       }).format(d);
     }
 
@@ -187,44 +188,38 @@
       const now = Date.now();
       const cut = new Date(cutoffIso).getTime();
       const diff = cut - now;
-
-      if (Number.isNaN(cut)) return "Cutoff: unknown";
+      if (Number.isNaN(cut)) return "Time left: —";
       if (diff <= 0) return "Time left: 0m";
-
-      const mins = Math.floor(diff / 60000);
-      const h = Math.floor(mins / 60);
-      const m = mins % 60;
-      if (h <= 0) return `Time left: ${m}m`;
+      const mins = Math.floor(diff/60000);
+      const h = Math.floor(mins/60);
+      const m = mins%60;
+      if (h<=0) return `Time left: ${m}m`;
       return `Time left: ${h}h ${m}m`;
     }
 
     async function getStatus() {
-      const res = await fetch(ENDPOINT + "?action=status", { method: "GET" });
+      const res = await fetch(ENDPOINT + "?action=status", { method:"GET" });
       return await res.json();
     }
 
     function setPills(data) {
       countPill.textContent = `${data.count} / ${data.max} registered`;
 
-      // status pill
       if (data.isFull) {
-        statusPill.textContent = `FULL`;
+        statusPill.textContent = "FULL";
         statusPill.className = "pill bad";
       } else if (data.open) {
-        statusPill.textContent = `OPEN (closes Fri 15:00)`;
+        statusPill.textContent = "OPEN (closes Fri 15:00)";
         statusPill.className = "pill ok";
       } else {
-        statusPill.textContent = `CLOSED`;
+        statusPill.textContent = "CLOSED";
         statusPill.className = "pill bad";
       }
 
-      // time left
       timeLeftPill.textContent = timeLeftText(data.cutoffIso);
-
       tzLine.textContent = `Timezone: ${CFG.timezoneLabel}`;
       cutoffText.innerHTML = `Registration closes at <b>Friday 3:00 PM</b> (local time). Next cutoff: <b>${fmtLocal(data.cutoffIso)}</b>.`;
 
-      // submit button
       if (data.isFull) {
         btn.disabled = true;
         btn.textContent = "Full";
@@ -250,7 +245,6 @@
         await navigator.clipboard.writeText(text);
         return true;
       } catch {
-        // fallback
         const ta = document.createElement("textarea");
         ta.value = text;
         document.body.appendChild(ta);
@@ -277,10 +271,12 @@
         const data = await getStatus();
         if (!data.ok) throw new Error("status not ok");
         setPills(data);
-      } catch (e) {
+        return data;
+      } catch {
         countPill.textContent = "Status unavailable";
         statusPill.textContent = "UNKNOWN";
         timeLeftPill.textContent = "";
+        return null;
       }
     }
 
@@ -329,22 +325,17 @@
 
       try {
         const res = await fetch(ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          method:"POST",
+          headers:{ "Content-Type":"text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
         const data = await res.json();
 
         if (data.ok) {
-          const msg = data.updated
-            ? `✅ Updated your registration. RegID: ${data.regId}`
-            : `✅ Submitted! RegID: ${data.regId}`;
-          statusEl.innerHTML = msg + ` <span class="hint">(keep it for cancellation)</span>`;
+          statusEl.innerHTML = (data.updated ? "✅ Updated" : "✅ Submitted") + `! RegID: <b>${data.regId}</b>`;
           statusEl.classList.add("okText");
-
           saveLastReg(payload.name, data.regId);
           regTools.style.display = "flex";
-
           form.reset();
           await refresh();
         } else {
@@ -371,7 +362,6 @@
         cancelStatus.classList.add("badText");
         return;
       }
-
       if (!confirm("Confirm cancellation? (Buy Maojin a coffee ☕)")) return;
 
       cancelBtn.disabled = true;
@@ -379,9 +369,9 @@
 
       try {
         const res = await fetch(ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "cancel", name, regId })
+          method:"POST",
+          headers:{ "Content-Type":"text/plain;charset=utf-8" },
+          body: JSON.stringify({ action:"cancel", name, regId })
         });
         const data = await res.json();
 
@@ -395,91 +385,110 @@
         }
       } catch (e) {
         cancelStatus.textContent = "❌ Network error: " + e;
-        cancelStatus.classList_help = "badText";
+        cancelStatus.classList.add("badText");
       } finally {
         cancelBtn.disabled = false;
         cancelBtn.textContent = "Cancel my registration";
       }
     });
 
-    genTeamsBtn.addEventListener("click", async () => {
-      teamsStatus.textContent = "";
-      teamsStatus.className = "status";
+    async function fetchAndRenderTeams(auto=false) {
+      if (!auto) {
+        teamsStatus.textContent = "";
+        teamsStatus.className = "status";
+      }
       teamsOutput.innerHTML = "";
 
-      genTeamsBtn.disabled = true;
-      genTeamsBtn.textContent = "Generating...";
+      if (!auto) {
+        refreshTeamsBtn.disabled = true;
+        refreshTeamsBtn.textContent = "Refreshing...";
+      }
 
       try {
-        const res = await fetch(ENDPOINT + "?action=teams", { method: "GET" });
+        const res = await fetch(ENDPOINT + "?action=teams", { method:"GET" });
         const data = await res.json();
 
         if (!data.ok) {
-          teamsStatus.textContent = "❌ " + (data.error || "Teams unavailable");
-          teamsStatus.classList.add("badText");
-          return;
+          if (!auto) {
+            teamsStatus.textContent = "❌ " + (data.error || "Teams unavailable");
+            teamsStatus.classList.add("badText");
+          }
+          return false;
         }
 
-        const lines = [];
-        data.teams.forEach(t => {
-          lines.push(`${t.name} (avg ${t.avg})`);
-          t.players.forEach(p => {
-            lines.push(`- ${p.name} [S${p.skill}] (${p.preference || "—"}, ${p.practiceDuration || "—"})`);
-          });
-          lines.push("");
-        });
+        const genTime = data.generatedAt ? new Date(data.generatedAt) : null;
+        const genText = genTime ? fmtLocal(genTime.toISOString()) : "unknown";
 
-        const textForWhatsApp = lines.join("\n").trim();
-
-        teamsStatus.innerHTML = `✅ Generated ${data.nTeams} teams from ${data.nPlayers} players. <span class="hint">Cutoff: ${fmtLocal(data.cutoffIso)}</span>`;
+        teamsStatus.innerHTML = `✅ Teams ready (${data.nTeams} teams / ${data.nPlayers} players). <span class="hint">Generated: ${genText}</span>`;
         teamsStatus.classList.add("okText");
 
-        // render
+        const teamsText = data.teamsText || "";
+
+        if (teamsText) {
+          const tools = document.createElement("div");
+          tools.className = "inline";
+          tools.style.marginBottom = "10px";
+          tools.innerHTML = `
+            <button class="smallbtn secondary" type="button" id="copyTeamsBtn">Copy teams text</button>
+            <button class="smallbtn secondary" type="button" id="waBtn">Share to WhatsApp</button>
+          `;
+          teamsOutput.appendChild(tools);
+
+          document.getElementById("copyTeamsBtn").addEventListener("click", async ()=>{
+            const ok = await copyText(teamsText);
+            teamsStatus.textContent = ok ? "✅ Teams copied to clipboard." : "❌ Copy failed.";
+            teamsStatus.className = "status " + (ok ? "okText" : "badText");
+          });
+
+          document.getElementById("waBtn").addEventListener("click", ()=>{
+            const url = "https://wa.me/?text=" + encodeURIComponent(teamsText);
+            window.open(url, "_blank");
+          });
+        }
+
         data.teams.forEach(t => {
           const div = document.createElement("div");
           div.className = "teambox";
           div.innerHTML = `
             <div class="teamtitle">${t.name} <span class="hint">(avg ${t.avg})</span></div>
             <ul class="list">
-              ${t.players.map(p => `<li>${p.name} <span class="hint">[S${p.skill}] (${p.preference || "—"}, ${p.practiceDuration || "—"})</span></li>`).join("")}
+              ${t.players.map(p => `<li>${p.name} <span class="hint">[S${p.skill}] (${p.preference||"—"}, ${p.practiceDuration||"—"})</span></li>`).join("")}
             </ul>
           `;
           teamsOutput.appendChild(div);
         });
 
-        // copy/share buttons
-        const tools = document.createElement("div");
-        tools.className = "inline";
-        tools.style.marginTop = "10px";
-        tools.innerHTML = `
-          <button class="smallbtn secondary" type="button" id="copyTeamsBtn">Copy teams text</button>
-          <button class="smallbtn secondary" type="button" id="waBtn">Share to WhatsApp</button>
-        `;
-        teamsOutput.prepend(tools);
-
-        document.getElementById("copyTeamsBtn").addEventListener("click", async ()=>{
-          const ok = await copyText(textForWhatsApp);
-          teamsStatus.textContent = ok ? "✅ Teams copied to clipboard." : "❌ Copy failed.";
-          teamsStatus.className = "status " + (ok ? "okText" : "badText");
-        });
-
-        document.getElementById("waBtn").addEventListener("click", ()=>{
-          const url = "https://wa.me/?text=" + encodeURIComponent(textForWhatsApp);
-          window.open(url, "_blank");
-        });
+        return true;
 
       } catch (e) {
-        teamsStatus.textContent = "❌ Network error: " + e;
-        teamsStatus.classList.add("badText");
+        if (!auto) {
+          teamsStatus.textContent = "❌ Network error: " + e;
+          teamsStatus.classList.add("badText");
+        }
+        return false;
       } finally {
-        genTeamsBtn.disabled = false;
-        genTeamsBtn.textContent = "Generate Teams";
+        if (!auto) {
+          refreshTeamsBtn.disabled = false;
+          refreshTeamsBtn.textContent = "Refresh Teams";
+        }
       }
+    }
+
+    refreshTeamsBtn.addEventListener("click", async () => {
+      await fetchAndRenderTeams(false);
     });
 
+    async function autoTeamsIfClosed() {
+      const st = await refresh();
+      if (st && st.ok && !st.open) {
+        // after cutoff: keep trying until generated
+        await fetchAndRenderTeams(true);
+      }
+    }
+
     renderGameInfo();
-    refresh();
-    setInterval(refresh, 30000);
+    autoTeamsIfClosed();
+    setInterval(autoTeamsIfClosed, 30000);
   </script>
 </body>
 </html>
