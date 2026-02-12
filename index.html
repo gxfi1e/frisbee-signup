@@ -4,21 +4,24 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Friday Ultimate Signup</title>
+  <script src="./config.js"></script>
   <style>
     body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:#f6f7fb; margin:0; padding:24px; color:#111; }
-    .wrap { max-width: 640px; margin: 0 auto; }
+    .wrap { max-width: 680px; margin: 0 auto; }
     .card { background:#fff; border-radius:16px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.08); }
     h1 { margin:0 0 6px; font-size:22px; }
-    .bar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:8px 0 16px; }
+    .bar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:8px 0 6px; }
     .pill { display:inline-block; padding:6px 10px; border-radius:999px; font-size:13px; background:#eee; }
     .pill.ok { background:#e7f7ec; }
     .pill.bad { background:#fdecec; }
+    .meta { margin: 0 0 14px; color:#666; font-size:12px; }
     p.sub { margin:0 0 14px; color:#555; line-height:1.35; }
     label { display:block; font-weight:600; margin:14px 0 8px; }
     input, select { width:100%; padding:12px; border:1px solid #ddd; border-radius:12px; font-size:16px; box-sizing:border-box; background:#fff; }
     .row { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
     .hint { margin-top:6px; font-size:13px; color:#666; }
     button { width:100%; margin-top:16px; padding:12px 14px; border:0; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer; background:#111; color:#fff; }
+    button.secondary { background:#444; }
     button:disabled { opacity:.55; cursor:not-allowed; }
     .status { margin-top:12px; font-size:14px; }
     .okText { color:#0a7a2f; }
@@ -27,6 +30,12 @@
     details { margin-top: 6px; }
     .footer { margin-top:14px; font-size:12px; color:#777; text-align:center; }
     code { background:#f3f3f3; padding:2px 6px; border-radius:6px; }
+    .inline { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .smallbtn { width:auto; padding:8px 10px; margin-top:0; border-radius:10px; font-size:13px; }
+    .teambox { background:#fafafa; border:1px solid #eee; border-radius:14px; padding:12px; margin-top:10px; }
+    .teamtitle { font-weight:800; margin:0 0 6px; }
+    .list { margin:0; padding-left:18px; }
+    a { color: inherit; }
   </style>
 </head>
 
@@ -38,12 +47,16 @@
       <div class="bar">
         <span id="countPill" class="pill">Loading...</span>
         <span id="statusPill" class="pill">Loading...</span>
-        <span id="cutoffPill" class="pill">Loading...</span>
+        <span id="timeLeftPill" class="pill">Loading...</span>
+      </div>
+      <div id="tzLine" class="meta"></div>
+
+      <div id="gameInfo" class="teambox" style="margin-top:10px;">
+        <div class="teamtitle">Game info</div>
+        <div id="gameInfoText"></div>
       </div>
 
-      <p class="sub">
-        Register for this Friday’s game. Registration automatically closes at <b>Friday 3:00 PM</b> (local time).
-      </p>
+      <p class="sub" id="cutoffText"></p>
 
       <form id="form">
         <label for="name">Name / Nickname *</label>
@@ -91,11 +104,16 @@
 
         <button id="btn" type="submit">Submit</button>
         <div id="status" class="status"></div>
+
+        <div id="regTools" class="inline" style="display:none; margin-top:10px;">
+          <button id="copyRegBtn" class="smallbtn secondary" type="button">Copy RegID</button>
+          <span id="regSavedNote" class="hint" style="margin:0;"></span>
+        </div>
       </form>
 
       <div class="hr"></div>
 
-      <details>
+      <details open>
         <summary><b>Cancel registration</b> (cost: buy Maojin a coffee ☕)</summary>
         <div style="margin-top:10px;">
           <label for="cancelName">Name / Nickname *</label>
@@ -104,68 +122,192 @@
           <input id="cancelId" placeholder="e.g., FRI-20260212-ABCDEF12" />
           <button id="cancelBtn" type="button">Cancel my registration</button>
           <div id="cancelStatus" class="status"></div>
-          <div class="hint">Your RegID will be shown after successful signup.</div>
+          <div class="hint">Tip: your last RegID is saved on this device.</div>
         </div>
       </details>
 
-      <div class="footer">Tip: Keep your <code>RegID</code> if you may cancel later.</div>
+      <div class="hr"></div>
+
+      <div id="teamsSection">
+        <div class="teamtitle">Teams (available after cutoff)</div>
+        <div class="hint" style="margin-top:6px;">
+          After Friday 15:00, click to generate teams. If players ≥ <b id="fourTeamMin"></b> → 4 teams; otherwise 2 teams.
+        </div>
+        <button id="genTeamsBtn" type="button" class="secondary">Generate Teams</button>
+        <div id="teamsStatus" class="status"></div>
+        <div id="teamsOutput"></div>
+      </div>
+
+      <div class="footer">Keep your <code>RegID</code>. Duplicate signups will update your info (no extra row).</div>
     </div>
   </div>
 
   <script>
-    const ENDPOINT = "https://script.google.com/macros/s/AKfycbzSNVgtOrjKp95rRlqOjb3v_IaKpCE4UREg0lK_ytMFe7FNdL7vIEYCdS77cXQXRFDe/exec";
+    const CFG = window.SIGNUP_CONFIG;
+    const ENDPOINT = CFG.endpoint;
+
+    const countPill = document.getElementById("countPill");
+    const statusPill = document.getElementById("statusPill");
+    const timeLeftPill = document.getElementById("timeLeftPill");
+    const tzLine = document.getElementById("tzLine");
+    const cutoffText = document.getElementById("cutoffText");
 
     const form = document.getElementById("form");
     const btn = document.getElementById("btn");
     const statusEl = document.getElementById("status");
 
-    const countPill = document.getElementById("countPill");
-    const statusPill = document.getElementById("statusPill");
-    const cutoffPill = document.getElementById("cutoffPill");
+    const regTools = document.getElementById("regTools");
+    const copyRegBtn = document.getElementById("copyRegBtn");
+    const regSavedNote = document.getElementById("regSavedNote");
 
     const cancelBtn = document.getElementById("cancelBtn");
     const cancelStatus = document.getElementById("cancelStatus");
+    const cancelName = document.getElementById("cancelName");
+    const cancelId = document.getElementById("cancelId");
+
+    const gameInfoText = document.getElementById("gameInfoText");
+    const fourTeamMin = document.getElementById("fourTeamMin");
+
+    const genTeamsBtn = document.getElementById("genTeamsBtn");
+    const teamsStatus = document.getElementById("teamsStatus");
+    const teamsOutput = document.getElementById("teamsOutput");
+
+    const LS_NAME = "frisbee_last_name";
+    const LS_REGID = "frisbee_last_regid";
 
     function fmtLocal(iso) {
-      try {
-        const d = new Date(iso);
-        return new Intl.DateTimeFormat(undefined, {
-          weekday: "short", year: "numeric", month: "short", day: "2-digit",
-          hour: "2-digit", minute: "2-digit"
-        }).format(d);
-      } catch {
-        return iso;
+      const d = new Date(iso);
+      return new Intl.DateTimeFormat(undefined, {
+        weekday: "short", year: "numeric", month: "short", day: "2-digit",
+        hour: "2-digit", minute: "2-digit"
+      }).format(d);
+    }
+
+    function timeLeftText(cutoffIso) {
+      const now = Date.now();
+      const cut = new Date(cutoffIso).getTime();
+      const diff = cut - now;
+
+      if (Number.isNaN(cut)) return "Cutoff: unknown";
+      if (diff <= 0) return "Time left: 0m";
+
+      const mins = Math.floor(diff / 60000);
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      if (h <= 0) return `Time left: ${m}m`;
+      return `Time left: ${h}h ${m}m`;
+    }
+
+    async function getStatus() {
+      const res = await fetch(ENDPOINT + "?action=status", { method: "GET" });
+      return await res.json();
+    }
+
+    function setPills(data) {
+      countPill.textContent = `${data.count} / ${data.max} registered`;
+
+      // status pill
+      if (data.isFull) {
+        statusPill.textContent = `FULL`;
+        statusPill.className = "pill bad";
+      } else if (data.open) {
+        statusPill.textContent = `OPEN (closes Fri 15:00)`;
+        statusPill.className = "pill ok";
+      } else {
+        statusPill.textContent = `CLOSED`;
+        statusPill.className = "pill bad";
+      }
+
+      // time left
+      timeLeftPill.textContent = timeLeftText(data.cutoffIso);
+
+      tzLine.textContent = `Timezone: ${CFG.timezoneLabel}`;
+      cutoffText.innerHTML = `Registration closes at <b>Friday 3:00 PM</b> (local time). Next cutoff: <b>${fmtLocal(data.cutoffIso)}</b>.`;
+
+      // submit button
+      if (data.isFull) {
+        btn.disabled = true;
+        btn.textContent = "Full";
+      } else if (!data.open) {
+        btn.disabled = true;
+        btn.textContent = "Registration closed";
+      } else {
+        btn.disabled = false;
+        btn.textContent = "Submit";
       }
     }
 
-    async function refreshStatus() {
+    function saveLastReg(name, regId) {
+      localStorage.setItem(LS_NAME, name);
+      localStorage.setItem(LS_REGID, regId);
+      cancelName.value = name;
+      cancelId.value = regId;
+      regSavedNote.textContent = "Saved on this device ✅";
+    }
+
+    async function copyText(text) {
       try {
-        const res = await fetch(ENDPOINT, { method: "GET" });
-        const data = await res.json();
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        // fallback
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      }
+    }
 
+    function renderGameInfo() {
+      const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
+      gameInfoText.innerHTML = `
+        <div><b>Time:</b> ${CFG.gameTimeText}</div>
+        <div><b>Location:</b> ${loc}</div>
+        <div><b>Format:</b> depends on players (after cutoff)</div>
+        <div><b>Bring:</b> cleats, water</div>
+      `;
+      fourTeamMin.textContent = CFG.teamsMinForFour;
+    }
+
+    async function refresh() {
+      try {
+        const data = await getStatus();
         if (!data.ok) throw new Error("status not ok");
-
-        countPill.textContent = `${data.count} / ${data.max} registered`;
-        cutoffPill.textContent = `Cutoff: ${fmtLocal(data.cutoffIso)}`;
-
-        const open = !!data.open;
-        statusPill.textContent = open ? "OPEN" : "CLOSED";
-        statusPill.className = "pill " + (open ? "ok" : "bad");
-
-        btn.disabled = !open;
-        if (!open) btn.textContent = "Registration closed";
-        else btn.textContent = "Submit";
+        setPills(data);
       } catch (e) {
         countPill.textContent = "Status unavailable";
         statusPill.textContent = "UNKNOWN";
-        cutoffPill.textContent = "";
+        timeLeftPill.textContent = "";
       }
     }
+
+    // load saved reg
+    (function initSaved(){
+      const n = localStorage.getItem(LS_NAME) || "";
+      const r = localStorage.getItem(LS_REGID) || "";
+      if (n) cancelName.value = n;
+      if (r) cancelId.value = r;
+    })();
+
+    copyRegBtn.addEventListener("click", async () => {
+      const regId = localStorage.getItem(LS_REGID) || "";
+      if (!regId) {
+        regSavedNote.textContent = "No RegID saved yet.";
+        return;
+      }
+      const ok = await copyText(regId);
+      regSavedNote.textContent = ok ? "RegID copied ✅" : "Copy failed ❌";
+    });
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       statusEl.textContent = "";
       statusEl.className = "status";
+      regTools.style.display = "none";
+      regSavedNote.textContent = "";
 
       const payload = {
         action: "register",
@@ -189,30 +331,32 @@
         const res = await fetch(ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(payload),
-          redirect: "follow"
+          body: JSON.stringify(payload)
         });
-
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); } catch { data = { ok: false, error: text }; }
+        const data = await res.json();
 
         if (data.ok) {
-          statusEl.innerHTML = `✅ Submitted! Your RegID: <code>${data.regId}</code> (keep it for cancellation).`;
+          const msg = data.updated
+            ? `✅ Updated your registration. RegID: ${data.regId}`
+            : `✅ Submitted! RegID: ${data.regId}`;
+          statusEl.innerHTML = msg + ` <span class="hint">(keep it for cancellation)</span>`;
           statusEl.classList.add("okText");
+
+          saveLastReg(payload.name, data.regId);
+          regTools.style.display = "flex";
+
           form.reset();
-          await refreshStatus();
+          await refresh();
         } else {
           statusEl.textContent = "❌ " + (data.error || "Submit failed");
           statusEl.classList.add("badText");
-          await refreshStatus();
+          await refresh();
         }
       } catch (err) {
         statusEl.textContent = "❌ Network error: " + err;
         statusEl.classList.add("badText");
       } finally {
-        btn.disabled = false;
-        await refreshStatus();
+        await refresh();
       }
     });
 
@@ -220,14 +364,15 @@
       cancelStatus.textContent = "";
       cancelStatus.className = "status";
 
-      const name = document.getElementById("cancelName").value.trim();
-      const regId = document.getElementById("cancelId").value.trim();
-
+      const name = cancelName.value.trim();
+      const regId = cancelId.value.trim();
       if (!name || !regId) {
         cancelStatus.textContent = "Please provide both Name and RegID.";
         cancelStatus.classList.add("badText");
         return;
       }
+
+      if (!confirm("Confirm cancellation? (Buy Maojin a coffee ☕)")) return;
 
       cancelBtn.disabled = true;
       cancelBtn.textContent = "Cancelling...";
@@ -236,33 +381,105 @@
         const res = await fetch(ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "cancel", name, regId }),
-          redirect: "follow"
+          body: JSON.stringify({ action: "cancel", name, regId })
         });
-
         const data = await res.json();
+
         if (data.ok) {
           cancelStatus.textContent = "✅ Cancelled. Please buy Maojin a coffee ☕";
           cancelStatus.classList.add("okText");
-          document.getElementById("cancelName").value = "";
-          document.getElementById("cancelId").value = "";
-          await refreshStatus();
+          await refresh();
         } else {
           cancelStatus.textContent = "❌ " + (data.error || "Cancel failed");
           cancelStatus.classList.add("badText");
         }
       } catch (e) {
         cancelStatus.textContent = "❌ Network error: " + e;
-        cancelStatus.classList.add("badText");
+        cancelStatus.classList_help = "badText";
       } finally {
         cancelBtn.disabled = false;
         cancelBtn.textContent = "Cancel my registration";
       }
     });
 
-    refreshStatus();
-    // optional: refresh every 30s
-    setInterval(refreshStatus, 30000);
+    genTeamsBtn.addEventListener("click", async () => {
+      teamsStatus.textContent = "";
+      teamsStatus.className = "status";
+      teamsOutput.innerHTML = "";
+
+      genTeamsBtn.disabled = true;
+      genTeamsBtn.textContent = "Generating...";
+
+      try {
+        const res = await fetch(ENDPOINT + "?action=teams", { method: "GET" });
+        const data = await res.json();
+
+        if (!data.ok) {
+          teamsStatus.textContent = "❌ " + (data.error || "Teams unavailable");
+          teamsStatus.classList.add("badText");
+          return;
+        }
+
+        const lines = [];
+        data.teams.forEach(t => {
+          lines.push(`${t.name} (avg ${t.avg})`);
+          t.players.forEach(p => {
+            lines.push(`- ${p.name} [S${p.skill}] (${p.preference || "—"}, ${p.practiceDuration || "—"})`);
+          });
+          lines.push("");
+        });
+
+        const textForWhatsApp = lines.join("\n").trim();
+
+        teamsStatus.innerHTML = `✅ Generated ${data.nTeams} teams from ${data.nPlayers} players. <span class="hint">Cutoff: ${fmtLocal(data.cutoffIso)}</span>`;
+        teamsStatus.classList.add("okText");
+
+        // render
+        data.teams.forEach(t => {
+          const div = document.createElement("div");
+          div.className = "teambox";
+          div.innerHTML = `
+            <div class="teamtitle">${t.name} <span class="hint">(avg ${t.avg})</span></div>
+            <ul class="list">
+              ${t.players.map(p => `<li>${p.name} <span class="hint">[S${p.skill}] (${p.preference || "—"}, ${p.practiceDuration || "—"})</span></li>`).join("")}
+            </ul>
+          `;
+          teamsOutput.appendChild(div);
+        });
+
+        // copy/share buttons
+        const tools = document.createElement("div");
+        tools.className = "inline";
+        tools.style.marginTop = "10px";
+        tools.innerHTML = `
+          <button class="smallbtn secondary" type="button" id="copyTeamsBtn">Copy teams text</button>
+          <button class="smallbtn secondary" type="button" id="waBtn">Share to WhatsApp</button>
+        `;
+        teamsOutput.prepend(tools);
+
+        document.getElementById("copyTeamsBtn").addEventListener("click", async ()=>{
+          const ok = await copyText(textForWhatsApp);
+          teamsStatus.textContent = ok ? "✅ Teams copied to clipboard." : "❌ Copy failed.";
+          teamsStatus.className = "status " + (ok ? "okText" : "badText");
+        });
+
+        document.getElementById("waBtn").addEventListener("click", ()=>{
+          const url = "https://wa.me/?text=" + encodeURIComponent(textForWhatsApp);
+          window.open(url, "_blank");
+        });
+
+      } catch (e) {
+        teamsStatus.textContent = "❌ Network error: " + e;
+        teamsStatus.classList.add("badText");
+      } finally {
+        genTeamsBtn.disabled = false;
+        genTeamsBtn.textContent = "Generate Teams";
+      }
+    });
+
+    renderGameInfo();
+    refresh();
+    setInterval(refresh, 30000);
   </script>
 </body>
 </html>
