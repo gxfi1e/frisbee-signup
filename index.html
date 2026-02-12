@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Friday Ultimate Signup</title>
   <script src="./config.js"></script>
+
   <style>
+    /* ===== Spinner (overlay) ===== */
     .spinner{
       width:36px;height:36px;margin:auto;border-radius:50%;
       border:4px solid #ddd;border-top-color:#111;
@@ -13,24 +15,96 @@
     }
     @keyframes spin{ to{ transform: rotate(360deg); } }
 
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f6f7fb;margin:0;padding:24px;color:#111}
+    /* ===== Base ===== */
+    body{
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:#f6f7fb;margin:0;padding:24px;color:#111
+    }
     .wrap{max-width:680px;margin:0 auto}
-    .card{background:#fff;border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
-    h1{margin:0 0 6px;font-size:22px}
+    .card{
+      background:#fff;border-radius:16px;padding:18px;
+      box-shadow:0 10px 30px rgba(0,0,0,.08)
+    }
+    h1{margin:0 0 10px;font-size:22px}
 
-    .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0 6px}
-    .pill{display:inline-block;padding:6px 10px;border-radius:999px;font-size:13px;background:#eee}
+    /* ===== Pills: always 1 line ===== */
+    .bar{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      margin:8px 0 8px;
+      flex-wrap:nowrap;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+    .bar::-webkit-scrollbar{ display:none; }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:13px;
+      background:#eee;
+      white-space:nowrap;
+      flex:0 0 auto;
+    }
     .pill.ok{background:#e7f7ec}
     .pill.bad{background:#fdecec}
 
-    .meta{margin:0 0 14px;color:#666;font-size:12px}
+    /* ===== Timezone line ===== */
+    .metaRight{
+      margin:0 0 10px;
+      color:#777;
+      font-size:12px;
+      text-align:right;
+    }
 
+    /* ===== Game info (compact) ===== */
+    .teambox{
+      background:#fafafa;
+      border:1px solid #eee;
+      border-radius:14px;
+      padding:10px 12px;
+      margin-top:8px;
+    }
+    .gameLine1{
+      font-weight:800;
+      font-size:14px;
+      line-height:1.25;
+      margin:0 0 4px;
+    }
+    .gameLine2{
+      font-size:12.5px;
+      color:#666;
+      line-height:1.25;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+    }
+    .gameLine2 span{ white-space:nowrap; }
+
+    /* ===== Text ===== */
+    p.sub{margin:10px 0 14px;color:#555;line-height:1.35}
     label{display:block;font-weight:600;margin:14px 0 8px}
-    input,select{width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;font-size:16px;box-sizing:border-box;background:#fff}
+    input,select{
+      width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;
+      font-size:16px;box-sizing:border-box;background:#fff
+    }
     .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .hint{margin-top:6px;font-size:13px;color:#666}
 
-    button{width:100%;margin-top:16px;padding:12px 14px;border:0;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;background:#111;color:#fff}
+    /* ===== Buttons ===== */
+    button{
+      width:100%;
+      margin-top:16px;
+      padding:12px 14px;
+      border:0;border-radius:12px;
+      font-size:16px;font-weight:700;
+      cursor:pointer;background:#111;color:#fff
+    }
     button.secondary{background:#444}
     button:disabled{opacity:.55;cursor:not-allowed}
 
@@ -38,36 +112,24 @@
     .okText{color:#0a7a2f}
     .badText{color:#b00020}
     .hr{height:1px;background:#eee;margin:18px 0}
-
     details{margin-top:6px}
-
     .footer{margin-top:14px;font-size:12px;color:#777;text-align:center}
     code{background:#f3f3f3;padding:2px 6px;border-radius:6px}
-
     .inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
     .smallbtn{width:auto;padding:8px 10px;margin-top:0;border-radius:10px;font-size:13px}
-
-    .teambox{background:#fafafa;border:1px solid #eee;border-radius:14px;padding:12px;margin-top:10px}
     .teamtitle{font-weight:800;margin:0 0 6px}
     .list{margin:0;padding-left:18px}
     a{color:inherit}
-
-    /* ===== Compact top area ===== */
-    .compact{ padding:14px; margin-top:10px; }
-    .compactMeta{ margin-top:6px; font-size:12px; color:#777; }
-    .gameRow{ font-size:15px; margin-bottom:4px; }
-    .gameRow b{ font-weight:800; }
-    .gameSub{ font-size:13px; color:#666; }
   </style>
 </head>
 
 <!-- Overlay loading -->
 <div id="overlay" style="
-display:none;
-position:fixed;
-inset:0;
-background:rgba(0,0,0,.45);
-z-index:9999;
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  z-index:9999;
 ">
   <div style="
     max-width:420px;
@@ -97,19 +159,26 @@ z-index:9999;
 <body>
   <div class="wrap">
     <div class="card">
+      <!-- Title (single line) -->
       <h1>Friday Ultimate Signup</h1>
 
+      <!-- Pills (always same row) -->
       <div class="bar">
         <span id="countPill" class="pill">Loading...</span>
         <span id="statusPill" class="pill">Loading...</span>
         <span id="timeLeftPill" class="pill">Loading...</span>
       </div>
 
-      <!-- Compact game info box (no repeated cutoff lines) -->
-      <div class="teambox compact">
-        <div id="gameInfoText"></div>
-        <div id="tzLine" class="compactMeta"></div>
+      <!-- Timezone (right aligned, small) -->
+      <div id="tzLine" class="metaRight">Timezone: Asia/Riyadh (Jeddah local time)</div>
+
+      <!-- Game info (compact) -->
+      <div class="teambox">
+        <div class="gameLine1" id="gameInfoLine1">Loading game info…</div>
+        <div class="gameLine2" id="gameInfoLine2"></div>
       </div>
+
+      <p class="sub" id="cutoffText"></p>
 
       <form id="form">
         <label for="name">Name / Nickname *</label>
@@ -197,12 +266,9 @@ z-index:9999;
   </div>
 
   <script>
-    const CFG = window.SIGNUP_CONFIG;
-    const ENDPOINT = CFG.endpoint;
-
-    // overlay
     const overlay = document.getElementById("overlay");
     const overlayMsg = document.getElementById("overlayMsg");
+
     let submitting = false;
     let slowTimer1 = null;
     let slowTimer2 = null;
@@ -210,6 +276,7 @@ z-index:9999;
     function showOverlay(){
       submitting = true;
       overlay.style.display = "block";
+
       overlayMsg.textContent = "Submitting to Google Sheets…";
 
       slowTimer1 = setTimeout(()=>{
@@ -228,11 +295,14 @@ z-index:9999;
       clearTimeout(slowTimer2);
     }
 
-    // DOM refs
+    const CFG = window.SIGNUP_CONFIG;
+    const ENDPOINT = CFG.endpoint;
+
     const countPill = document.getElementById("countPill");
     const statusPill = document.getElementById("statusPill");
     const timeLeftPill = document.getElementById("timeLeftPill");
     const tzLine = document.getElementById("tzLine");
+    const cutoffText = document.getElementById("cutoffText");
 
     const form = document.getElementById("form");
     const btn = document.getElementById("btn");
@@ -247,7 +317,8 @@ z-index:9999;
     const cancelName = document.getElementById("cancelName");
     const cancelId = document.getElementById("cancelId");
 
-    const gameInfoText = document.getElementById("gameInfoText");
+    const gameInfoLine1 = document.getElementById("gameInfoLine1");
+    const gameInfoLine2 = document.getElementById("gameInfoLine2");
     const fourTeamMin = document.getElementById("fourTeamMin");
 
     const refreshTeamsBtn = document.getElementById("refreshTeamsBtn");
@@ -269,13 +340,13 @@ z-index:9999;
       const now = Date.now();
       const cut = new Date(cutoffIso).getTime();
       const diff = cut - now;
-      if (Number.isNaN(cut)) return "—";
-      if (diff <= 0) return "0m left";
+      if (Number.isNaN(cut)) return "Time left: —";
+      if (diff <= 0) return "Time left: 0m";
       const mins = Math.floor(diff/60000);
       const h = Math.floor(mins/60);
       const m = mins%60;
-      if (h<=0) return `${m}m left`;
-      return `${h}h ${m}m left`;
+      if (h<=0) return `Time left: ${m}m`;
+      return `Time left: ${h}h ${m}m`;
     }
 
     async function getStatus() {
@@ -299,7 +370,12 @@ z-index:9999;
 
       timeLeftPill.textContent = timeLeftText(data.cutoffIso);
 
-      // button state
+      // Right aligned timezone (explicit text you requested)
+      tzLine.textContent = `Timezone: ${CFG.timezoneLabel} (Jeddah local time)`;
+
+      cutoffText.innerHTML =
+        `Registration closes at <b>Friday 3:00 PM</b> (local). Next cutoff: <b>${fmtLocal(data.cutoffIso)}</b>.`;
+
       if (data.isFull) {
         btn.disabled = true;
         btn.textContent = "Full";
@@ -337,11 +413,16 @@ z-index:9999;
 
     function renderGameInfo() {
       const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
-      gameInfoText.innerHTML = `
-        <div class="gameRow"><b>${CFG.gameTimeText}</b> · ${loc}</div>
-        <div class="gameSub">Bring: cleats, water · Format: depends on players (after cutoff)</div>
+
+      // Line 1: Time + Location
+      gameInfoLine1.innerHTML = `${CFG.gameTimeText} · ${loc}`;
+
+      // Line 2: Bring (emoji) + Format (same line)
+      gameInfoLine2.innerHTML = `
+        <span>💧🥿 Bring: water, cleats</span>
+        <span>🎽 Format: after cutoff</span>
       `;
-      tzLine.textContent = `Timezone: ${CFG.timezoneLabel}`;
+
       fourTeamMin.textContent = CFG.teamsMinForFour;
     }
 
@@ -379,6 +460,7 @@ z-index:9999;
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
+
       statusEl.textContent = "";
       statusEl.className = "status";
       regTools.style.display = "none";
@@ -401,8 +483,6 @@ z-index:9999;
 
       btn.disabled = true;
       btn.textContent = "Submitting...";
-
-      // show overlay to prevent early exit
       showOverlay();
 
       try {
@@ -431,6 +511,7 @@ z-index:9999;
       } finally {
         hideOverlay();
         await refresh();
+        if (!btn.disabled) btn.textContent = "Submit";
       }
     });
 
