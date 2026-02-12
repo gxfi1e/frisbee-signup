@@ -47,6 +47,29 @@
     .teamtitle{font-weight:800;margin:0 0 6px}
     .list{margin:0;padding-left:18px}
     a{color:inherit}
+    .compact{
+      padding:14px;
+    }
+
+    .compactMeta{
+      margin-top:6px;
+      font-size:12px;
+      color:#777;
+    }
+
+    .gameRow{
+      font-size:15px;
+      margin-bottom:4px;
+    }
+
+    .gameRow b{
+      font-weight:700;
+    }
+
+    .gameSub{
+      font-size:13px;
+      color:#666;
+    }
   </style>
 </head>
 
@@ -96,12 +119,10 @@
       </div>
       <div id="tzLine" class="meta"></div>
 
-      <div class="teambox" style="margin-top:10px;">
-        <div class="teamtitle">Game info</div>
+      <div class="teambox compact">
         <div id="gameInfoText"></div>
+        <div id="tzLine" class="meta compactMeta"></div>
       </div>
-
-      <p class="sub" id="cutoffText"></p>
 
       <form id="form">
         <label for="name">Name / Nickname *</label>
@@ -285,7 +306,7 @@
         statusPill.textContent = "FULL";
         statusPill.className = "pill bad";
       } else if (data.open) {
-        statusPill.textContent = "OPEN (closes Fri 15:00)";
+        statusPill.textContent = "OPEN";
         statusPill.className = "pill ok";
       } else {
         statusPill.textContent = "CLOSED";
@@ -332,49 +353,59 @@
     }
 
     function renderGameInfo() {
-      const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
+
+      const loc =
+        `<a href="${CFG.googleMapsLink}" target="_blank">${CFG.locationText}</a>`;
+
       gameInfoText.innerHTML = `
-        <div><b>Time:</b> ${CFG.gameTimeText}</div>
-        <div><b>Location:</b> ${loc}</div>
-        <div><b>Format:</b> depends on players (after cutoff)</div>
-        <div><b>Bring:</b> cleats, water</div>
+        <div class="gameRow">
+          <b>${CFG.gameTimeText}</b> · ${loc}
+        </div>
+
+        <div class="gameSub">
+          Bring cleats, water
+        </div>
       `;
-      fourTeamMin.textContent = CFG.teamsMinForFour;
-    }
 
-    async function refresh() {
-      try {
-        const data = await getStatus();
-        if (!data.ok) throw new Error("status not ok");
-        setPills(data);
-        return data;
-      } catch {
-        countPill.textContent = "Status unavailable";
-        statusPill.textContent = "UNKNOWN";
-        timeLeftPill.textContent = "";
-        return null;
-      }
-    }
+      tzLine.textContent =
+        `Timezone: ${CFG.timezoneLabel}`;
 
-    // load saved reg
-    (function initSaved(){
-      const n = localStorage.getItem(LS_NAME) || "";
-      const r = localStorage.getItem(LS_REGID) || "";
-      if (n) cancelName.value = n;
-      if (r) cancelId.value = r;
-    })();
+      fourTeamMin.textContent =
+        CFG.teamsMinForFour;
+        }
+        async function refresh() {
+          try {
+            const data = await getStatus();
+            if (!data.ok) throw new Error("status not ok");
+            setPills(data);
+            return data;
+          } catch {
+            countPill.textContent = "Status unavailable";
+            statusPill.textContent = "UNKNOWN";
+            timeLeftPill.textContent = "";
+            return null;
+          }
+        }  
 
-    copyRegBtn.addEventListener("click", async () => {
-      const regId = localStorage.getItem(LS_REGID) || "";
-      if (!regId) {
-        regSavedNote.textContent = "No RegID saved yet.";
-        return;
-      }
-      const ok = await copyText(regId);
-      regSavedNote.textContent = ok ? "RegID copied ✅" : "Copy failed ❌";
-    });
+        // load saved reg
+        (function initSaved(){
+          const n = localStorage.getItem(LS_NAME) || "";
+          const r = localStorage.getItem(LS_REGID) || "";
+          if (n) cancelName.value = n;
+          if (r) cancelId.value = r;
+        })();
 
-    form.addEventListener("submit", async (e) => {
+        copyRegBtn.addEventListener("click", async () => {
+          const regId = localStorage.getItem(LS_REGID) || "";
+          if (!regId) {
+            regSavedNote.textContent = "No RegID saved yet.";
+            return;
+          }
+          const ok = await copyText(regId);
+          regSavedNote.textContent = ok ? "RegID copied ✅" : "Copy failed ❌";
+        });
+
+        form.addEventListener("submit", async (e) => {
       e.preventDefault();
       statusEl.textContent = "";
       statusEl.className = "status";
