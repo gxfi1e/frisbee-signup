@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>KAUST Happy Frisbee hat registration </title>
+  <title>KAUST Happy Frisbee hat registration</title>
   <script src="./config.js"></script>
 
   <style>
-    /* ===== Spinner (overlay) ===== */
     .spinner{
       width:36px;height:36px;margin:auto;border-radius:50%;
       border:4px solid #ddd;border-top-color:#111;
@@ -15,7 +14,6 @@
     }
     @keyframes spin{ to{ transform: rotate(360deg); } }
 
-    /* ===== Base ===== */
     body{
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       background:#f6f7fb;margin:0;padding:24px;color:#111
@@ -31,7 +29,6 @@
       font-size: 22px;
     }
 
-    /* ===== Pills: 1 line + swipe scroll ===== */
     .bar{
       display:flex;
       gap:6px;
@@ -60,7 +57,6 @@
     .pill.ok{background:#e7f7ec}
     .pill.bad{background:#fdecec}
 
-    /* ===== Timezone line (right aligned) ===== */
     .metaRight{
       margin:0 0 10px;
       color:#777;
@@ -68,14 +64,14 @@
       text-align:right;
     }
 
-    /* ===== Game info (compact) ===== */
     .teambox{
       background:#fafafa;
       border:1px solid #eee;
       border-radius:14px;
       padding:10px 12px;
-      margin-top:8px;
+      margin-top:10px;
     }
+
     .gameLine1{
       font-weight:800;
       font-size:14px;
@@ -94,7 +90,6 @@
     .gameLine2 span{ white-space:nowrap; }
     a{color:inherit}
 
-    /* ===== Form ===== */
     p.sub{margin:10px 0 14px;color:#555;line-height:1.35}
     label{display:block;font-weight:600;margin:14px 0 8px}
     input,select{
@@ -104,7 +99,6 @@
     .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .hint{margin-top:6px;font-size:13px;color:#666}
 
-    /* ===== Buttons ===== */
     button{
       width:100%;
       margin-top:16px;
@@ -128,7 +122,7 @@
     .teamtitle{font-weight:800;margin:0 0 6px}
     .list{margin:0;padding-left:18px}
 
-    /* ===== Players panel ===== */
+    /* players panel */
     .playersTop{
       display:flex;
       gap:10px;
@@ -156,6 +150,14 @@
       background:#eee;
       white-space:nowrap;
     }
+    .statsLine{
+      font-size:12.5px;
+      color:#666;
+      margin-top:6px;
+      display:flex;
+      gap:16px;
+      flex-wrap:wrap;
+    }
   </style>
 </head>
 
@@ -177,18 +179,9 @@
     text-align:center;
   ">
     <div class="spinner"></div>
-
-    <div style="font-weight:900; margin-top:12px; font-size:16px;">
-      Submitting registration…
-    </div>
-
-    <div id="overlayMsg" style="color:#666; font-size:13px; margin-top:6px;">
-      Please keep this page open.
-    </div>
-
-    <div style="color:#999; font-size:12px; margin-top:10px;">
-      Do not close until you see confirmation.
-    </div>
+    <div style="font-weight:900; margin-top:12px; font-size:16px;">Submitting registration…</div>
+    <div id="overlayMsg" style="color:#666; font-size:13px; margin-top:6px;">Please keep this page open.</div>
+    <div style="color:#999; font-size:12px; margin-top:10px;">Do not close until you see confirmation.</div>
   </div>
 </div>
 
@@ -197,36 +190,17 @@
     <div class="card">
       <h1>Friday Ultimate Signup</h1>
 
-      <!-- Pills (swipe if needed) -->
       <div class="bar" aria-label="Status pills (swipe)">
         <span id="countPill" class="pill">Loading...</span>
         <span id="statusPill" class="pill">Loading...</span>
         <span id="timeLeftPill" class="pill">Loading...</span>
       </div>
 
-      <!-- Timezone (right aligned) -->
       <div id="tzLine" class="metaRight"></div>
 
-      <!-- Game info (compact) -->
       <div class="teambox">
         <div class="gameLine1" id="gameInfoLine1">Loading game info…</div>
         <div class="gameLine2" id="gameInfoLine2"></div>
-      </div>
-
-      <!-- ✅ Registered players (below Game info) -->
-      <div class="teambox" id="playersBox">
-        <div class="playersTop">
-          <div class="teamtitle" style="margin:0;">Registered players</div>
-          <span id="playersCountPill" class="miniPill">—</span>
-        </div>
-
-        <div class="playersBtnRow">
-          <button id="togglePlayersBtn" type="button" class="smallbtn secondary">Show</button>
-          <button id="copyPlayersBtn" type="button" class="smallbtn secondary" style="display:none;">Copy</button>
-          <span id="playersHint" class="hint" style="margin:0;"></span>
-        </div>
-
-        <div id="playersOutput" style="margin-top:10px; display:none;"></div>
       </div>
 
       <form id="form">
@@ -296,6 +270,29 @@
           <div class="hint">Tip: your last RegID is saved on this device.</div>
         </div>
       </details>
+
+      <div class="hr"></div>
+
+      <!-- ✅ Registered players (before Teams) -->
+      <div class="teambox" id="playersBox">
+        <div class="playersTop">
+          <div class="teamtitle" style="margin:0;">Registered players</div>
+          <span id="playersCountPill" class="miniPill">—</span>
+        </div>
+
+        <div class="statsLine">
+          <span id="genderStats">Male: —  Female: —</span>
+          <span id="prefStats">Handler: —  Cutter: —</span>
+        </div>
+
+        <div class="playersBtnRow">
+          <button id="togglePlayersBtn" type="button" class="smallbtn secondary">Show</button>
+          <button id="copyPlayersBtn" type="button" class="smallbtn secondary" style="display:none;">Copy</button>
+          <span id="playersHint" class="hint" style="margin:0;"></span>
+        </div>
+
+        <div id="playersOutput" style="margin-top:10px; display:none;"></div>
+      </div>
 
       <div class="hr"></div>
 
@@ -372,13 +369,17 @@
     const teamsStatus = document.getElementById("teamsStatus");
     const teamsOutput = document.getElementById("teamsOutput");
 
-    // ✅ Players UI
+    // Players UI
     const playersCountPill = document.getElementById("playersCountPill");
+    const genderStatsEl = document.getElementById("genderStats");
+    const prefStatsEl = document.getElementById("prefStats");
     const togglePlayersBtn = document.getElementById("togglePlayersBtn");
     const copyPlayersBtn = document.getElementById("copyPlayersBtn");
     const playersHint = document.getElementById("playersHint");
     const playersOutput = document.getElementById("playersOutput");
+
     let playersVisible = false;
+    let cachedPlayers = [];
     let cachedPlayersText = "";
 
     const LS_NAME = "frisbee_last_name";
@@ -417,9 +418,6 @@
       }
 
       timeLeftPill.textContent = timeLeftText(data.cutoffIso);
-
-      // also update players count pill quickly
-      playersCountPill.textContent = `${data.count} players`;
 
       if (data.isFull) {
         btn.disabled = true;
@@ -499,30 +497,47 @@
       regSavedNote.textContent = ok ? "RegID copied ✅" : "Copy failed ❌";
     });
 
-    // ✅ Fetch + render players
+    // ===== Players fetch + render (registration order) =====
     async function fetchPlayers(){
       const res = await fetch(ENDPOINT + "?action=players", { method:"GET" });
-      const data = await res.json();
-      return data;
+      return await res.json();
     }
 
-    function renderPlayersList(players){
-      // simple list: names only
-      const names = players.map(p => p.name).filter(Boolean);
-      cachedPlayersText = names.join("\n");
+    function applyPlayersData(data){
+      if (!data || !data.ok) return;
 
-      playersOutput.innerHTML = `
-        <div class="hint">${names.length} players</div>
-        <ul class="list">
-          ${names.map(n => `<li>${n}</li>`).join("")}
-        </ul>
-      `;
+      cachedPlayers = data.players || [];
+
+      playersCountPill.textContent = `${data.count} players`;
+
+      const s = data.stats || { male:0, female:0, handler:0, cutter:0 };
+      genderStatsEl.textContent = `Male: ${s.male}   Female: ${s.female}`;
+      prefStatsEl.textContent = `Handler: ${s.handler}   Cutter: ${s.cutter}`;
+
+      cachedPlayersText = cachedPlayers.map((p,i)=> `${i+1}. ${p.name}`).join("\n");
+
+      if (playersVisible) {
+        playersOutput.innerHTML = `
+          <ul class="list">
+            ${cachedPlayers.map((p,i)=> `<li>${i+1}. ${p.name}</li>`).join("")}
+          </ul>
+        `;
+      }
+    }
+
+    async function updatePlayersStatsAndMaybeList(){
+      try{
+        const data = await fetchPlayers();
+        applyPlayersData(data);
+      } catch {
+        // ignore silently (network hiccup)
+      }
     }
 
     togglePlayersBtn.addEventListener("click", async () => {
       playersHint.textContent = "";
       playersHint.className = "hint";
-      
+
       if (playersVisible) {
         playersVisible = false;
         playersOutput.style.display = "none";
@@ -538,17 +553,15 @@
 
       try {
         const data = await fetchPlayers();
-
         if (!data.ok) {
           playersOutput.innerHTML = `<div class="badText">❌ ${data.error || "Failed to load players"}</div>`;
           return;
         }
+        applyPlayersData(data);
 
-        renderPlayersList(data.players || []);
-        copyPlayersBtn.style.display = "inline-block";
         playersVisible = true;
         togglePlayersBtn.textContent = "Hide";
-        playersCountPill.textContent = `${data.count} players`;
+        copyPlayersBtn.style.display = "inline-block";
 
       } catch (e) {
         playersOutput.innerHTML = `<div class="badText">❌ Network error</div>`;
@@ -565,8 +578,10 @@
       }
       const ok = await copyText(cachedPlayersText);
       playersHint.textContent = ok ? "Copied ✅" : "Copy failed ❌";
+      if (ok) setTimeout(()=> playersHint.textContent = "", 1500);
     });
 
+    // ===== Submit =====
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
@@ -608,16 +623,9 @@
           saveLastReg(payload.name, data.regId);
           regTools.style.display = "flex";
           form.reset();
-          await refresh();
 
-          // if players list is open, refresh it too
-          if (playersVisible) {
-            const p = await fetchPlayers();
-            if (p && p.ok) {
-              renderPlayersList(p.players || []);
-              playersCountPill.textContent = `${p.count} players`;
-            }
-          }
+          await refresh();
+          await updatePlayersStatsAndMaybeList();
 
         } else {
           statusEl.textContent = "❌ " + (data.error || "Submit failed");
@@ -630,10 +638,12 @@
       } finally {
         hideOverlay();
         await refresh();
+        await updatePlayersStatsAndMaybeList();
         if (!btn.disabled) btn.textContent = "Submit";
       }
     });
 
+    // ===== Cancel =====
     cancelBtn.addEventListener("click", async () => {
       cancelStatus.textContent = "";
       cancelStatus.className = "status";
@@ -662,16 +672,7 @@
           cancelStatus.textContent = "✅ Cancelled. Please buy Maojin a coffee ☕";
           cancelStatus.classList.add("okText");
           await refresh();
-
-          // if players list is open, refresh it too
-          if (playersVisible) {
-            const p = await fetchPlayers();
-            if (p && p.ok) {
-              renderPlayersList(p.players || []);
-              playersCountPill.textContent = `${p.count} players`;
-            }
-          }
-
+          await updatePlayersStatsAndMaybeList();
         } else {
           cancelStatus.textContent = "❌ " + (data.error || "Cancel failed");
           cancelStatus.classList.add("badText");
@@ -685,6 +686,7 @@
       }
     });
 
+    // ===== Teams =====
     async function fetchAndRenderTeams(auto=false) {
       if (!auto) {
         teamsStatus.textContent = "";
@@ -776,9 +778,18 @@
       }
     }
 
+    // ===== Init =====
     renderGameInfo();
+    refresh();
+    updatePlayersStatsAndMaybeList();          // ✅ initial stats
     autoTeamsIfClosed();
-    setInterval(autoTeamsIfClosed, 30000);
+
+    // ✅ realtime refresh: status + players stats (+ list if open) + teams if closed
+    setInterval(async () => {
+      await refresh();
+      await updatePlayersStatsAndMaybeList();
+      await autoTeamsIfClosed();
+    }, 30000);
   </script>
 </body>
 </html>
