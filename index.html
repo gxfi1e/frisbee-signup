@@ -7,8 +7,6 @@
   <script src="./config.js"></script>
 
   <style>
-    
-  
     /* ===== Spinner (overlay) ===== */
     .spinner{
       width:36px;height:36px;margin:auto;border-radius:50%;
@@ -31,7 +29,7 @@
       text-align: center;
       margin: 0 0 10px;
       font-size: 22px;
-      }
+    }
 
     /* ===== Pills: 1 line + swipe scroll ===== */
     .bar{
@@ -43,7 +41,10 @@
       margin:6px auto;
       overflow-x:auto;
       flex-wrap:nowrap;
-        }
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      padding-bottom:2px;
+    }
     .bar::-webkit-scrollbar{ display:none; }
 
     .pill{
@@ -54,7 +55,7 @@
       font-size:13px;
       background:#eee;
       white-space:nowrap;
-      flex:0 0 auto;                   /* don't shrink */
+      flex:0 0 auto;
     }
     .pill.ok{background:#e7f7ec}
     .pill.bad{background:#fdecec}
@@ -126,6 +127,35 @@
     .smallbtn{width:auto;padding:8px 10px;margin-top:0;border-radius:10px;font-size:13px}
     .teamtitle{font-weight:800;margin:0 0 6px}
     .list{margin:0;padding-left:18px}
+
+    /* ===== Players panel ===== */
+    .playersTop{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .playersBtnRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top:6px;
+    }
+    .playersBtnRow button{
+      width:auto;
+      margin-top:0;
+    }
+    .miniPill{
+      display:inline-flex;
+      align-items:center;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:12px;
+      background:#eee;
+      white-space:nowrap;
+    }
   </style>
 </head>
 
@@ -183,8 +213,21 @@
         <div class="gameLine2" id="gameInfoLine2"></div>
       </div>
 
-      <!-- NOTE: removed the extra repeated cutoff paragraph -->
-      <!-- <p class="sub" id="cutoffText"></p> -->
+      <!-- ✅ Registered players (below Game info) -->
+      <div class="teambox" id="playersBox">
+        <div class="playersTop">
+          <div class="teamtitle" style="margin:0;">Registered players</div>
+          <span id="playersCountPill" class="miniPill">—</span>
+        </div>
+
+        <div class="playersBtnRow">
+          <button id="togglePlayersBtn" type="button" class="smallbtn secondary">Show</button>
+          <button id="copyPlayersBtn" type="button" class="smallbtn secondary" style="display:none;">Copy</button>
+          <span id="playersHint" class="hint" style="margin:0;"></span>
+        </div>
+
+        <div id="playersOutput" style="margin-top:10px; display:none;"></div>
+      </div>
 
       <form id="form">
         <label for="name">Name / Nickname *</label>
@@ -329,6 +372,15 @@
     const teamsStatus = document.getElementById("teamsStatus");
     const teamsOutput = document.getElementById("teamsOutput");
 
+    // ✅ Players UI
+    const playersCountPill = document.getElementById("playersCountPill");
+    const togglePlayersBtn = document.getElementById("togglePlayersBtn");
+    const copyPlayersBtn = document.getElementById("copyPlayersBtn");
+    const playersHint = document.getElementById("playersHint");
+    const playersOutput = document.getElementById("playersOutput");
+    let playersVisible = false;
+    let cachedPlayersText = "";
+
     const LS_NAME = "frisbee_last_name";
     const LS_REGID = "frisbee_last_regid";
 
@@ -365,6 +417,9 @@
       }
 
       timeLeftPill.textContent = timeLeftText(data.cutoffIso);
+
+      // also update players count pill quickly
+      playersCountPill.textContent = `${data.count} players`;
 
       if (data.isFull) {
         btn.disabled = true;
@@ -403,19 +458,12 @@
 
     function renderGameInfo() {
       const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
-
-      // Line 1: time + location
       gameInfoLine1.innerHTML = `${CFG.gameTimeText} · ${loc}`;
-
-      // Line 2: bring + format (same line)
       gameInfoLine2.innerHTML = `
-        <span> Bring: 💧 👟 🥏 🔥</span>
-        <span> Format: 5v5, 6v6, or 7v7 after cutoff</span>
+        <span>Bring: 💧 👟 🥏 🔥</span>
+        <span>Format: 5v5 / 6v6 / 7v7 (after cutoff)</span>
       `;
-
-      tzLine.textContent =
-  `Registration closes: Fri 3:00 PM | Jeddah local time`;
-
+      tzLine.textContent = `Registration closes: Fri 3:00 PM | Jeddah local time`;
       fourTeamMin.textContent = CFG.teamsMinForFour;
     }
 
@@ -449,6 +497,74 @@
       }
       const ok = await copyText(regId);
       regSavedNote.textContent = ok ? "RegID copied ✅" : "Copy failed ❌";
+    });
+
+    // ✅ Fetch + render players
+    async function fetchPlayers(){
+      const res = await fetch(ENDPOINT + "?action=players", { method:"GET" });
+      const data = await res.json();
+      return data;
+    }
+
+    function renderPlayersList(players){
+      // simple list: names only
+      const names = players.map(p => p.name).filter(Boolean);
+      cachedPlayersText = names.join("\n");
+
+      playersOutput.innerHTML = `
+        <div class="hint">${names.length} players</div>
+        <ul class="list">
+          ${names.map(n => `<li>${n}</li>`).join("")}
+        </ul>
+      `;
+    }
+
+    togglePlayersBtn.addEventListener("click", async () => {
+      playersHint.textContent = "";
+      playersHint.className = "hint";
+      
+      if (playersVisible) {
+        playersVisible = false;
+        playersOutput.style.display = "none";
+        copyPlayersBtn.style.display = "none";
+        togglePlayersBtn.textContent = "Show";
+        return;
+      }
+
+      togglePlayersBtn.disabled = true;
+      togglePlayersBtn.textContent = "Loading...";
+      playersOutput.style.display = "block";
+      playersOutput.innerHTML = `<div class="hint">Loading…</div>`;
+
+      try {
+        const data = await fetchPlayers();
+
+        if (!data.ok) {
+          playersOutput.innerHTML = `<div class="badText">❌ ${data.error || "Failed to load players"}</div>`;
+          return;
+        }
+
+        renderPlayersList(data.players || []);
+        copyPlayersBtn.style.display = "inline-block";
+        playersVisible = true;
+        togglePlayersBtn.textContent = "Hide";
+        playersCountPill.textContent = `${data.count} players`;
+
+      } catch (e) {
+        playersOutput.innerHTML = `<div class="badText">❌ Network error</div>`;
+      } finally {
+        togglePlayersBtn.disabled = false;
+        if (!playersVisible) togglePlayersBtn.textContent = "Show";
+      }
+    });
+
+    copyPlayersBtn.addEventListener("click", async () => {
+      if (!cachedPlayersText) {
+        playersHint.textContent = "Nothing to copy yet.";
+        return;
+      }
+      const ok = await copyText(cachedPlayersText);
+      playersHint.textContent = ok ? "Copied ✅" : "Copy failed ❌";
     });
 
     form.addEventListener("submit", async (e) => {
@@ -493,6 +609,16 @@
           regTools.style.display = "flex";
           form.reset();
           await refresh();
+
+          // if players list is open, refresh it too
+          if (playersVisible) {
+            const p = await fetchPlayers();
+            if (p && p.ok) {
+              renderPlayersList(p.players || []);
+              playersCountPill.textContent = `${p.count} players`;
+            }
+          }
+
         } else {
           statusEl.textContent = "❌ " + (data.error || "Submit failed");
           statusEl.classList.add("badText");
@@ -536,6 +662,16 @@
           cancelStatus.textContent = "✅ Cancelled. Please buy Maojin a coffee ☕";
           cancelStatus.classList.add("okText");
           await refresh();
+
+          // if players list is open, refresh it too
+          if (playersVisible) {
+            const p = await fetchPlayers();
+            if (p && p.ok) {
+              renderPlayersList(p.players || []);
+              playersCountPill.textContent = `${p.count} players`;
+            }
+          }
+
         } else {
           cancelStatus.textContent = "❌ " + (data.error || "Cancel failed");
           cancelStatus.classList.add("badText");
