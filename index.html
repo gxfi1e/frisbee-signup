@@ -756,9 +756,10 @@ copyPlayersBtn.addEventListener("click", async ()=>{
         }
         return false;
       } finally {
-        if (!auto) {
-          refreshTeamsBtn.disabled = false;
-          refreshTeamsBtn.textContent = "Refresh Teams";
+      // 只有按钮还在显示时才恢复
+      if (!auto && refreshTeamsBtn.style.display !== "none") {
+        refreshTeamsBtn.disabled = false;
+        refreshTeamsBtn.textContent = "Refresh Teams";
         }
       }
     }
@@ -768,17 +769,34 @@ copyPlayersBtn.addEventListener("click", async ()=>{
     });
 
     async function autoTeamsIfClosed() {
+
       const st = await refresh();
       await refreshPlayers(true);
 
-      if (st && st.ok && !st.open) {
-        await fetchAndRenderTeams(true);
+      if (!st || !st.ok) return;
+
+      // cutoff 之前
+      if (st.open) {
+        refreshTeamsBtn.disabled = true;
+        refreshTeamsBtn.style.opacity = 0.5;
+        return;
+      }
+
+      // cutoff 之后
+      refreshTeamsBtn.disabled = false;
+      refreshTeamsBtn.style.opacity = 1;
+
+      const loaded = await fetchAndRenderTeams(true);
+
+      // 如果已成功加载 teams，就可以隐藏按钮
+      if (loaded) {
+        refreshTeamsBtn.style.display = "none";
       }
     }
 
+
     renderGameInfo();
     autoTeamsIfClosed();
-    setInterval(autoTeamsIfClosed, 30000);
   </script>
 </body>
 </html>
