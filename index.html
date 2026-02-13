@@ -628,39 +628,41 @@
     let lastPlayersText = "";
 
     async function refreshPlayers(silent=false){
-      if (!silent) playersStatus.textContent = "Loading…";
-      copyPlayersBtn.disabled = true;
+  if (!silent) playersStatus.textContent = "Loading…";
+  copyPlayersBtn.disabled = true;
 
-      try{
-        const data = await safeGetJson(ENDPOINT + "?action=players");
-        if (!data.ok) throw new Error(data.error || "players not ok");
+  try{
+    const data = await safeGetJson(ENDPOINT + "?action=players");
+    if (!data.ok) throw new Error(data.error || "players not ok");
 
-        playersBadge.textContent = `${data.count} players`;
-        genderStats.textContent = `Male: ${data.stats.male}   Female: ${data.stats.female}`;
-        prefStats.textContent = `Handler: ${data.stats.handler}   Cutter: ${data.stats.cutter}`;
+    playersBadge.textContent = `${data.count} players`;
 
-        const lines = data.players.map((p, idx) => {
-          const meta = `${p.gender || "—"} · ${p.preference || "—"} · S${p.skill || "—"}`;
-          return { idx: idx+1, name: p.name, meta };
-        });
+    // 统计行保留（你要不要也去掉？不影响只显示名单）
+    genderStats.textContent = `Male: ${data.stats.male}   Female: ${data.stats.female}`;
+    prefStats.textContent   = `Handler: ${data.stats.handler}   Cutter: ${data.stats.cutter}`;
 
-        playersList.innerHTML = lines.map(x => `
-          <div class="playerLine">
-            <div><b>${x.idx}. ${escapeHtml(x.name)}</b></div>
-            <div class="playerMeta">${escapeHtml(x.meta)}</div>
-          </div>
-        `).join("");
+    // 只保留：序号 + 名字
+    const lines = data.players
+      .filter(p => (p.name||"").trim())
+      .map((p, idx) => ({ idx: idx+1, name: p.name.trim() }));
 
-        lastPlayersText = lines.map(x => `${x.idx}. ${x.name} (${x.meta})`).join("\n");
-        copyPlayersBtn.disabled = !lastPlayersText;
+    playersList.innerHTML = lines.map(x => `
+      <div class="playerLine">
+        <div><b>${x.idx}. ${escapeHtml(x.name)}</b></div>
+      </div>
+    `).join("");
 
-        if (!silent) playersStatus.textContent = "Updated ✅";
-        return true;
-      } catch(e){
-        if (!silent) playersStatus.textContent = "Slow / failed. Tap Show again.";
-        return false;
-      }
-    }
+    lastPlayersText = lines.map(x => `${x.idx}. ${x.name}`).join("\n");
+    copyPlayersBtn.disabled = !lastPlayersText;
+
+    if (!silent) playersStatus.textContent = "Updated ✅";
+    return true;
+  } catch(e){
+    if (!silent) playersStatus.textContent = "Slow / failed. Tap Show again.";
+    return false;
+  }
+}
+
 
     togglePlayersBtn.addEventListener("click", async ()=>{
       const open = playersArea.style.display !== "none";
