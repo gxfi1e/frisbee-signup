@@ -682,100 +682,87 @@
     });
 
     // ---- TEAMS ----
-async function fetchAndRenderTeams(auto=false) {
-
-  if (!auto) {
-    teamsStatus.textContent = "";
-    teamsStatus.className = "status";
-  }
-
-  teamsOutput.innerHTML = "";
-
-  if (!auto) {
-    refreshTeamsBtn.disabled = true;
-    refreshTeamsBtn.textContent = "Refreshing…";
-  }
-
-  try {
-
-    const data = await safeGetJson(ENDPOINT + "?action=teams");
-
-    if (!data || !data.ok) {
+    async function fetchAndRenderTeams(auto=false) {
       if (!auto) {
-        teamsStatus.textContent = "❌ Not generated yet";
-        teamsStatus.classList.add("badText");
+        teamsStatus.textContent = "";
+        teamsStatus.className = "status";
       }
-      return false;
-    }
+      teamsOutput.innerHTML = "";
 
-    teamsStatus.innerHTML =
-      `✅ ${data.nTeams} teams / ${data.nPlayers} players`;
-    teamsStatus.className = "status okText";
+      if (!auto) {
+        refreshTeamsBtn.disabled = true;
+        refreshTeamsBtn.textContent = "Refreshing…";
+      }
 
-    const teamsText = data.teamsText || "";
+      try {
+        const data = await safeGetJson(ENDPOINT + "?action=teams");
 
-    if (teamsText) {
-      const tools = document.createElement("div");
-      tools.className = "inline";
-      tools.style.marginBottom = "10px";
-      tools.innerHTML = `
-        <button class="smallbtn secondary" type="button" id="copyTeamsBtn">Copy teams text</button>
-        <button class="smallbtn secondary" type="button" id="waBtn">Share to WhatsApp</button>
-      `;
-      teamsOutput.appendChild(tools);
+        if (!data.ok) {
+          if (!auto) {
+            teamsStatus.textContent = "❌ " + (data.error || "Teams unavailable");
+            teamsStatus.classList.add("badText");
+          }
+          return false;
+        }
 
-      document.getElementById("copyTeamsBtn").addEventListener("click", async ()=>{
-        const ok = await copyText(teamsText);
-        teamsStatus.textContent = ok ? "✅ Teams copied." : "❌ Copy failed.";
-        teamsStatus.className = "status " + (ok ? "okText" : "badText");
-      });
+        teamsStatus.innerHTML = `✅ Teams ready (${data.nTeams} teams / ${data.nPlayers} players).`;
+        teamsStatus.classList.add("okText");
 
-      document.getElementById("waBtn").addEventListener("click", ()=>{
-        const url = "https://wa.me/?text=" + encodeURIComponent(teamsText);
-        window.open(url, "_blank");
-      });
-    }
+        const teamsText = data.teamsText || "";
 
-    data.teams.forEach(t => {
+        if (teamsText) {
+          const tools = document.createElement("div");
+          tools.className = "inline";
+          tools.style.marginBottom = "10px";
+          tools.innerHTML = `
+            <button class="smallbtn secondary" type="button" id="copyTeamsBtn">Copy teams text</button>
+            <button class="smallbtn secondary" type="button" id="waBtn">Share to WhatsApp</button>
+          `;
+          teamsOutput.appendChild(tools);
 
+          document.getElementById("copyTeamsBtn").addEventListener("click", async ()=>{
+            const ok = await copyText(teamsText);
+            teamsStatus.textContent = ok ? "✅ Teams copied to clipboard." : "❌ Copy failed.";
+            teamsStatus.className = "status " + (ok ? "okText" : "badText");
+          });
+
+          document.getElementById("waBtn").addEventListener("click", ()=>{
+            const url = "https://wa.me/?text=" + encodeURIComponent(teamsText);
+            window.open(url, "_blank");
+          });
+        }
+
+        data.teams.forEach(t => {
       const div = document.createElement("div");
       div.className = "box";
-
       div.innerHTML = `
         <div class="teamtitle">${t.name}</div>
         <ul class="list">
           ${t.players.map(p => `<li>${escapeHtml(p.name)}</li>`).join("")}
         </ul>
       `;
-
       teamsOutput.appendChild(div);
+      });
+
+
+        return true;
+      } catch (e) {
+        if (!auto) {
+          teamsStatus.textContent = "❌ Network error: " + e;
+          teamsStatus.classList.add("badText");
+        }
+        return false;
+      } finally {
+        if (!auto) {
+          refreshTeamsBtn.disabled = false;
+          refreshTeamsBtn.textContent = "Refresh Teams";
+        }
+      }
+    }
+
+    refreshTeamsBtn.addEventListener("click", async () => {
+      await fetchAndRenderTeams(false);
     });
-
-    return true;
-
-  } catch (e) {
-
-    if (!auto) {
-      teamsStatus.textContent = "❌ Network error";
-      teamsStatus.classList.add("badText");
-    }
-
-    return false;
-
-  } finally {
-
-    if (!auto) {
-      refreshTeamsBtn.disabled = false;
-      refreshTeamsBtn.textContent = "Refresh Teams";
-    }
-
-  }
-}
-
-refreshTeamsBtn.addEventListener("click", async () => {
-  await fetchAndRenderTeams(false);
-});
-
 
     async function autoTeamsIfClosed() {
       const st = await refresh();
@@ -787,14 +774,7 @@ refreshTeamsBtn.addEventListener("click", async () => {
     }
 
     renderGameInfo();
-    async function autoTeamsIfClosed() {
-    await refresh();
-    await refreshPlayers(true);
-
-    // 🔥 直接尝试加载 teams
-    await fetchAndRenderTeams(true);
-}
-
+    autoTeamsIfClosed();
     setInterval(autoTeamsIfClosed, 30000);
   </script>
 </body>
