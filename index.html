@@ -24,12 +24,11 @@
       box-shadow:0 10px 30px rgba(0,0,0,.08)
     }
     h1{
-      text-align:center;
-      margin:0 0 10px;
-      font-size:22px;
+      text-align: center;
+      margin: 0 0 10px;
+      font-size: 22px;
     }
 
-    /* Pills: 1 line + swipe scroll */
     .bar{
       display:flex;
       gap:6px;
@@ -39,7 +38,9 @@
       margin:6px auto;
       overflow-x:auto;
       flex-wrap:nowrap;
-      -webkit-overflow-scrolling: touch;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      padding-bottom:2px;
     }
     .bar::-webkit-scrollbar{ display:none; }
 
@@ -56,7 +57,6 @@
     .pill.ok{background:#e7f7ec}
     .pill.bad{background:#fdecec}
 
-    /* Timezone line (right aligned) */
     .metaRight{
       margin:0 0 10px;
       color:#777;
@@ -64,8 +64,7 @@
       text-align:right;
     }
 
-    /* Boxes */
-    .box{
+    .teambox{
       background:#fafafa;
       border:1px solid #eee;
       border-radius:14px;
@@ -73,7 +72,6 @@
       margin-top:10px;
     }
 
-    /* Game info (compact) */
     .gameLine1{
       font-weight:800;
       font-size:14px;
@@ -92,7 +90,7 @@
     .gameLine2 span{ white-space:nowrap; }
     a{color:inherit}
 
-    /* Form */
+    p.sub{margin:10px 0 14px;color:#555;line-height:1.35}
     label{display:block;font-weight:600;margin:14px 0 8px}
     input,select{
       width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;
@@ -101,7 +99,6 @@
     .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .hint{margin-top:6px;font-size:13px;color:#666}
 
-    /* Buttons */
     button{
       width:100%;
       margin-top:16px;
@@ -116,49 +113,51 @@
     .status{margin-top:12px;font-size:14px}
     .okText{color:#0a7a2f}
     .badText{color:#b00020}
-
     .hr{height:1px;background:#eee;margin:18px 0}
     details{margin-top:6px}
     .footer{margin-top:14px;font-size:12px;color:#777;text-align:center}
     code{background:#f3f3f3;padding:2px 6px;border-radius:6px}
-
     .inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .smallbtn{width:auto;padding:8px 12px;margin-top:0;border-radius:999px;font-size:13px}
-
-    .teamtitle{font-weight:900;margin:0 0 6px;font-size:16px}
+    .smallbtn{width:auto;padding:8px 10px;margin-top:0;border-radius:10px;font-size:13px}
+    .teamtitle{font-weight:800;margin:0 0 6px}
     .list{margin:0;padding-left:18px}
 
-    /* Registered players */
-    .headRow{
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-      margin-bottom:6px;
+    /* players panel */
+    .playersTop{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
     }
-    .badge{
-      background:#eee;border-radius:999px;padding:6px 10px;font-size:13px;white-space:nowrap;
+    .playersBtnRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top:6px;
     }
-    .statsRow{
-      color:#666;font-size:13px;display:flex;flex-wrap:wrap;gap:16px;
-      margin-bottom:10px;
+    .playersBtnRow button{
+      width:auto;
+      margin-top:0;
     }
-    .playersArea{
-      margin-top:8px;
-      max-height:240px;
-      overflow:auto;
-      padding-right:6px;
+    .miniPill{
+      display:inline-flex;
+      align-items:center;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:12px;
+      background:#eee;
+      white-space:nowrap;
     }
-    .playersArea::-webkit-scrollbar{ width:8px; }
-    .playersArea::-webkit-scrollbar-thumb{ background:#ddd;border-radius:8px; }
-
-    .playerLine{
-      display:flex;justify-content:space-between;gap:10px;
-      padding:8px 10px;
-      border:1px solid #eee;
-      border-radius:12px;
-      background:#fff;
-      margin-bottom:8px;
-      font-size:14px;
+    .statsLine{
+      font-size:12.5px;
+      color:#666;
+      margin-top:6px;
+      display:flex;
+      gap:16px;
+      flex-wrap:wrap;
     }
-    .playerMeta{color:#777;font-size:12px;white-space:nowrap}
   </style>
 </head>
 
@@ -199,7 +198,7 @@
 
       <div id="tzLine" class="metaRight"></div>
 
-      <div class="box">
+      <div class="teambox">
         <div class="gameLine1" id="gameInfoLine1">Loading game info…</div>
         <div class="gameLine2" id="gameInfoLine2"></div>
       </div>
@@ -274,32 +273,29 @@
 
       <div class="hr"></div>
 
-      <!-- Registered players -->
-      <div class="box" id="playersSection">
-        <div class="headRow">
+      <!-- ✅ Registered players (before Teams) -->
+      <div class="teambox" id="playersBox">
+        <div class="playersTop">
           <div class="teamtitle" style="margin:0;">Registered players</div>
-          <div class="badge" id="playersBadge">—</div>
+          <span id="playersCountPill" class="miniPill">—</span>
         </div>
 
-        <div class="statsRow">
+        <div class="statsLine">
           <span id="genderStats">Male: —  Female: —</span>
           <span id="prefStats">Handler: —  Cutter: —</span>
         </div>
 
-        <div class="inline" style="margin-top:6px;">
-          <button id="togglePlayersBtn" class="smallbtn secondary" type="button">Show</button>
-          <button id="copyPlayersBtn" class="smallbtn secondary" type="button" disabled>Copy</button>
-          <span id="playersStatus" class="hint" style="margin:0;"></span>
+        <div class="playersBtnRow">
+          <button id="togglePlayersBtn" type="button" class="smallbtn secondary">Show</button>
+          <button id="copyPlayersBtn" type="button" class="smallbtn secondary" style="display:none;">Copy</button>
+          <span id="playersHint" class="hint" style="margin:0;"></span>
         </div>
 
-        <div id="playersArea" class="playersArea" style="display:none;">
-          <div id="playersList" style="margin-top:10px;">Loading…</div>
-        </div>
+        <div id="playersOutput" style="margin-top:10px; display:none;"></div>
       </div>
 
       <div class="hr"></div>
 
-      <!-- Teams -->
       <div id="teamsSection">
         <div class="teamtitle">Teams (auto after cutoff)</div>
         <div class="hint" style="margin-top:6px;">
@@ -316,9 +312,6 @@
   </div>
 
   <script>
-    const CFG = window.SIGNUP_CONFIG;
-    const ENDPOINT = CFG.endpoint;
-
     const overlay = document.getElementById("overlay");
     const overlayMsg = document.getElementById("overlayMsg");
 
@@ -347,6 +340,9 @@
       clearTimeout(slowTimer2);
     }
 
+    const CFG = window.SIGNUP_CONFIG;
+    const ENDPOINT = CFG.endpoint;
+
     const countPill = document.getElementById("countPill");
     const statusPill = document.getElementById("statusPill");
     const timeLeftPill = document.getElementById("timeLeftPill");
@@ -374,36 +370,20 @@
     const teamsOutput = document.getElementById("teamsOutput");
 
     // Players UI
-    const playersBadge = document.getElementById("playersBadge");
-    const genderStats = document.getElementById("genderStats");
-    const prefStats = document.getElementById("prefStats");
+    const playersCountPill = document.getElementById("playersCountPill");
+    const genderStatsEl = document.getElementById("genderStats");
+    const prefStatsEl = document.getElementById("prefStats");
     const togglePlayersBtn = document.getElementById("togglePlayersBtn");
     const copyPlayersBtn = document.getElementById("copyPlayersBtn");
-    const playersStatus = document.getElementById("playersStatus");
-    const playersArea = document.getElementById("playersArea");
-    const playersList = document.getElementById("playersList");
+    const playersHint = document.getElementById("playersHint");
+    const playersOutput = document.getElementById("playersOutput");
+
+    let playersVisible = false;
+    let cachedPlayers = [];
+    let cachedPlayersText = "";
 
     const LS_NAME = "frisbee_last_name";
     const LS_REGID = "frisbee_last_regid";
-
-    async function fetchWithTimeout(url, ms=6000, opts={}){
-      const controller = new AbortController();
-      const t = setTimeout(()=>controller.abort(), ms);
-      try{
-        const res = await fetch(url, { ...opts, signal: controller.signal });
-        return await res.json();
-      } finally {
-        clearTimeout(t);
-      }
-    }
-
-    async function safeGetJson(url){
-      try{
-        return await fetchWithTimeout(url, 6000, { method:"GET" });
-      } catch(e){
-        return await fetchWithTimeout(url, 9000, { method:"GET" });
-      }
-    }
 
     function timeLeftText(cutoffIso) {
       const now = Date.now();
@@ -415,11 +395,12 @@
       const h = Math.floor(mins/60);
       const m = mins%60;
       if (h<=0) return `Time left: ${m}m`;
-      return `Time left: ${h}h ${m}m`;
+      return `Time left: ${h}h`;
     }
 
     async function getStatus() {
-      return await safeGetJson(ENDPOINT + "?action=status");
+      const res = await fetch(ENDPOINT + "?action=status", { method:"GET" });
+      return await res.json();
     }
 
     function setPills(data) {
@@ -473,21 +454,12 @@
       }
     }
 
-    function escapeHtml(s){
-      return (s||"").toString()
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-
     function renderGameInfo() {
       const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
       gameInfoLine1.innerHTML = `${CFG.gameTimeText} · ${loc}`;
       gameInfoLine2.innerHTML = `
-        <span>Bring: 💧 Water · 👟 Cleats</span>
-        <span>Format: auto after cutoff</span>
+        <span>Bring: 💧 👟 🥏 🔥</span>
+        <span>Format: 5v5 / 6v6 / 7v7 (after cutoff)</span>
       `;
       tzLine.textContent = `Registration closes: Fri 3:00 PM | Jeddah local time`;
       fourTeamMin.textContent = CFG.teamsMinForFour;
@@ -507,6 +479,7 @@
       }
     }
 
+    // load saved reg
     (function initSaved(){
       const n = localStorage.getItem(LS_NAME) || "";
       const r = localStorage.getItem(LS_REGID) || "";
@@ -524,7 +497,91 @@
       regSavedNote.textContent = ok ? "RegID copied ✅" : "Copy failed ❌";
     });
 
-    // ---- REGISTER ----
+    // ===== Players fetch + render (registration order) =====
+    async function fetchPlayers(){
+      const res = await fetch(ENDPOINT + "?action=players", { method:"GET" });
+      return await res.json();
+    }
+
+    function applyPlayersData(data){
+      if (!data || !data.ok) return;
+
+      cachedPlayers = data.players || [];
+
+      playersCountPill.textContent = `${data.count} players`;
+
+      const s = data.stats || { male:0, female:0, handler:0, cutter:0 };
+      genderStatsEl.textContent = `Male: ${s.male}   Female: ${s.female}`;
+      prefStatsEl.textContent = `Handler: ${s.handler}   Cutter: ${s.cutter}`;
+
+      cachedPlayersText = cachedPlayers.map((p,i)=> `${i+1}. ${p.name}`).join("\n");
+
+      if (playersVisible) {
+        playersOutput.innerHTML = `
+          <ul class="list">
+            ${cachedPlayers.map((p,i)=> `<li>${i+1}. ${p.name}</li>`).join("")}
+          </ul>
+        `;
+      }
+    }
+
+    async function updatePlayersStatsAndMaybeList(){
+      try{
+        const data = await fetchPlayers();
+        applyPlayersData(data);
+      } catch {
+        // ignore silently (network hiccup)
+      }
+    }
+
+    togglePlayersBtn.addEventListener("click", async () => {
+      playersHint.textContent = "";
+      playersHint.className = "hint";
+
+      if (playersVisible) {
+        playersVisible = false;
+        playersOutput.style.display = "none";
+        copyPlayersBtn.style.display = "none";
+        togglePlayersBtn.textContent = "Show";
+        return;
+      }
+
+      togglePlayersBtn.disabled = true;
+      togglePlayersBtn.textContent = "Loading...";
+      playersOutput.style.display = "block";
+      playersOutput.innerHTML = `<div class="hint">Loading…</div>`;
+
+      try {
+        const data = await fetchPlayers();
+        if (!data.ok) {
+          playersOutput.innerHTML = `<div class="badText">❌ ${data.error || "Failed to load players"}</div>`;
+          return;
+        }
+        applyPlayersData(data);
+
+        playersVisible = true;
+        togglePlayersBtn.textContent = "Hide";
+        copyPlayersBtn.style.display = "inline-block";
+
+      } catch (e) {
+        playersOutput.innerHTML = `<div class="badText">❌ Network error</div>`;
+      } finally {
+        togglePlayersBtn.disabled = false;
+        if (!playersVisible) togglePlayersBtn.textContent = "Show";
+      }
+    });
+
+    copyPlayersBtn.addEventListener("click", async () => {
+      if (!cachedPlayersText) {
+        playersHint.textContent = "Nothing to copy yet.";
+        return;
+      }
+      const ok = await copyText(cachedPlayersText);
+      playersHint.textContent = ok ? "Copied ✅" : "Copy failed ❌";
+      if (ok) setTimeout(()=> playersHint.textContent = "", 1500);
+    });
+
+    // ===== Submit =====
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
@@ -549,15 +606,16 @@
       }
 
       btn.disabled = true;
-      btn.textContent = "Submitting…";
+      btn.textContent = "Submitting...";
       showOverlay();
 
       try {
-        const data = await fetchWithTimeout(ENDPOINT, 12000, {
+        const res = await fetch(ENDPOINT, {
           method:"POST",
           headers:{ "Content-Type":"text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
+        const data = await res.json();
 
         if (data.ok) {
           statusEl.innerHTML = (data.updated ? "✅ Updated" : "✅ Submitted") + `! RegID: <b>${data.regId}</b>`;
@@ -565,8 +623,10 @@
           saveLastReg(payload.name, data.regId);
           regTools.style.display = "flex";
           form.reset();
+
           await refresh();
-          if (playersArea.style.display !== "none") await refreshPlayers(true);
+          await updatePlayersStatsAndMaybeList();
+
         } else {
           statusEl.textContent = "❌ " + (data.error || "Submit failed");
           statusEl.classList.add("badText");
@@ -578,11 +638,12 @@
       } finally {
         hideOverlay();
         await refresh();
+        await updatePlayersStatsAndMaybeList();
         if (!btn.disabled) btn.textContent = "Submit";
       }
     });
 
-    // ---- CANCEL ----
+    // ===== Cancel =====
     cancelBtn.addEventListener("click", async () => {
       cancelStatus.textContent = "";
       cancelStatus.className = "status";
@@ -597,20 +658,21 @@
       if (!confirm("Confirm cancellation? (Buy Maojin a coffee ☕)")) return;
 
       cancelBtn.disabled = true;
-      cancelBtn.textContent = "Cancelling…";
+      cancelBtn.textContent = "Cancelling...";
 
       try {
-        const data = await fetchWithTimeout(ENDPOINT, 12000, {
+        const res = await fetch(ENDPOINT, {
           method:"POST",
           headers:{ "Content-Type":"text/plain;charset=utf-8" },
           body: JSON.stringify({ action:"cancel", name, regId })
         });
+        const data = await res.json();
 
         if (data.ok) {
           cancelStatus.textContent = "✅ Cancelled. Please buy Maojin a coffee ☕";
           cancelStatus.classList.add("okText");
           await refresh();
-          if (playersArea.style.display !== "none") await refreshPlayers(true);
+          await updatePlayersStatsAndMaybeList();
         } else {
           cancelStatus.textContent = "❌ " + (data.error || "Cancel failed");
           cancelStatus.classList.add("badText");
@@ -624,64 +686,7 @@
       }
     });
 
-    // ---- PLAYERS ----
-    let lastPlayersText = "";
-
-    async function refreshPlayers(silent=false){
-      if (!silent) playersStatus.textContent = "Loading…";
-      copyPlayersBtn.disabled = true;
-
-      try{
-        const data = await safeGetJson(ENDPOINT + "?action=players");
-        if (!data.ok) throw new Error(data.error || "players not ok");
-
-        playersBadge.textContent = `${data.count} players`;
-        genderStats.textContent = `Male: ${data.stats.male}   Female: ${data.stats.female}`;
-        prefStats.textContent = `Handler: ${data.stats.handler}   Cutter: ${data.stats.cutter}`;
-
-        const lines = data.players.map((p, idx) => {
-          const meta = `${p.gender || "—"} · ${p.preference || "—"} · S${p.skill || "—"}`;
-          return { idx: idx+1, name: p.name, meta };
-        });
-
-        playersList.innerHTML = lines.map(x => `
-          <div class="playerLine">
-            <div><b>${x.idx}. ${escapeHtml(x.name)}</b></div>
-            <div class="playerMeta">${escapeHtml(x.meta)}</div>
-          </div>
-        `).join("");
-
-        lastPlayersText = lines.map(x => `${x.idx}. ${x.name} (${x.meta})`).join("\n");
-        copyPlayersBtn.disabled = !lastPlayersText;
-
-        if (!silent) playersStatus.textContent = "Updated ✅";
-        return true;
-      } catch(e){
-        if (!silent) playersStatus.textContent = "Slow / failed. Tap Show again.";
-        return false;
-      }
-    }
-
-    togglePlayersBtn.addEventListener("click", async ()=>{
-      const open = playersArea.style.display !== "none";
-      if (open){
-        playersArea.style.display = "none";
-        togglePlayersBtn.textContent = "Show";
-        playersStatus.textContent = "";
-        return;
-      }
-      playersArea.style.display = "block";
-      togglePlayersBtn.textContent = "Hide";
-      await refreshPlayers(false);
-    });
-
-    copyPlayersBtn.addEventListener("click", async ()=>{
-      if (!lastPlayersText) return;
-      const ok = await copyText(lastPlayersText);
-      playersStatus.textContent = ok ? "Copied ✅" : "Copy failed ❌";
-    });
-
-    // ---- TEAMS ----
+    // ===== Teams =====
     async function fetchAndRenderTeams(auto=false) {
       if (!auto) {
         teamsStatus.textContent = "";
@@ -691,11 +696,12 @@
 
       if (!auto) {
         refreshTeamsBtn.disabled = true;
-        refreshTeamsBtn.textContent = "Refreshing…";
+        refreshTeamsBtn.textContent = "Refreshing...";
       }
 
       try {
-        const data = await safeGetJson(ENDPOINT + "?action=teams");
+        const res = await fetch(ENDPOINT + "?action=teams", { method:"GET" });
+        const data = await res.json();
 
         if (!data.ok) {
           if (!auto) {
@@ -734,17 +740,19 @@
 
         data.teams.forEach(t => {
           const div = document.createElement("div");
-          div.className = "box";
+          div.className = "teambox";
+          div.style.marginTop = "10px";
           div.innerHTML = `
             <div class="teamtitle">${t.name} <span class="hint">(avg ${t.avg})</span></div>
             <ul class="list">
-              ${t.players.map(p => `<li>${escapeHtml(p.name)} <span class="hint">[S${p.skill}] (${p.preference||"—"}, ${p.practiceDuration||"—"})</span></li>`).join("")}
+              ${t.players.map(p => `<li>${p.name} <span class="hint">[S${p.skill}] (${p.preference||"—"}, ${p.practiceDuration||"—"})</span></li>`).join("")}
             </ul>
           `;
           teamsOutput.appendChild(div);
         });
 
         return true;
+
       } catch (e) {
         if (!auto) {
           teamsStatus.textContent = "❌ Network error: " + e;
@@ -765,16 +773,23 @@
 
     async function autoTeamsIfClosed() {
       const st = await refresh();
-      await refreshPlayers(true);
-
       if (st && st.ok && !st.open) {
         await fetchAndRenderTeams(true);
       }
     }
 
+    // ===== Init =====
     renderGameInfo();
+    refresh();
+    updatePlayersStatsAndMaybeList();          // ✅ initial stats
     autoTeamsIfClosed();
-    setInterval(autoTeamsIfClosed, 30000);
+
+    // ✅ realtime refresh: status + players stats (+ list if open) + teams if closed
+    setInterval(async () => {
+      await refresh();
+      await updatePlayersStatsAndMaybeList();
+      await autoTeamsIfClosed();
+    }, 30000);
   </script>
 </body>
 </html>
