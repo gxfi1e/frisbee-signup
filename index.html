@@ -623,63 +623,63 @@
         cancelBtn.textContent = "Cancel my registration";
       }
     });
+// ---- PLAYERS ----
+let lastPlayersText = "";
 
-    // ---- PLAYERS ----
-    let lastPlayersText = "";
+async function refreshPlayers(silent=false){
+  if (!silent) playersStatus.textContent = "Loading…";
+  copyPlayersBtn.disabled = true;
 
-    async function refreshPlayers(silent=false){
-      if (!silent) playersStatus.textContent = "Loading…";
-      copyPlayersBtn.disabled = true;
+  try{
+    const data = await safeGetJson(ENDPOINT + "?action=players");
+    if (!data.ok) throw new Error(data.error || "players not ok");
 
-      try{
-        const data = await safeGetJson(ENDPOINT + "?action=players");
-        if (!data.ok) throw new Error(data.error || "players not ok");
+    playersBadge.textContent = `${data.count} players`;
+    genderStats.textContent = `Male: ${data.stats.male}   Female: ${data.stats.female}`;
+    prefStats.textContent = `Handler: ${data.stats.handler}   Cutter: ${data.stats.cutter}`;
 
-        playersBadge.textContent = `${data.count} players`;
-        genderStats.textContent = `Male: ${data.stats.male}   Female: ${data.stats.female}`;
-        prefStats.textContent = `Handler: ${data.stats.handler}   Cutter: ${data.stats.cutter}`;
-
-        const lines = data.players.map((p, idx) => {
-          const meta = `${p.gender || "—"} · ${p.preference || "—"}`;
-          return { idx: idx+1, name: p.name, meta };
-        });
-
-        playersList.innerHTML = lines.map(x => `
-          <div class="playerLine">
-            <div><b>${x.idx}. ${escapeHtml(x.name)}</b></div>
-            <div class="playerMeta">${escapeHtml(x.meta)}</div>
-          </div>
-        `).join("");
-
-        lastPlayersText = lines.map(x => `${x.idx}. ${x.name} (${x.meta})`).join("\n");
-        copyPlayersBtn.disabled = !lastPlayersText;
-
-        if (!silent) playersStatus.textContent = "Updated ✅";
-        return true;
-      } catch(e){
-        if (!silent) playersStatus.textContent = "Slow / failed. Tap Show again.";
-        return false;
-      }
-    }
-
-    togglePlayersBtn.addEventListener("click", async ()=>{
-      const open = playersArea.style.display !== "none";
-      if (open){
-        playersArea.style.display = "none";
-        togglePlayersBtn.textContent = "Show";
-        playersStatus.textContent = "";
-        return;
-      }
-      playersArea.style.display = "block";
-      togglePlayersBtn.textContent = "Hide";
-      await refreshPlayers(false);
+    const lines = data.players.map((p, idx) => {
+      const meta = `${p.gender || "—"} · ${p.preference || "—"}`;
+      return { idx: idx+1, name: p.name, meta };
     });
 
-    copyPlayersBtn.addEventListener("click", async ()=>{
-      if (!lastPlayersText) return;
-      const ok = await copyText(lastPlayersText);
-      playersStatus.textContent = ok ? "Copied ✅" : "Copy failed ❌";
-    });
+    playersList.innerHTML = lines.map(x => `
+      <div class="playerLine">
+        <div><b>${x.idx}. ${escapeHtml(x.name)}</b></div>
+        <div class="playerMeta">${escapeHtml(x.meta)}</div>
+      </div>
+    `).join("");
+
+    lastPlayersText = lines.map(x => `${x.idx}. ${x.name} (${x.meta})`).join("\n");
+    copyPlayersBtn.disabled = !lastPlayersText;
+
+    if (!silent) playersStatus.textContent = "Updated ✅";
+    return true;
+
+  } catch(e){
+    if (!silent) playersStatus.textContent = "Slow / failed. Tap Show again.";
+    return false;
+  }
+}
+
+togglePlayersBtn.addEventListener("click", async ()=>{
+  const open = playersArea.style.display !== "none";
+  if (open){
+    playersArea.style.display = "none";
+    togglePlayersBtn.textContent = "Show";
+    playersStatus.textContent = "";
+    return;
+  }
+  playersArea.style.display = "block";
+  togglePlayersBtn.textContent = "Hide";
+  await refreshPlayers(false);
+});
+
+copyPlayersBtn.addEventListener("click", async ()=>{
+  if (!lastPlayersText) return;
+  const ok = await copyText(lastPlayersText);
+  playersStatus.textContent = ok ? "Copied ✅" : "Copy failed ❌";
+});
 
     // ---- TEAMS ----
     async function fetchAndRenderTeams(auto=false) {
