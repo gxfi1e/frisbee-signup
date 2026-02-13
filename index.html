@@ -640,7 +640,7 @@
         prefStats.textContent = `Handler: ${data.stats.handler}   Cutter: ${data.stats.cutter}`;
 
         const lines = data.players.map((p, idx) => {
-          const meta = `${p.gender || "—"} · ${p.preference || "—"} · S${p.skill || "—"}`;
+          const meta = `${p.gender || "—"} · ${p.preference || "—"}`;
           return { idx: idx+1, name: p.name, meta };
         });
 
