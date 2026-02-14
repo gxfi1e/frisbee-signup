@@ -1,802 +1,846 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>KAUST Happy Frisbee hat registration</title>
-  <script src="./config.js"></script>
-
-  <style>
-    .spinner{
-      width:36px;height:36px;margin:auto;border-radius:50%;
-      border:4px solid #ddd;border-top-color:#111;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin{ to{ transform: rotate(360deg); } }
-
-    body{
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background:#f6f7fb;margin:0;padding:24px;color:#111
-    }
-    .wrap{max-width:680px;margin:0 auto}
-    .card{
-      background:#fff;border-radius:16px;padding:18px;
-      box-shadow:0 10px 30px rgba(0,0,0,.08)
-    }
-    h1{
-      text-align:center;
-      margin:0 0 10px;
-      font-size:22px;
-    }
-
-    /* Pills: 1 line + swipe scroll */
-    .bar{
-      display:flex;
-      gap:6px;
-      align-items:center;
-      justify-content:center;
-      width:fit-content;
-      margin:6px auto;
-      overflow-x:auto;
-      flex-wrap:nowrap;
-      -webkit-overflow-scrolling: touch;
-    }
-    .bar::-webkit-scrollbar{ display:none; }
-
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      padding:5px 9px;
-      border-radius:999px;
-      font-size:13px;
-      background:#eee;
-      white-space:nowrap;
-      flex:0 0 auto;
-    }
-    .pill.ok{background:#e7f7ec}
-    .pill.bad{background:#fdecec}
-
-    /* Timezone line (right aligned) */
-    .metaRight{
-      margin:0 0 10px;
-      color:#777;
-      font-size:12px;
-      text-align:right;
-    }
-
-    /* Boxes */
-    .box{
-      background:#fafafa;
-      border:1px solid #eee;
-      border-radius:14px;
-      padding:10px 12px;
-      margin-top:10px;
-    }
-
-    /* Game info (compact) */
-    .gameLine1{
-      font-weight:800;
-      font-size:14px;
-      line-height:1.25;
-      margin:0 0 4px;
-    }
-    .gameLine2{
-      font-size:12.5px;
-      color:#666;
-      line-height:1.25;
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      align-items:center;
-    }
-    .gameLine2 span{ white-space:nowrap; }
-    a{color:inherit}
-
-    /* Form */
-    label{display:block;font-weight:600;margin:14px 0 8px}
-    input,select{
-      width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;
-      font-size:16px;box-sizing:border-box;background:#fff
-    }
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .hint{margin-top:6px;font-size:13px;color:#666}
-
-    /* Buttons */
-    button{
-      width:100%;
-      margin-top:16px;
-      padding:12px 14px;
-      border:0;border-radius:12px;
-      font-size:16px;font-weight:700;
-      cursor:pointer;background:#111;color:#fff
-    }
-    button.secondary{background:#444}
-    button:disabled{opacity:.55;cursor:not-allowed}
-
-    .status{margin-top:12px;font-size:14px}
-    .okText{color:#0a7a2f}
-    .badText{color:#b00020}
-
-    .hr{height:1px;background:#eee;margin:18px 0}
-    details{margin-top:6px}
-    .footer{margin-top:14px;font-size:12px;color:#777;text-align:center}
-    code{background:#f3f3f3;padding:2px 6px;border-radius:6px}
-
-    .inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .smallbtn{width:auto;padding:8px 12px;margin-top:0;border-radius:999px;font-size:13px}
-
-    .teamtitle{font-weight:900;margin:0 0 6px;font-size:16px}
-    .list{margin:0;padding-left:18px}
-
-    /* Registered players */
-    .headRow{
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-      margin-bottom:6px;
-    }
-    .badge{
-      background:#eee;border-radius:999px;padding:6px 10px;font-size:13px;white-space:nowrap;
-    }
-    .statsRow{
-      color:#666;font-size:13px;display:flex;flex-wrap:wrap;gap:16px;
-      margin-bottom:10px;
-    }
-    .playersArea{
-      margin-top:8px;
-      max-height:240px;
-      overflow:auto;
-      padding-right:6px;
-    }
-    .playersArea::-webkit-scrollbar{ width:8px; }
-    .playersArea::-webkit-scrollbar-thumb{ background:#ddd;border-radius:8px; }
-
-    .playerLine{
-      display:flex;justify-content:space-between;gap:10px;
-      padding:8px 10px;
-      border:1px solid #eee;
-      border-radius:12px;
-      background:#fff;
-      margin-bottom:8px;
-      font-size:14px;
-    }
-    .playerMeta{color:#777;font-size:12px;white-space:nowrap}
-  </style>
-</head>
-
-<!-- Overlay loading -->
-<div id="overlay" style="
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.45);
-  z-index:9999;
-">
-  <div style="
-    max-width:420px;
-    margin:18vh auto;
-    background:#fff;
-    border-radius:16px;
-    padding:20px;
-    box-shadow:0 20px 60px rgba(0,0,0,.25);
-    text-align:center;
+  <!doctype html>
+  <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KAUST Happy Frisbee hat registration</title>
+    <script src="./config.js"></script>
+  
+    <style>
+      .spinner{
+        width:36px;height:36px;margin:auto;border-radius:50%;
+        border:4px solid #ddd;border-top-color:#111;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin{ to{ transform: rotate(360deg); } }
+  
+      body{
+        font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+        background:#f6f7fb;margin:0;padding:24px;color:#111
+      }
+      .wrap{max-width:680px;margin:0 auto}
+      .card{
+        background:#fff;border-radius:16px;padding:18px;
+        box-shadow:0 10px 30px rgba(0,0,0,.08)
+      }
+      h1{
+        text-align:center;
+        margin:0 0 10px;
+        font-size:22px;
+      }
+  
+      /* Pills: 1 line + swipe scroll */
+      .bar{
+        display:flex;
+        gap:6px;
+        align-items:center;
+        justify-content:center;
+        width:fit-content;
+        margin:6px auto;
+        overflow-x:auto;
+        flex-wrap:nowrap;
+        -webkit-overflow-scrolling: touch;
+      }
+      .bar::-webkit-scrollbar{ display:none; }
+  
+      .pill{
+        display:inline-flex;
+        align-items:center;
+        padding:5px 9px;
+        border-radius:999px;
+        font-size:13px;
+        background:#eee;
+        white-space:nowrap;
+        flex:0 0 auto;
+      }
+      .pill.ok{background:#e7f7ec}
+      .pill.bad{background:#fdecec}
+  
+      /* Timezone line (right aligned) */
+      .metaRight{
+        margin:0 0 10px;
+        color:#777;
+        font-size:12px;
+        text-align:right;
+      }
+  
+      /* Boxes */
+      .box{
+        background:#fafafa;
+        border:1px solid #eee;
+        border-radius:14px;
+        padding:10px 12px;
+        margin-top:10px;
+      }
+  
+      /* Game info (compact) */
+      .gameLine1{
+        font-weight:800;
+        font-size:14px;
+        line-height:1.25;
+        margin:0 0 4px;
+      }
+      .gameLine2{
+        font-size:12.5px;
+        color:#666;
+        line-height:1.25;
+        display:flex;
+        flex-wrap:wrap;
+        gap:10px;
+        align-items:center;
+      }
+      .gameLine2 span{ white-space:nowrap; }
+      a{color:inherit}
+  
+      /* Form */
+      label{display:block;font-weight:600;margin:14px 0 8px}
+      input,select{
+        width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;
+        font-size:16px;box-sizing:border-box;background:#fff
+      }
+      .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+      .hint{margin-top:6px;font-size:13px;color:#666}
+  
+      /* Buttons */
+      button{
+        width:100%;
+        margin-top:16px;
+        padding:12px 14px;
+        border:0;border-radius:12px;
+        font-size:16px;font-weight:700;
+        cursor:pointer;background:#111;color:#fff
+      }
+      button.secondary{background:#444}
+      button:disabled{opacity:.55;cursor:not-allowed}
+  
+      .status{margin-top:12px;font-size:14px}
+      .okText{color:#0a7a2f}
+      .badText{color:#b00020}
+  
+      .hr{height:1px;background:#eee;margin:18px 0}
+      details{margin-top:6px}
+      .footer{margin-top:14px;font-size:12px;color:#777;text-align:center}
+      code{background:#f3f3f3;padding:2px 6px;border-radius:6px}
+  
+      .inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+      .smallbtn{width:auto;padding:8px 12px;margin-top:0;border-radius:999px;font-size:13px}
+  
+      .teamtitle{font-weight:900;margin:0 0 6px;font-size:16px}
+      .list{margin:0;padding-left:18px}
+  
+      /* Registered players */
+      .headRow{
+        display:flex;align-items:center;justify-content:space-between;gap:10px;
+        margin-bottom:6px;
+      }
+      .badge{
+        background:#eee;border-radius:999px;padding:6px 10px;font-size:13px;white-space:nowrap;
+      }
+      .statsRow{
+        color:#666;font-size:13px;display:flex;flex-wrap:wrap;gap:16px;
+        margin-bottom:10px;
+      }
+      .playersArea{
+        margin-top:8px;
+        max-height:240px;
+        overflow:auto;
+        padding-right:6px;
+      }
+      .playersArea::-webkit-scrollbar{ width:8px; }
+      .playersArea::-webkit-scrollbar-thumb{ background:#ddd;border-radius:8px; }
+  
+      .playerLine{
+        display:flex;justify-content:space-between;gap:10px;
+        padding:8px 10px;
+        border:1px solid #eee;
+        border-radius:12px;
+        background:#fff;
+        margin-bottom:8px;
+        font-size:14px;
+      }
+      .playerMeta{color:#777;font-size:12px;white-space:nowrap}
+    </style>
+  </head>
+  
+  <!-- Overlay loading -->
+  <div id="overlay" style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.45);
+    z-index:9999;
   ">
-    <div class="spinner"></div>
-    <div style="font-weight:900; margin-top:12px; font-size:16px;">Submitting registration…</div>
-    <div id="overlayMsg" style="color:#666; font-size:13px; margin-top:6px;">Please keep this page open.</div>
-    <div style="color:#999; font-size:12px; margin-top:10px;">Do not close until you see confirmation.</div>
-  </div>
-</div>
-
-<body>
-  <div class="wrap">
-    <div class="card">
-      <h1>Friday Ultimate Signup</h1>
-
-      <div class="bar" aria-label="Status pills (swipe)">
-        <span id="countPill" class="pill">Loading...</span>
-        <span id="statusPill" class="pill">Loading...</span>
-        <span id="timeLeftPill" class="pill">Loading...</span>
-      </div>
-
-      <div id="tzLine" class="metaRight"></div>
-
-      <div class="box">
-        <div class="gameLine1" id="gameInfoLine1">Loading game info…</div>
-        <div class="gameLine2" id="gameInfoLine2"></div>
-      </div>
-
-      <form id="form">
-        <label for="name">Name / Nickname *</label>
-        <input id="name" required placeholder="e.g., Maojin / MJ" />
-
-        <div class="row">
-          <div>
-            <label for="gender">Gender *</label>
-            <select id="gender" required>
-              <option value="" selected disabled>Select</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="skill">Skill (1–5) *</label>
-            <select id="skill" required>
-              <option value="" selected disabled>Select</option>
-              <option value="1">1 — Beginner</option>
-              <option value="2">2</option>
-              <option value="3">3 — Intermediate</option>
-              <option value="4">4</option>
-              <option value="5">5 — Advanced</option>
-            </select>
-            <div class="hint">1 = new player, 5 = high-level</div>
-          </div>
-        </div>
-
-        <label for="pref">Preference *</label>
-        <select id="pref" required>
-          <option value="" selected disabled>Select</option>
-          <option value="Handler">Handler</option>
-          <option value="Cutter">Cutter</option>
-        </select>
-
-        <label for="pd">Practice duration (optional)</label>
-        <select id="pd">
-          <option value="" selected>Prefer not to say</option>
-          <option value="< 3 months">&lt; 3 months</option>
-          <option value="3–12 months">3–12 months</option>
-          <option value="1–3 years">1–3 years</option>
-          <option value="> 3 years">&gt; 3 years</option>
-        </select>
-
-        <button id="btn" type="submit">Submit</button>
-        <div id="status" class="status"></div>
-
-        <div id="regTools" class="inline" style="display:none; margin-top:10px;">
-          <button id="copyRegBtn" class="smallbtn secondary" type="button">Copy RegID</button>
-          <span id="regSavedNote" class="hint" style="margin:0;"></span>
-        </div>
-      </form>
-
-      <div class="hr"></div>
-
-      <details>
-        <summary><b>Cancel registration</b> (cost: buy Maojin a coffee ☕)</summary>
-        <div style="margin-top:10px;">
-          <label for="cancelName">Name / Nickname *</label>
-          <input id="cancelName" placeholder="must match your signup name" />
-          <label for="cancelId">RegID *</label>
-          <input id="cancelId" placeholder="e.g., FRI-20260212-ABCDEF12" />
-          <button id="cancelBtn" type="button">Cancel my registration</button>
-          <div id="cancelStatus" class="status"></div>
-          <div class="hint">Tip: your last RegID is saved on this device.</div>
-        </div>
-      </details>
-
-      <div class="hr"></div>
-
-      <!-- Registered players -->
-      <div class="box" id="playersSection">
-        <div class="headRow">
-          <div class="teamtitle" style="margin:0;">Registered players</div>
-          <div class="badge" id="playersBadge">—</div>
-        </div>
-
-        <div class="statsRow">
-          <span id="genderStats">Male: —  Female: —</span>
-          <span id="prefStats">Handler: —  Cutter: —</span>
-        </div>
-
-        <div class="inline" style="margin-top:6px;">
-          <button id="togglePlayersBtn" class="smallbtn secondary" type="button">Show</button>
-          <button id="copyPlayersBtn" class="smallbtn secondary" type="button" disabled>Copy</button>
-          <span id="playersStatus" class="hint" style="margin:0;"></span>
-        </div>
-
-        <div id="playersArea" class="playersArea" style="display:none;">
-          <div id="playersList" style="margin-top:10px;">Loading…</div>
-        </div>
-      </div>
-
-      <div class="hr"></div>
-
-      <!-- Teams -->
-      <div id="teamsSection">
-        <div class="teamtitle">Teams (auto after cutoff)</div>
-        <div class="hint" style="margin-top:6px;">
-          After Friday 15:00, teams are automatically generated and shown here.
-          If players ≥ <b id="fourTeamMin"></b> → 4 teams; otherwise 2 teams.
-        </div>
-        <button id="refreshTeamsBtn" type="button" class="secondary">Refresh Teams</button>
-        <div id="teamsStatus" class="status"></div>
-        <div id="teamsOutput"></div>
-      </div>
-
-      <div class="footer">Keep your <code>RegID</code>. Duplicate signups update your info (no extra row).</div>
+    <div style="
+      max-width:420px;
+      margin:18vh auto;
+      background:#fff;
+      border-radius:16px;
+      padding:20px;
+      box-shadow:0 20px 60px rgba(0,0,0,.25);
+      text-align:center;
+    ">
+      <div class="spinner"></div>
+      <div style="font-weight:900; margin-top:12px; font-size:16px;">Submitting registration…</div>
+      <div id="overlayMsg" style="color:#666; font-size:13px; margin-top:6px;">Please keep this page open.</div>
+      <div style="color:#999; font-size:12px; margin-top:10px;">Do not close until you see confirmation.</div>
     </div>
   </div>
+  
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <h1>Friday Ultimate Signup</h1>
+  
+        <div class="bar" aria-label="Status pills (swipe)">
+          <span id="countPill" class="pill">Loading...</span>
+          <span id="statusPill" class="pill">Loading...</span>
+          <span id="timeLeftPill" class="pill">Loading...</span>
+        </div>
+  
+        <div id="tzLine" class="metaRight"></div>
+  
+        <div class="box">
+          <div class="gameLine1" id="gameInfoLine1">Loading game info…</div>
+          <div class="gameLine2" id="gameInfoLine2"></div>
+        </div>
+  
+        <form id="form">
+          <label for="name">Name / Nickname *</label>
+          <input id="name" required placeholder="e.g., Maojin / MJ" />
+  
+          <label for="throwing">Throwing (1–5) *</label>
+	<select id="throwing" required>
+  	<option value="" selected disabled>Select</option>
+ 	  <option value="1">1 — Can barely throw, unstable release</option>
+ 	  <option value="2">2 — Basic backhand only</option>
+	  <option value="3">3 — Confident backhand + basic forehand</option>
+	  <option value="4">4 — Accurate backhand & forehand under light pressure</option>
+	  <option value="5">5 — Break throws, around mark, confident in-game</option>
+	</select>
+	<div class="hint">
+	  Evaluate your in-game throwing ability honestly.
+	</div>
 
-  <script>
-    const CFG = window.SIGNUP_CONFIG;
-    const ENDPOINT = CFG.endpoint;
 
-    const overlay = document.getElementById("overlay");
-    const overlayMsg = document.getElementById("overlayMsg");
+	<label for="catch">Catch (1–5) *</label>
+	<select id="catch" required>
+	  <option value="" selected disabled>Select</option>
+ 	 <option value="1">1 — Drops often, struggles with timing</option>
+  	<option value="2">2 — Can catch easy throws only</option>
+  	<option value="3">3 — Reliable catch on normal passes</option>
+	  <option value="4">4 — Can catch under light defensive pressure</option>
+	  <option value="5">5 — Confident contested catches & layout attempts</option>
+	</select>
+	<div class="hint">
+	  Consider catching under pressure, not just warm-up throws.
+	</div>
 
-    let submitting = false;
-    let slowTimer1 = null;
-    let slowTimer2 = null;
 
-    function showOverlay(){
-      submitting = true;
-      overlay.style.display = "block";
-      overlayMsg.textContent = "Submitting to Google Sheets…";
+	<label for="fitness">Fitness (1–5) *</label>
+	<select id="fitness" required>
+  	<option value="" selected disabled>Select</option>
+  	<option value="1">1 — Struggles to run full point</option>
+	  <option value="2">2 — Can jog but limited endurance</option>
+  	<option value="3">3 — Can play full game with breaks</option>
+	  <option value="4">4 — Good stamina & repeat sprints</option>
+ 	 <option value="5">5 — Competitive-level endurance & speed</option>
+	</select>
+	<div class="hint">
+	  Think about real match stamina, not gym performance.
+	</div>
 
-      slowTimer1 = setTimeout(()=>{
-        if(submitting) overlayMsg.textContent = "Still working… Google may be slow. Please wait.";
-      }, 4000);
 
-      slowTimer2 = setTimeout(()=>{
-        if(submitting) overlayMsg.textContent = "Almost done… Please keep this page open.";
-      }, 9000);
-    }
+	<label for="experience">Experience (1–5) *</label>
+	<select id="experience" required>
+	  <option value="" selected disabled>Select</option>
+	  <option value="1">1 — New to ultimate</option>
+	  <option value="2">2 — Played casually a few times</option>
+	  <option value="3">3 — Regular pickup player</option>
+	  <option value="4">4 — Played league / tournaments</option>
+  	<option value="5">5 — Competitive tournament player</option>
+	</select>
+	<div class="hint">
+	  Rate based on actual competitive exposure.
+	</div>
 
-    function hideOverlay(){
-      submitting = false;
-      overlay.style.display = "none";
-      clearTimeout(slowTimer1);
-      clearTimeout(slowTimer2);
-    }
-
-    const countPill = document.getElementById("countPill");
-    const statusPill = document.getElementById("statusPill");
-    const timeLeftPill = document.getElementById("timeLeftPill");
-    const tzLine = document.getElementById("tzLine");
-
-    const form = document.getElementById("form");
-    const btn = document.getElementById("btn");
-    const statusEl = document.getElementById("status");
-
-    const regTools = document.getElementById("regTools");
-    const copyRegBtn = document.getElementById("copyRegBtn");
-    const regSavedNote = document.getElementById("regSavedNote");
-
-    const cancelBtn = document.getElementById("cancelBtn");
-    const cancelStatus = document.getElementById("cancelStatus");
-    const cancelName = document.getElementById("cancelName");
-    const cancelId = document.getElementById("cancelId");
-
-    const gameInfoLine1 = document.getElementById("gameInfoLine1");
-    const gameInfoLine2 = document.getElementById("gameInfoLine2");
-    const fourTeamMin = document.getElementById("fourTeamMin");
-
-    const refreshTeamsBtn = document.getElementById("refreshTeamsBtn");
-    const teamsStatus = document.getElementById("teamsStatus");
-    const teamsOutput = document.getElementById("teamsOutput");
-
-    // Players UI
-    const playersBadge = document.getElementById("playersBadge");
-    const genderStats = document.getElementById("genderStats");
-    const prefStats = document.getElementById("prefStats");
-    const togglePlayersBtn = document.getElementById("togglePlayersBtn");
-    const copyPlayersBtn = document.getElementById("copyPlayersBtn");
-    const playersStatus = document.getElementById("playersStatus");
-    const playersArea = document.getElementById("playersArea");
-    const playersList = document.getElementById("playersList");
-
-    const LS_NAME = "frisbee_last_name";
-    const LS_REGID = "frisbee_last_regid";
-
-    async function fetchWithTimeout(url, ms=6000, opts={}){
-      const controller = new AbortController();
-      const t = setTimeout(()=>controller.abort(), ms);
-      try{
-        const res = await fetch(url, { ...opts, signal: controller.signal });
-        return await res.json();
-      } finally {
-        clearTimeout(t);
-      }
-    }
-
-    async function safeGetJson(url){
-      try{
-        return await fetchWithTimeout(url, 6000, { method:"GET" });
-      } catch(e){
-        return await fetchWithTimeout(url, 9000, { method:"GET" });
-      }
-    }
-
-    function timeLeftText(cutoffIso) {
-      const now = Date.now();
-      const cut = new Date(cutoffIso).getTime();
-      const diff = cut - now;
-      if (Number.isNaN(cut)) return "Time left: —";
-      if (diff <= 0) return "Time left: 0m";
-      const mins = Math.floor(diff/60000);
-      const h = Math.floor(mins/60);
-      const m = mins%60;
-      if (h<=0) return `Time left: ${m}m`;
-      return `Time left: ${h}h ${m}m`;
-    }
-
-    async function getStatus() {
-      return await safeGetJson(ENDPOINT + "?action=status");
-    }
-
-    function setPills(data) {
-      countPill.textContent = `${data.count} / ${data.max} registered`;
-
-      if (data.isFull) {
-        statusPill.textContent = "FULL";
-        statusPill.className = "pill bad";
-      } else if (data.open) {
-        statusPill.textContent = "OPEN";
-        statusPill.className = "pill ok";
-      } else {
-        statusPill.textContent = "CLOSED";
-        statusPill.className = "pill bad";
-      }
-
-      timeLeftPill.textContent = timeLeftText(data.cutoffIso);
-
-      if (data.isFull) {
-        btn.disabled = true;
-        btn.textContent = "Full";
-      } else if (!data.open) {
-        btn.disabled = true;
-        btn.textContent = "Registration closed";
-      } else {
-        btn.disabled = false;
-        btn.textContent = "Submit";
-      }
-    }
-
-    function saveLastReg(name, regId) {
-      localStorage.setItem(LS_NAME, name);
-      localStorage.setItem(LS_REGID, regId);
-      cancelName.value = name;
-      cancelId.value = regId;
-      regSavedNote.textContent = "Saved on this device ✅";
-    }
-
-    async function copyText(text) {
-      try {
-        await navigator.clipboard.writeText(text);
-        return true;
-      } catch {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        const ok = document.execCommand("copy");
-        document.body.removeChild(ta);
-        return ok;
-      }
-    }
-
-    function escapeHtml(s){
-      return (s||"").toString()
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-
-    function renderGameInfo() {
-      const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
-      gameInfoLine1.innerHTML = `${CFG.gameTimeText} · ${loc}`;
-      gameInfoLine2.innerHTML = `
-        <span>Bring: 💧 👟 🥏 🔥</span>
-        <span>Format: 5v5 / 6v6 / 7v7 (after cutoff)</span>
-      `;
-      tzLine.textContent = `Registration closes: Fri 3:00 PM | Jeddah local time`;
-      fourTeamMin.textContent = CFG.teamsMinForFour;
-    }
-
-    async function refresh() {
-      try {
-        const data = await getStatus();
-        if (!data.ok) throw new Error("status not ok");
-        setPills(data);
-        return data;
-      } catch {
-        countPill.textContent = "Status unavailable";
-        statusPill.textContent = "UNKNOWN";
-        timeLeftPill.textContent = "";
-        return null;
-      }
-    }
-
-    (function initSaved(){
-      const n = localStorage.getItem(LS_NAME) || "";
-      const r = localStorage.getItem(LS_REGID) || "";
-      if (n) cancelName.value = n;
-      if (r) cancelId.value = r;
-    })();
-
-    copyRegBtn.addEventListener("click", async () => {
-      const regId = localStorage.getItem(LS_REGID) || "";
-      if (!regId) {
-        regSavedNote.textContent = "No RegID saved yet.";
-        return;
-      }
-      const ok = await copyText(regId);
-      regSavedNote.textContent = ok ? "RegID copied ✅" : "Copy failed ❌";
-    });
-
-    // ---- REGISTER ----
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      statusEl.textContent = "";
-      statusEl.className = "status";
-      regTools.style.display = "none";
-      regSavedNote.textContent = "";
-
-      const payload = {
-        action: "register",
-        name: document.getElementById("name").value.trim(),
-        gender: document.getElementById("gender").value,
-        skill: document.getElementById("skill").value,
-        preference: document.getElementById("pref").value,
-        practiceDuration: document.getElementById("pd").value
-      };
-
-      if (!payload.name || !payload.gender || !payload.skill || !payload.preference) {
-        statusEl.textContent = "Please complete all required fields.";
-        statusEl.classList.add("badText");
-        return;
-      }
-
-      btn.disabled = true;
-      btn.textContent = "Submitting…";
-      showOverlay();
-
-      try {
-        const data = await fetchWithTimeout(ENDPOINT, 12000, {
-          method:"POST",
-          headers:{ "Content-Type":"text/plain;charset=utf-8" },
-          body: JSON.stringify(payload)
-        });
-
-        if (data.ok) {
-          statusEl.innerHTML = (data.updated ? "✅ Updated" : "✅ Submitted") + `! RegID: <b>${data.regId}</b>`;
-          statusEl.classList.add("okText");
-          saveLastReg(payload.name, data.regId);
-          regTools.style.display = "flex";
-          form.reset();
-          await refresh();
-          if (playersArea.style.display !== "none") await refreshPlayers(true);
-        } else {
-          statusEl.textContent = "❌ " + (data.error || "Submit failed");
-          statusEl.classList.add("badText");
-          await refresh();
-        }
-      } catch (err) {
-        statusEl.textContent = "❌ Network error: " + err;
-        statusEl.classList.add("badText");
-      } finally {
-        hideOverlay();
-        await refresh();
-        if (!btn.disabled) btn.textContent = "Submit";
-      }
-    });
-
-    // ---- CANCEL ----
-    cancelBtn.addEventListener("click", async () => {
-      cancelStatus.textContent = "";
-      cancelStatus.className = "status";
-
-      const name = cancelName.value.trim();
-      const regId = cancelId.value.trim();
-      if (!name || !regId) {
-        cancelStatus.textContent = "Please provide both Name and RegID.";
-        cancelStatus.classList.add("badText");
-        return;
-      }
-      if (!confirm("Confirm cancellation? (Buy Maojin a coffee ☕)")) return;
-
-      cancelBtn.disabled = true;
-      cancelBtn.textContent = "Cancelling…";
-
-      try {
-        const data = await fetchWithTimeout(ENDPOINT, 12000, {
-          method:"POST",
-          headers:{ "Content-Type":"text/plain;charset=utf-8" },
-          body: JSON.stringify({ action:"cancel", name, regId })
-        });
-
-        if (data.ok) {
-          cancelStatus.textContent = "✅ Cancelled. Please buy Maojin a coffee ☕";
-          cancelStatus.classList.add("okText");
-          await refresh();
-          if (playersArea.style.display !== "none") await refreshPlayers(true);
-        } else {
-          cancelStatus.textContent = "❌ " + (data.error || "Cancel failed");
-          cancelStatus.classList.add("badText");
-        }
-      } catch (e) {
-        cancelStatus.textContent = "❌ Network error: " + e;
-        cancelStatus.classList.add("badText");
-      } finally {
-        cancelBtn.disabled = false;
-        cancelBtn.textContent = "Cancel my registration";
-      }
-    });
-// ---- PLAYERS ----
-let lastPlayersText = "";
-
-async function refreshPlayers(silent=false){
-  if (!silent) playersStatus.textContent = "Loading…";
-  copyPlayersBtn.disabled = true;
-
-  try{
-    const data = await safeGetJson(ENDPOINT + "?action=players");
-    if (!data.ok) throw new Error(data.error || "players not ok");
-
-    playersBadge.textContent = `${data.count} players`;
-    genderStats.textContent = `Male: ${data.stats.male}   Female: ${data.stats.female}`;
-    prefStats.textContent = `Handler: ${data.stats.handler}   Cutter: ${data.stats.cutter}`;
-
-    const lines = data.players.map((p, idx) => {
-      return {
-        idx: idx+1,
-        name: p.name,
-        gender: p.gender || "—"
-      };
-    });
-
-    playersList.innerHTML = lines.map(x => `
-      <div class="playerLine">
-        <div><b>${x.idx}. ${escapeHtml(x.name)}</b></div>
-        <div class="playerMeta">${escapeHtml(x.gender)}</div>
+  
+          <label for="pref">Preference *</label>
+          <select id="pref" required>
+            <option value="" selected disabled>Select</option>
+            <option value="Handler">Handler</option>
+            <option value="Cutter">Cutter</option>
+          </select>
+  
+          <label for="pd">Practice duration (optional)</label>
+          <select id="pd">
+            <option value="" selected>Prefer not to say</option>
+            <option value="< 3 months">&lt; 3 months</option>
+            <option value="3–12 months">3–12 months</option>
+            <option value="1–3 years">1–3 years</option>
+            <option value="> 3 years">&gt; 3 years</option>
+          </select>
+  
+          <button id="btn" type="submit">Submit</button>
+          <div id="status" class="status"></div>
+  
+          <div id="regTools" class="inline" style="display:none; margin-top:10px;">
+            <button id="copyRegBtn" class="smallbtn secondary" type="button">Copy RegID</button>
+            <span id="regSavedNote" class="hint" style="margin:0;"></span>
+          </div>
+        </form>
+  
+        <div class="hr"></div>
+  
+        <details>
+          <summary><b>Cancel registration</b> (cost: buy Maojin a coffee ☕)</summary>
+          <div style="margin-top:10px;">
+            <label for="cancelName">Name / Nickname *</label>
+            <input id="cancelName" placeholder="must match your signup name" />
+            <label for="cancelId">RegID *</label>
+            <input id="cancelId" placeholder="e.g., FRI-20260212-ABCDEF12" />
+            <button id="cancelBtn" type="button">Cancel my registration</button>
+            <div id="cancelStatus" class="status"></div>
+            <div class="hint">Tip: your last RegID is saved on this device.</div>
+          </div>
+        </details>
+  
+        <div class="hr"></div>
+  
+        <!-- Registered players -->
+        <div class="box" id="playersSection">
+          <div class="headRow">
+            <div class="teamtitle" style="margin:0;">Registered players</div>
+            <div class="badge" id="playersBadge">—</div>
+          </div>
+  
+          <div class="statsRow">
+            <span id="genderStats">Male: —  Female: —</span>
+            <span id="prefStats">Handler: —  Cutter: —</span>
+          </div>
+  
+          <div class="inline" style="margin-top:6px;">
+            <button id="togglePlayersBtn" class="smallbtn secondary" type="button">Show</button>
+            <button id="copyPlayersBtn" class="smallbtn secondary" type="button" disabled>Copy</button>
+            <span id="playersStatus" class="hint" style="margin:0;"></span>
+          </div>
+  
+          <div id="playersArea" class="playersArea" style="display:none;">
+            <div id="playersList" style="margin-top:10px;">Loading…</div>
+          </div>
+        </div>
+  
+        <div class="hr"></div>
+  
+        <!-- Teams -->
+        <div id="teamsSection">
+          <div class="teamtitle">Teams (auto after cutoff)</div>
+          <div class="hint" style="margin-top:6px;">
+            After Friday 15:00, teams are automatically generated and shown here.
+            If players ≥ <b id="fourTeamMin"></b> → 4 teams; otherwise 2 teams.
+          </div>
+          <button id="refreshTeamsBtn" type="button" class="secondary">Refresh Teams</button>
+          <div id="teamsStatus" class="status"></div>
+          <div id="teamsOutput"></div>
+        </div>
+  
+        <div class="footer">Keep your <code>RegID</code>. Duplicate signups update your info (no extra row).</div>
       </div>
-    `).join("");
-
-    lastPlayersText = lines.map(x => `${x.idx}. ${x.name} (${x.gender})`).join("\n");
-    copyPlayersBtn.disabled = !lastPlayersText;
-
-    if (!silent) playersStatus.textContent = "Updated ✅";
-    return true;
-
-  } catch(e){
-    if (!silent) playersStatus.textContent = "Slow / failed. Tap Show again.";
-    return false;
-  }
-}
-
-togglePlayersBtn.addEventListener("click", async ()=>{
-  const open = playersArea.style.display !== "none";
-  if (open){
-    playersArea.style.display = "none";
-    togglePlayersBtn.textContent = "Show";
-    playersStatus.textContent = "";
-    return;
-  }
-  playersArea.style.display = "block";
-  togglePlayersBtn.textContent = "Hide";
-  await refreshPlayers(false);
-});
-
-copyPlayersBtn.addEventListener("click", async ()=>{
-  if (!lastPlayersText) return;
-  const ok = await copyText(lastPlayersText);
-  playersStatus.textContent = ok ? "Copied ✅" : "Copy failed ❌";
-});
-
-    // ---- TEAMS ----
-    async function fetchAndRenderTeams(auto=false) {
-      if (!auto) {
-        teamsStatus.textContent = "";
-        teamsStatus.className = "status";
+    </div>
+  
+    <script>
+      const CFG = window.SIGNUP_CONFIG;
+      const ENDPOINT = CFG.endpoint;
+  
+      const overlay = document.getElementById("overlay");
+      const overlayMsg = document.getElementById("overlayMsg");
+  
+      let submitting = false;
+      let slowTimer1 = null;
+      let slowTimer2 = null;
+  
+      function showOverlay(){
+        submitting = true;
+        overlay.style.display = "block";
+        overlayMsg.textContent = "Submitting to Google Sheets…";
+  
+        slowTimer1 = setTimeout(()=>{
+          if(submitting) overlayMsg.textContent = "Still working… Google may be slow. Please wait.";
+        }, 4000);
+  
+        slowTimer2 = setTimeout(()=>{
+          if(submitting) overlayMsg.textContent = "Almost done… Please keep this page open.";
+        }, 9000);
       }
-      teamsOutput.innerHTML = "";
-
-      if (!auto) {
-        refreshTeamsBtn.disabled = true;
-        refreshTeamsBtn.textContent = "Refreshing…";
+  
+      function hideOverlay(){
+        submitting = false;
+        overlay.style.display = "none";
+        clearTimeout(slowTimer1);
+        clearTimeout(slowTimer2);
       }
+  
+      const countPill = document.getElementById("countPill");
+      const statusPill = document.getElementById("statusPill");
+      const timeLeftPill = document.getElementById("timeLeftPill");
+      const tzLine = document.getElementById("tzLine");
+  
+      const form = document.getElementById("form");
+      const btn = document.getElementById("btn");
+      const statusEl = document.getElementById("status");
+  
+      const regTools = document.getElementById("regTools");
+      const copyRegBtn = document.getElementById("copyRegBtn");
+      const regSavedNote = document.getElementById("regSavedNote");
+  
+      const cancelBtn = document.getElementById("cancelBtn");
+      const cancelStatus = document.getElementById("cancelStatus");
+      const cancelName = document.getElementById("cancelName");
+      const cancelId = document.getElementById("cancelId");
+  
+      const gameInfoLine1 = document.getElementById("gameInfoLine1");
+      const gameInfoLine2 = document.getElementById("gameInfoLine2");
+      const fourTeamMin = document.getElementById("fourTeamMin");
+  
+      const refreshTeamsBtn = document.getElementById("refreshTeamsBtn");
+      const teamsStatus = document.getElementById("teamsStatus");
+      const teamsOutput = document.getElementById("teamsOutput");
+  
+      // Players UI
+      const playersBadge = document.getElementById("playersBadge");
+      const genderStats = document.getElementById("genderStats");
+      const prefStats = document.getElementById("prefStats");
+      const togglePlayersBtn = document.getElementById("togglePlayersBtn");
+      const copyPlayersBtn = document.getElementById("copyPlayersBtn");
+      const playersStatus = document.getElementById("playersStatus");
+      const playersArea = document.getElementById("playersArea");
+      const playersList = document.getElementById("playersList");
+  
+      const LS_NAME = "frisbee_last_name";
+      const LS_REGID = "frisbee_last_regid";
+  
+      async function fetchWithTimeout(url, ms=6000, opts={}){
+        const controller = new AbortController();
+        const t = setTimeout(()=>controller.abort(), ms);
+        try{
+          const res = await fetch(url, { ...opts, signal: controller.signal });
+          return await res.json();
+        } finally {
+          clearTimeout(t);
+        }
+      }
+  
+      async function safeGetJson(url){
+        try{
+          return await fetchWithTimeout(url, 6000, { method:"GET" });
+        } catch(e){
+          return await fetchWithTimeout(url, 9000, { method:"GET" });
+        }
+      }
+  
+      function timeLeftText(cutoffIso) {
+        const now = Date.now();
+        const cut = new Date(cutoffIso).getTime();
+        const diff = cut - now;
+        if (Number.isNaN(cut)) return "Time left: —";
+        if (diff <= 0) return "Time left: 0m";
+        const mins = Math.floor(diff/60000);
+        const h = Math.floor(mins/60);
+        const m = mins%60;
+        if (h<=0) return `Time left: ${m}m`;
+        return `Time left: ${h}h ${m}m`;
+      }
+  
+      async function getStatus() {
+        return await safeGetJson(ENDPOINT + "?action=status");
+      }
+  
+      function setPills(data) {
+        countPill.textContent = `${data.count} / ${data.max} registered`;
+  
+        if (data.isFull) {
+          statusPill.textContent = "FULL";
+          statusPill.className = "pill bad";
+        } else if (data.open) {
+          statusPill.textContent = "OPEN";
+          statusPill.className = "pill ok";
+        } else {
+          statusPill.textContent = "CLOSED";
+          statusPill.className = "pill bad";
+        }
+  
+        timeLeftPill.textContent = timeLeftText(data.cutoffIso);
+  
+        if (data.isFull) {
+          btn.disabled = true;
+          btn.textContent = "Full";
+        } else if (!data.open) {
+          btn.disabled = true;
+          btn.textContent = "Registration closed";
+        } else {
+          btn.disabled = false;
+          btn.textContent = "Submit";
+        }
+      }
+  
+      function saveLastReg(name, regId) {
+        localStorage.setItem(LS_NAME, name);
+        localStorage.setItem(LS_REGID, regId);
+        cancelName.value = name;
+        cancelId.value = regId;
+        regSavedNote.textContent = "Saved on this device ✅";
+      }
+  
+      async function copyText(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          const ok = document.execCommand("copy");
+          document.body.removeChild(ta);
+          return ok;
+        }
+      }
+  
+      function escapeHtml(s){
+        return (s||"").toString()
+          .replaceAll("&","&amp;")
+          .replaceAll("<","&lt;")
+          .replaceAll(">","&gt;")
+          .replaceAll('"',"&quot;")
+          .replaceAll("'","&#039;");
+      }
+  
+      function renderGameInfo() {
+        const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
+        gameInfoLine1.innerHTML = `${CFG.gameTimeText} · ${loc}`;
+        gameInfoLine2.innerHTML = `
+          <span>Bring: 💧 👟 🥏 🔥</span>
+          <span>Format: 5v5 / 6v6 / 7v7 (after cutoff)</span>
+        `;
+        tzLine.textContent = `Registration closes: Fri 3:00 PM | Jeddah local time`;
+        fourTeamMin.textContent = CFG.teamsMinForFour;
+      }
+  
+      async function refresh() {
+        try {
+          const data = await getStatus();
+          if (!data.ok) throw new Error("status not ok");
+          setPills(data);
+          return data;
+        } catch {
+          countPill.textContent = "Status unavailable";
+          statusPill.textContent = "UNKNOWN";
+          timeLeftPill.textContent = "";
+          return null;
+        }
+      }
+  
+      (function initSaved(){
+        const n = localStorage.getItem(LS_NAME) || "";
+        const r = localStorage.getItem(LS_REGID) || "";
+        if (n) cancelName.value = n;
+        if (r) cancelId.value = r;
+      })();
+  
+      copyRegBtn.addEventListener("click", async () => {
+        const regId = localStorage.getItem(LS_REGID) || "";
+        if (!regId) {
+          regSavedNote.textContent = "No RegID saved yet.";
+          return;
+        }
+        const ok = await copyText(regId);
+        regSavedNote.textContent = ok ? "RegID copied ✅" : "Copy failed ❌";
+      });
+  
+      // ---- REGISTER ----
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+  
+        statusEl.textContent = "";
+        statusEl.className = "status";
+        regTools.style.display = "none";
+        regSavedNote.textContent = "";
+  
+        const payload = {
+			action: "register",
+  			name: document.getElementById("name").value.trim(),
+  			gender: document.getElementById("gender").value,
+  			throwing: document.getElementById("throwing").value,
+  			catch: document.getElementById("catch").value,
+ 			 fitness: document.getElementById("fitness").value,
+  			experience: document.getElementById("experience").value,
+  			practiceDuration: document.getElementById("pd").value,
+  			preference: document.getElementById("pref").value
+		};
 
-      try {
-        const data = await safeGetJson(ENDPOINT + "?action=teams");
-
-        if (!data.ok) {
+  
+        if (
+  			!payload.name ||
+  			!payload.gender ||
+  			!payload.throwing ||
+  			!payload.catch ||
+  			!payload.fitness ||
+  			!payload.experience ||
+  			!payload.preference
+		){
+          statusEl.textContent = "Please complete all required fields.";
+          statusEl.classList.add("badText");
+          return;
+        }
+  
+        btn.disabled = true;
+        btn.textContent = "Submitting…";
+        showOverlay();
+  
+        try {
+          const data = await fetchWithTimeout(ENDPOINT, 12000, {
+            method:"POST",
+            headers:{ "Content-Type":"text/plain;charset=utf-8" },
+            body: JSON.stringify(payload)
+          });
+  
+          if (data.ok) {
+            statusEl.innerHTML = (data.updated ? "✅ Updated" : "✅ Submitted") + `! RegID: <b>${data.regId}</b>`;
+            statusEl.classList.add("okText");
+            saveLastReg(payload.name, data.regId);
+            regTools.style.display = "flex";
+            form.reset();
+            await refresh();
+            if (playersArea.style.display !== "none") await refreshPlayers(true);
+          } else {
+            statusEl.textContent = "❌ " + (data.error || "Submit failed");
+            statusEl.classList.add("badText");
+            await refresh();
+          }
+        } catch (err) {
+          statusEl.textContent = "❌ Network error: " + err;
+          statusEl.classList.add("badText");
+        } finally {
+          hideOverlay();
+          await refresh();
+          if (!btn.disabled) btn.textContent = "Submit";
+        }
+      });
+  
+      // ---- CANCEL ----
+      cancelBtn.addEventListener("click", async () => {
+        cancelStatus.textContent = "";
+        cancelStatus.className = "status";
+  
+        const name = cancelName.value.trim();
+        const regId = cancelId.value.trim();
+        if (!name || !regId) {
+          cancelStatus.textContent = "Please provide both Name and RegID.";
+          cancelStatus.classList.add("badText");
+          return;
+        }
+        if (!confirm("Confirm cancellation? (Buy Maojin a coffee ☕)")) return;
+  
+        cancelBtn.disabled = true;
+        cancelBtn.textContent = "Cancelling…";
+  
+        try {
+          const data = await fetchWithTimeout(ENDPOINT, 12000, {
+            method:"POST",
+            headers:{ "Content-Type":"text/plain;charset=utf-8" },
+            body: JSON.stringify({ action:"cancel", name, regId })
+          });
+  
+          if (data.ok) {
+            cancelStatus.textContent = "✅ Cancelled. Please buy Maojin a coffee ☕";
+            cancelStatus.classList.add("okText");
+            await refresh();
+            if (playersArea.style.display !== "none") await refreshPlayers(true);
+          } else {
+            cancelStatus.textContent = "❌ " + (data.error || "Cancel failed");
+            cancelStatus.classList.add("badText");
+          }
+        } catch (e) {
+          cancelStatus.textContent = "❌ Network error: " + e;
+          cancelStatus.classList.add("badText");
+        } finally {
+          cancelBtn.disabled = false;
+          cancelBtn.textContent = "Cancel my registration";
+        }
+      });
+  // ---- PLAYERS ----
+  let lastPlayersText = "";
+  
+  async function refreshPlayers(silent=false){
+    if (!silent) playersStatus.textContent = "Loading…";
+    copyPlayersBtn.disabled = true;
+  
+    try{
+      const data = await safeGetJson(ENDPOINT + "?action=players");
+      if (!data.ok) throw new Error(data.error || "players not ok");
+  
+      playersBadge.textContent = `${data.count} players`;
+      genderStats.textContent = `Male: ${data.stats.male}   Female: ${data.stats.female}`;
+      prefStats.textContent = `Handler: ${data.stats.handler}   Cutter: ${data.stats.cutter}`;
+  
+      const lines = data.players.map((p, idx) => {
+        return {
+          idx: idx+1,
+          name: p.name,
+          gender: p.gender || "—"
+        };
+      });
+  
+      playersList.innerHTML = lines.map(x => `
+        <div class="playerLine">
+          <div><b>${x.idx}. ${escapeHtml(x.name)}</b></div>
+          <div class="playerMeta">${escapeHtml(x.gender)}</div>
+        </div>
+      `).join("");
+  
+      lastPlayersText = lines.map(x => `${x.idx}. ${x.name} (${x.gender})`).join("\n");
+      copyPlayersBtn.disabled = !lastPlayersText;
+  
+      if (!silent) playersStatus.textContent = "Updated ✅";
+      return true;
+  
+    } catch(e){
+      if (!silent) playersStatus.textContent = "Slow / failed. Tap Show again.";
+      return false;
+    }
+  }
+  
+  togglePlayersBtn.addEventListener("click", async ()=>{
+    const open = playersArea.style.display !== "none";
+    if (open){
+      playersArea.style.display = "none";
+      togglePlayersBtn.textContent = "Show";
+      playersStatus.textContent = "";
+      return;
+    }
+    playersArea.style.display = "block";
+    togglePlayersBtn.textContent = "Hide";
+    await refreshPlayers(false);
+  });
+  
+  copyPlayersBtn.addEventListener("click", async ()=>{
+    if (!lastPlayersText) return;
+    const ok = await copyText(lastPlayersText);
+    playersStatus.textContent = ok ? "Copied ✅" : "Copy failed ❌";
+  });
+  
+      // ---- TEAMS ----
+      async function fetchAndRenderTeams(auto=false) {
+        if (!auto) {
+          teamsStatus.textContent = "";
+          teamsStatus.className = "status";
+        }
+        teamsOutput.innerHTML = "";
+  
+        if (!auto) {
+          refreshTeamsBtn.disabled = true;
+          refreshTeamsBtn.textContent = "Refreshing…";
+        }
+  
+        try {
+          const data = await safeGetJson(ENDPOINT + "?action=teams");
+  
+          if (!data.ok) {
+            if (!auto) {
+              teamsStatus.textContent = "❌ " + (data.error || "Teams unavailable");
+              teamsStatus.classList.add("badText");
+            }
+            return false;
+          }
+  
+          teamsStatus.innerHTML = `✅ Teams ready (${data.nTeams} teams / ${data.nPlayers} players).`;
+          teamsStatus.classList.add("okText");
+  
+          const teamsText = data.teamsText || "";
+  
+          if (teamsText) {
+            const tools = document.createElement("div");
+            tools.className = "inline";
+            tools.style.marginBottom = "10px";
+            tools.innerHTML = `
+              <button class="smallbtn secondary" type="button" id="copyTeamsBtn">Copy teams text</button>
+              <button class="smallbtn secondary" type="button" id="waBtn">Share to WhatsApp</button>
+            `;
+            teamsOutput.appendChild(tools);
+  
+            document.getElementById("copyTeamsBtn").addEventListener("click", async ()=>{
+              const ok = await copyText(teamsText);
+              teamsStatus.textContent = ok ? "✅ Teams copied to clipboard." : "❌ Copy failed.";
+              teamsStatus.className = "status " + (ok ? "okText" : "badText");
+            });
+  
+            document.getElementById("waBtn").addEventListener("click", ()=>{
+              const url = "https://wa.me/?text=" + encodeURIComponent(teamsText);
+              window.open(url, "_blank");
+            });
+          }
+  
+      data.teams.forEach(t => {
+        const div = document.createElement("div");
+        div.className = "box";
+        div.innerHTML = `
+          <div class="teamtitle">${t.name}</div>
+          <ul class="list">
+            ${t.players.map(p => `<li>${escapeHtml(p.name)}</li>`).join("")}
+          </ul>
+        `;
+        teamsOutput.appendChild(div);
+      });
+  
+  
+          return true;
+        } catch (e) {
           if (!auto) {
-            teamsStatus.textContent = "❌ " + (data.error || "Teams unavailable");
+            teamsStatus.textContent = "❌ Network error: " + e;
             teamsStatus.classList.add("badText");
           }
           return false;
+        } finally {
+        // 只有按钮还在显示时才恢复
+        if (!auto && refreshTeamsBtn.style.display !== "none") {
+          refreshTeamsBtn.disabled = false;
+          refreshTeamsBtn.textContent = "Refresh Teams";
+          }
         }
-
-        teamsStatus.innerHTML = `✅ Teams ready (${data.nTeams} teams / ${data.nPlayers} players).`;
-        teamsStatus.classList.add("okText");
-
-        const teamsText = data.teamsText || "";
-
-        if (teamsText) {
-          const tools = document.createElement("div");
-          tools.className = "inline";
-          tools.style.marginBottom = "10px";
-          tools.innerHTML = `
-            <button class="smallbtn secondary" type="button" id="copyTeamsBtn">Copy teams text</button>
-            <button class="smallbtn secondary" type="button" id="waBtn">Share to WhatsApp</button>
-          `;
-          teamsOutput.appendChild(tools);
-
-          document.getElementById("copyTeamsBtn").addEventListener("click", async ()=>{
-            const ok = await copyText(teamsText);
-            teamsStatus.textContent = ok ? "✅ Teams copied to clipboard." : "❌ Copy failed.";
-            teamsStatus.className = "status " + (ok ? "okText" : "badText");
-          });
-
-          document.getElementById("waBtn").addEventListener("click", ()=>{
-            const url = "https://wa.me/?text=" + encodeURIComponent(teamsText);
-            window.open(url, "_blank");
-          });
+      }
+  
+      refreshTeamsBtn.addEventListener("click", async () => {
+        await fetchAndRenderTeams(false);
+      });
+  
+      async function autoTeamsIfClosed() {
+  
+        const st = await refresh();
+        await refreshPlayers(true);
+  
+        if (!st || !st.ok) return;
+  
+        // cutoff 之前
+        if (st.open) {
+          refreshTeamsBtn.disabled = true;
+          refreshTeamsBtn.style.opacity = 0.5;
+          return;
         }
-
-    data.teams.forEach(t => {
-      const div = document.createElement("div");
-      div.className = "box";
-      div.innerHTML = `
-        <div class="teamtitle">${t.name}</div>
-        <ul class="list">
-          ${t.players.map(p => `<li>${escapeHtml(p.name)}</li>`).join("")}
-        </ul>
-      `;
-      teamsOutput.appendChild(div);
-    });
-
-
-        return true;
-      } catch (e) {
-        if (!auto) {
-          teamsStatus.textContent = "❌ Network error: " + e;
-          teamsStatus.classList.add("badText");
-        }
-        return false;
-      } finally {
-      // 只有按钮还在显示时才恢复
-      if (!auto && refreshTeamsBtn.style.display !== "none") {
+  
+        // cutoff 之后
         refreshTeamsBtn.disabled = false;
-        refreshTeamsBtn.textContent = "Refresh Teams";
+        refreshTeamsBtn.style.opacity = 1;
+  
+        const loaded = await fetchAndRenderTeams(true);
+  
+        // 如果已成功加载 teams，就可以隐藏按钮
+        if (loaded) {
+          refreshTeamsBtn.style.display = "none";
         }
       }
-    }
-
-    refreshTeamsBtn.addEventListener("click", async () => {
-      await fetchAndRenderTeams(false);
-    });
-
-    async function autoTeamsIfClosed() {
-
-      const st = await refresh();
-      await refreshPlayers(true);
-
-      if (!st || !st.ok) return;
-
-      // cutoff 之前
-      if (st.open) {
-        refreshTeamsBtn.disabled = true;
-        refreshTeamsBtn.style.opacity = 0.5;
-        return;
-      }
-
-      // cutoff 之后
-      refreshTeamsBtn.disabled = false;
-      refreshTeamsBtn.style.opacity = 1;
-
-      const loaded = await fetchAndRenderTeams(true);
-
-      // 如果已成功加载 teams，就可以隐藏按钮
-      if (loaded) {
-        refreshTeamsBtn.style.display = "none";
-      }
-    }
-
-
-    renderGameInfo();
-    autoTeamsIfClosed();
-  </script>
-</body>
-</html>
+  
+  
+      renderGameInfo();
+      autoTeamsIfClosed();
+    </script>
+  </body>
+  </html>
