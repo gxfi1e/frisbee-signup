@@ -6,5 +6,5 @@ window.SIGNUP_CONFIG = {
   locationText: "KAUST Stadium",
   googleMapsLink: "https://maps.app.goo.gl/FRdURVCfe1TDdVug7",
 
-  teamsMinForFour: 20
+  teamsMinForFour: 24
 };
