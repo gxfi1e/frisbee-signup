@@ -438,17 +438,23 @@
       }
   
       function timeLeftText(cutoffIso) {
-        const now = Date.now();
-        const cut = new Date(cutoffIso).getTime();
-        const diff = cut - now;
-        if (Number.isNaN(cut)) return "Time left: —";
-        if (diff <= 0) return "Time left: 0m";
-        const mins = Math.floor(diff/60000);
-        const h = Math.floor(mins/60);
-        const m = mins%60;
-        if (h<=0) return `Time left: ${m}m`;
-        return `Time left: ${h}h ${m}m`;
-      }
+ 		 const now = Date.now();
+ 		 const cut = new Date(cutoffIso).getTime();
+
+ 		 if (!cutoffIso || Number.isNaN(cut)) return "Time left: —";
+
+  		const diff = cut - now;
+
+  		if (diff <= 0) return "Time left: 0m";
+
+  		const totalMinutes = Math.floor(diff / 60000);
+  		const hours = Math.floor(totalMinutes / 60);
+  		const minutes = totalMinutes % 60;
+
+ 		 if (hours <= 0) return `Time left: ${minutes}m`;
+  		return `Time left: ${hours}h ${minutes}m`;
+		}
+
   
       async function getStatus() {
         return await safeGetJson(ENDPOINT + "?action=status");
