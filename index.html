@@ -204,7 +204,7 @@
           <div class="gameLine2" id="gameInfoLine2"></div>
         </div>
   
-        <form id="form">
+<form id="form">
 
   <label for="name">Name / Nickname *</label>
   <input id="name" required placeholder="e.g., Maojin / MJ" />
@@ -213,51 +213,63 @@
   <div class="row">
 
     <div>
-      <label for="throwing">Throwing (1–5) *</label>
+      <label for="throwing">Throwing *</label>
       <select id="throwing" required>
         <option value="" selected disabled>Select</option>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
+        <option value="1">1 — Can barely throw, unstable release</option>
+        <option value="2">2 — Basic backhand only</option>
+        <option value="3">3 — Confident backhand + basic forehand</option>
+        <option value="4">4 — Accurate under light pressure</option>
+        <option value="5">5 — Break throws & confident in-game</option>
       </select>
+      <div class="hint">
+        Evaluate your in-game throwing ability honestly.
+      </div>
     </div>
 
     <div>
-      <label for="catch">Catch (1–5) *</label>
+      <label for="catch">Catch *</label>
       <select id="catch" required>
         <option value="" selected disabled>Select</option>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
+        <option value="1">1 — Drops often</option>
+        <option value="2">2 — Easy throws only</option>
+        <option value="3">3 — Reliable catch</option>
+        <option value="4">4 — Under light pressure</option>
+        <option value="5">5 — Confident contested catches</option>
       </select>
+      <div class="hint">
+        Consider catching under pressure, not warm-up throws.
+      </div>
     </div>
 
     <div>
-      <label for="fitness">Fitness (1–5) *</label>
+      <label for="fitness">Fitness *</label>
       <select id="fitness" required>
         <option value="" selected disabled>Select</option>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
+        <option value="1">1 — Struggles to run full point</option>
+        <option value="2">2 — Limited endurance</option>
+        <option value="3">3 — Can play full game</option>
+        <option value="4">4 — Good repeat sprints</option>
+        <option value="5">5 — Competitive-level stamina</option>
       </select>
+      <div class="hint">
+        Think about real match stamina, not gym performance.
+      </div>
     </div>
 
     <div>
-      <label for="experience">Experience (1–5) *</label>
+      <label for="experience">Experience *</label>
       <select id="experience" required>
         <option value="" selected disabled>Select</option>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
+        <option value="1">1 — New to ultimate</option>
+        <option value="2">2 — Played casually</option>
+        <option value="3">3 — Regular pickup</option>
+        <option value="4">4 — League / tournaments</option>
+        <option value="5">5 — Competitive player</option>
       </select>
+      <div class="hint">
+        Rate based on actual competitive exposure.
+      </div>
     </div>
 
     <div>
@@ -437,23 +449,29 @@
         }
       }
   
-      function timeLeftText(cutoffIso) {
- 		 const now = Date.now();
- 		 const cut = new Date(cutoffIso).getTime();
+function timeLeftText(cutoffIso){
 
- 		 if (!cutoffIso || Number.isNaN(cut)) return "Time left: —";
+  if (!cutoffIso) return "Time left: —";
 
-  		const diff = cut - now;
+  const cut = new Date(cutoffIso).getTime();
+  if (Number.isNaN(cut)) return "Time left: —";
 
-  		if (diff <= 0) return "Time left: 0m";
+  const now = Date.now();
+  const diff = cut - now;
 
-  		const totalMinutes = Math.floor(diff / 60000);
-  		const hours = Math.floor(totalMinutes / 60);
-  		const minutes = totalMinutes % 60;
+  if (diff <= 0) return "Time left: 0m";
 
- 		 if (hours <= 0) return `Time left: ${minutes}m`;
-  		return `Time left: ${hours}h`;
-		}
+  const totalMinutes = Math.floor(diff / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours > 0){
+    return `Time left: ${hours}h `;
+  }
+
+  return `Time left: ${minutes}m`;
+}
+
 
   
       async function getStatus() {
