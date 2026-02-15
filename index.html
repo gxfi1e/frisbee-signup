@@ -679,10 +679,26 @@ function timeLeftText(cutoffIso){
 		if (data && data.regId) {
   		statusEl.innerHTML = `✅ Submitted! RegID: <b>${data.regId}</b>`;
   		saveLastReg(payload.name, data.regId);
- 	 	regTools.style.display = "flex";
+  		regTools.style.display = "flex";
+
 		} else {
   		statusEl.textContent = "✅ Submitted! (Response blocked by browser)";
+
+  		// ✅ 回查 RegID（靠 GET 拿回 JSON，成功率高）
+  		try {
+    		const q = encodeURIComponent(payload.name);
+    		const back = await safeGetJson(ENDPOINT + "?action=lastReg&name=" + q);
+
+    		if (back && back.ok && back.regId) {
+      		statusEl.innerHTML = `✅ Submitted! RegID: <b>${back.regId}</b>`;
+      		saveLastReg(payload.name, back.regId);
+      		regTools.style.display = "flex";
+    		}
+  		} catch (e) {
+    		// 查不到就算了，仍然保持已提交提示
+  		}
 		}
+
 
 		// 清空表单 + 刷新状态/列表（用 refresh 来确认写入）
 		form.reset();
