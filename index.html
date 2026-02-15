@@ -233,84 +233,85 @@
 
 
   <!-- 两列开始 -->
-  <div class="row">
+<div class="row">
 
-    <!-- Throwing -->
-    <div>
-      <label for="throwing">Throwing *</label>
-      <select id="throwing" required>
-        <option value="" selected disabled>Select</option>
-        <option value="1">1 — Can barely throw, unstable</option>
-        <option value="2">2 — Basic backhand only</option>
-        <option value="3">3 — Confident backhand + basic forehand</option>
-        <option value="4">4 — Accurate backhand & forehand under light pressure</option>
-        <option value="5">5 — Break throws, around mark, confident in-game</option>
-      </select>
-    </div>
-
-    <!-- Catch -->
-    <div>
-      <label for="catch">Catch *</label>
-      <select id="catch" required>
-        <option value="" selected disabled>Select</option>
-        <option value="1">1 — Drops often, struggles with timing</option>
-        <option value="2">2 — Can catch easy throws only</option>
-        <option value="3">3 — Reliable catch on normal passes</option>
-        <option value="4">4 — Can catch under light defensive pressure</option>
-        <option value="5">5 — Confident contested catches & layout attempts</option>
-      </select>
-    </div>
-
-    <!-- Fitness -->
-    <div>
-      <label for="fitness">Fitness *</label>
-      <select id="fitness" required>
-        <option value="" selected disabled>Select</option>
-        <option value="1">1 — Struggles to run full point</option>
-        <option value="2">2 — Can jog but limited endurance</option>
-        <option value="3">3 — Can play full game with breaks</option>
-        <option value="4">4 — Good stamina & repeat sprints</option>
-        <option value="5">5 — Competitive-level endurance & speed</option>
-      </select>
-    </div>
-
-    <!-- Experience -->
-    <div>
-      <label for="experience">Experience *</label>
-      <select id="experience" required>
-        <option value="" selected disabled>Select</option>
-        <option value="1">1 — New to ultimate</option>
-        <option value="2">2 — Played casually a few times</option>
-        <option value="3">3 — Regular pickup player</option>
-        <option value="4">4 — Played tournaments</option>
-        <option value="5">5 — Competitive tournament player</option>
-      </select>
-    </div>
-
-    <!-- Preference -->
-    <div>
-      <label for="pref">Preference *</label>
-      <select id="pref" required>
-        <option value="" selected disabled>Select</option>
-        <option value="Handler">Handler</option>
-        <option value="Cutter">Cutter</option>
-      </select>
-    </div>
-
-    <!-- Practice duration -->
-    <div>
-      <label for="pd">Practice duration</label>
-      <select id="pd">
-        <option value="" selected>Prefer not to say</option>
-        <option value="< 3 months">&lt; 3 months</option>
-        <option value="3–12 months">3–12 months</option>
-        <option value="1–3 years">1–3 years</option>
-        <option value="> 3 years">&gt; 3 years</option>
-      </select>
-    </div>
-
+  <!-- Throwing -->
+  <div>
+    <label for="throwing">Throwing *</label>
+    <select id="throwing" required>
+      <option value="" selected disabled>Select</option>
+      <option value="1">1 — Struggles with basic throws</option>
+      <option value="2">2 — Basic backhand only</option>
+      <option value="3">3 — Confident backhand and basic forehand</option>
+      <option value="4">4 — Accurate backhand and forehand in games</option>
+      <option value="5">5 — Confident break throws and around mark</option>
+    </select>
   </div>
-  <!-- 两列结束 -->
+
+  <!-- Catch -->
+  <div>
+    <label for="catch">Catch *</label>
+    <select id="catch" required>
+      <option value="" selected disabled>Select</option>
+      <option value="1">1 — Frequently drops easy catches</option>
+      <option value="2">2 — Can catch easy uncontested throws</option>
+      <option value="3">3 — Reliable catches in normal play</option>
+      <option value="4">4 — Can catch under defensive pressure</option>
+      <option value="5">5 — Confident in contested catches and layouts</option>
+    </select>
+  </div>
+
+  <!-- Fitness -->
+  <div>
+    <label for="fitness">Fitness *</label>
+    <select id="fitness" required>
+      <option value="" selected disabled>Select</option>
+      <option value="1">1 — Struggles to run a full point</option>
+      <option value="2">2 — Can jog but limited endurance</option>
+      <option value="3">3 — Can play full game with rest between points</option>
+      <option value="4">4 — Good stamina with repeated sprints</option>
+      <option value="5">5 — Excellent stamina and speed</option>
+    </select>
+  </div>
+
+  <!-- Experience -->
+  <div>
+    <label for="experience">Experience *</label>
+    <select id="experience" required>
+      <option value="" selected disabled>Select</option>
+      <option value="1">1 — Completely new to ultimate</option>
+      <option value="2">2 — Played casually a few times</option>
+      <option value="3">3 — Regular pickup player</option>
+      <option value="4">4 — Played tournament</option>
+      <option value="5">5 — Competitive tournament player</option>
+    </select>
+  </div>
+
+  <!-- Preference -->
+  <div>
+    <label for="pref">Preferred role *</label>
+    <select id="pref" required>
+      <option value="" selected disabled>Select</option>
+      <option value="Handler">Handler</option>
+      <option value="Cutter">Cutter</option>
+    </select>
+  </div>
+
+  <!-- Practice duration -->
+  <div>
+    <label for="pd">Ultimate experience duration</label>
+    <select id="pd">
+      <option value="" selected>Prefer not to say</option>
+      <option value="< 3 months">&lt; 3 months</option>
+      <option value="3–12 months">3–12 months</option>
+      <option value="1–3 years">1–3 years</option>
+      <option value="> 3 years">&gt; 3 years</option>
+    </select>
+  </div>
+
+</div>
+<!-- 两列结束 -->
+
 
   <button id="btn" type="submit">Submit</button>
   <div id="status" class="status"></div>
