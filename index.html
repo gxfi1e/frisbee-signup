@@ -691,11 +691,14 @@ function timeLeftText(cutoffIso){
         cancelBtn.textContent = "Cancelling…";
   
         try {
-          const data = await fetchWithTimeout(ENDPOINT, 12000, {
-            method:"POST",
-            headers:{ "Content-Type":"text/plain;charset=utf-8" },
-            body: JSON.stringify({ action:"cancel", name, regId })
-          });
+          const res = await fetch(ENDPOINT, {
+  		  method:"POST",
+  		  headers:{ "Content-Type":"text/plain;charset=utf-8" },
+ 		  body: JSON.stringify(payload)
+		  });
+
+const data = await res.json();
+
   
           if (data.ok) {
             cancelStatus.textContent = "✅ Cancelled. Please buy Maojin a coffee ☕";
