@@ -46,9 +46,9 @@
       .pill{
         display:inline-flex;
         align-items:center;
-        padding:5px 9px;
+        padding:4px 8px;
         border-radius:999px;
-        font-size:13px;
+        font-size:12px;
         background:#eee;
         white-space:nowrap;
         flex:0 0 auto;
@@ -76,12 +76,12 @@
       /* Game info (compact) */
       .gameLine1{
         font-weight:800;
-        font-size:14px;
+        font-size:13px;
         line-height:1.25;
         margin:0 0 4px;
       }
       .gameLine2{
-        font-size:12.5px;
+        font-size:12px;
         color:#666;
         line-height:1.25;
         display:flex;
@@ -459,17 +459,17 @@ function timeLeftText(cutoffIso){
   const now = Date.now();
   const diff = cut - now;
 
-  if (diff <= 0) return "Time left: 0m";
+  if (diff <= 0) return "0m left";
 
   const totalMinutes = Math.floor(diff / 60000);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
   if (hours > 0){
-    return `Time left: ${hours}h `;
+    return ` ${hours}h left `;
   }
 
-  return `Time left: ${minutes}m`;
+  return `${minutes}m left`;
 }
 
 
