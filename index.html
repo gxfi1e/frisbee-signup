@@ -46,9 +46,9 @@
       .pill{
         display:inline-flex;
         align-items:center;
-        padding:5px 9px;
+        padding:4px 8px;
         border-radius:999px;
-        font-size:13px;
+        font-size:12px;
         background:#eee;
         white-space:nowrap;
         flex:0 0 auto;
@@ -76,12 +76,12 @@
       /* Game info (compact) */
       .gameLine1{
         font-weight:800;
-        font-size:14px;
+        font-size:13px;
         line-height:1.25;
         margin:0 0 4px;
       }
       .gameLine2{
-        font-size:12.5px;
+        font-size:12px;
         color:#666;
         line-height:1.25;
         display:flex;
@@ -103,13 +103,18 @@
   
       /* Buttons */
       button{
-        width:100%;
-        margin-top:16px;
-        padding:12px 14px;
-        border:0;border-radius:12px;
-        font-size:16px;font-weight:700;
-        cursor:pointer;background:#111;color:#fff
-      }
+ 		 width:100%;
+		  margin-top:16px;
+ 		 padding:14px 16px;
+  		border:0;
+		  border-radius:14px;
+ 		 font-size:16px;
+		  font-weight:700;
+  		cursor:pointer;
+		  background:#111;
+ 		 color:#fff;
+		}
+
       button.secondary{background:#444}
       button:disabled{opacity:.55;cursor:not-allowed}
   
@@ -142,7 +147,7 @@
       }
       .playersArea{
         margin-top:8px;
-        max-height:240px;
+        max-height:320px;
         overflow:auto;
         padding-right:6px;
       }
@@ -206,25 +211,15 @@
   
 <form id="form">
 
-<div class="row">
-
-  <!-- Name -->
-  <div>
-    <label for="name">Name / Nick *</label>
-    <input id="name" required placeholder="e.g., Maojin" />
-  </div>
-
-  <!-- Gender -->
-  <div>
-    <label for="gender">Gender *</label>
-    <select id="gender" required>
-      <option value="" selected disabled>Select</option>
-      <option value="Male">Male</option>
-      <option value="Female">Female</option>
-    </select>
-  </div>
-
-</div>
+  <label for="name">Name / Nickname *</label>
+  <input id="name" required placeholder="e.g., Maojin" />
+	
+  <label for="gender">Gender *</label>
+	<select id="gender" required>
+ 	<option value="" selected disabled>Select</option>
+  	<option value="Male">Male</option>
+  	<option value="Female">Female</option>
+	</select>
 
   <!-- 两列开始 -->
   <div class="row">
@@ -447,28 +442,16 @@
       const LS_NAME = "frisbee_last_name";
       const LS_REGID = "frisbee_last_regid";
   
-	  async function fetchWithTimeout(url, ms=6000, opts={}){
-  		const controller = new AbortController();
-  		const t = setTimeout(()=>controller.abort(), ms);
-
-  		try{
-   		 const res = await fetch(url, {
-   		   ...opts,
-   		   mode: "no-cors",     // ⭐ 关键
-		      signal: controller.signal
-    		});
-
-   		 // 不再读取 res.json()
-  		  return { ok: true };
-	
-  		} catch(err){
-  		  // 即使报错也返回成功（因为后端已经执行）
-  		  return { ok: true };
- 		 } finally {
- 	  	 clearTimeout(t);
-		  }
-		}
-
+      async function fetchWithTimeout(url, ms=6000, opts={}){
+        const controller = new AbortController();
+        const t = setTimeout(()=>controller.abort(), ms);
+        try{
+          const res = await fetch(url, { ...opts, signal: controller.signal });
+          return await res.json();
+        } finally {
+          clearTimeout(t);
+        }
+      }
   
       async function safeGetJson(url){
         try{
@@ -488,14 +471,14 @@ function timeLeftText(cutoffIso){
   const now = Date.now();
   const diff = cut - now;
 
-  if (diff <= 0) return "Time left: 0m";
+  if (diff <= 0) return "0m left";
 
   const totalMinutes = Math.floor(diff / 60000);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
   if (hours > 0){
-    return `${hours}h left`;
+    return `${hours}h left `;
   }
 
   return `${minutes}m left`;
@@ -872,12 +855,11 @@ function timeLeftText(cutoffIso){
   
         if (!st || !st.ok) return;
   
-        // cutoff 之前
         if (st.open) {
-          refreshTeamsBtn.disabled = true;
-          refreshTeamsBtn.style.opacity = 0.5;
-          return;
-        }
+ 		 refreshTeamsBtn.style.display = "none";
+ 		 return;
+		}
+
   
         // cutoff 之后
         refreshTeamsBtn.disabled = false;
