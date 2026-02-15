@@ -211,15 +211,26 @@
   
 <form id="form">
 
-  <label for="name">Name / Nickname *</label>
-  <input id="name" required placeholder="e.g., Maojin" />
-	
-  <label for="gender">Gender *</label>
-	<select id="gender" required>
- 	<option value="" selected disabled>Select</option>
-  	<option value="Male">Male</option>
-  	<option value="Female">Female</option>
-	</select>
+<div class="row">
+
+  <!-- Name -->
+  <div>
+    <label for="name">Name / Nick *</label>
+    <input id="name" required placeholder="e.g., Maojin" />
+  </div>
+
+  <!-- Gender -->
+  <div>
+    <label for="gender">Gender *</label>
+    <select id="gender" required>
+      <option value="" selected disabled>Select</option>
+      <option value="Male">Male</option>
+      <option value="Female">Female</option>
+    </select>
+  </div>
+
+</div>
+
 
   <!-- 两列开始 -->
   <div class="row">
