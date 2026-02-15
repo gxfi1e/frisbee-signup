@@ -205,89 +205,89 @@
         </div>
   
         <form id="form">
-          <label for="name">Name / Nickname *</label>
-          <input id="name" required placeholder="e.g., Maojin / MJ" />
-  
-          <label for="throwing">Throwing (1–5) *</label>
-	<select id="throwing" required>
-  	<option value="" selected disabled>Select</option>
- 	  <option value="1">1 — Can barely throw, unstable release</option>
- 	  <option value="2">2 — Basic backhand only</option>
-	  <option value="3">3 — Confident backhand + basic forehand</option>
-	  <option value="4">4 — Accurate backhand & forehand under light pressure</option>
-	  <option value="5">5 — Break throws, around mark, confident in-game</option>
-	</select>
-	<div class="hint">
-	  Evaluate your in-game throwing ability honestly.
-	</div>
 
+  <label for="name">Name / Nickname *</label>
+  <input id="name" required placeholder="e.g., Maojin / MJ" />
 
-	<label for="catch">Catch (1–5) *</label>
-	<select id="catch" required>
-	  <option value="" selected disabled>Select</option>
- 	 <option value="1">1 — Drops often, struggles with timing</option>
-  	<option value="2">2 — Can catch easy throws only</option>
-  	<option value="3">3 — Reliable catch on normal passes</option>
-	  <option value="4">4 — Can catch under light defensive pressure</option>
-	  <option value="5">5 — Confident contested catches & layout attempts</option>
-	</select>
-	<div class="hint">
-	  Consider catching under pressure, not just warm-up throws.
-	</div>
+  <!-- 两列开始 -->
+  <div class="row">
 
+    <div>
+      <label for="throwing">Throwing (1–5) *</label>
+      <select id="throwing" required>
+        <option value="" selected disabled>Select</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+    </div>
 
-	<label for="fitness">Fitness (1–5) *</label>
-	<select id="fitness" required>
-  	<option value="" selected disabled>Select</option>
-  	<option value="1">1 — Struggles to run full point</option>
-	  <option value="2">2 — Can jog but limited endurance</option>
-  	<option value="3">3 — Can play full game with breaks</option>
-	  <option value="4">4 — Good stamina & repeat sprints</option>
- 	 <option value="5">5 — Competitive-level endurance & speed</option>
-	</select>
-	<div class="hint">
-	  Think about real match stamina, not gym performance.
-	</div>
+    <div>
+      <label for="catch">Catch (1–5) *</label>
+      <select id="catch" required>
+        <option value="" selected disabled>Select</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+    </div>
 
+    <div>
+      <label for="fitness">Fitness (1–5) *</label>
+      <select id="fitness" required>
+        <option value="" selected disabled>Select</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+    </div>
 
-	<label for="experience">Experience (1–5) *</label>
-	<select id="experience" required>
-	  <option value="" selected disabled>Select</option>
-	  <option value="1">1 — New to ultimate</option>
-	  <option value="2">2 — Played casually a few times</option>
-	  <option value="3">3 — Regular pickup player</option>
-	  <option value="4">4 — Played league / tournaments</option>
-  	<option value="5">5 — Competitive tournament player</option>
-	</select>
-	<div class="hint">
-	  Rate based on actual competitive exposure.
-	</div>
+    <div>
+      <label for="experience">Experience (1–5) *</label>
+      <select id="experience" required>
+        <option value="" selected disabled>Select</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+    </div>
 
-  
-          <label for="pref">Preference *</label>
-          <select id="pref" required>
-            <option value="" selected disabled>Select</option>
-            <option value="Handler">Handler</option>
-            <option value="Cutter">Cutter</option>
-          </select>
-  
-          <label for="pd">Practice duration (optional)</label>
-          <select id="pd">
-            <option value="" selected>Prefer not to say</option>
-            <option value="< 3 months">&lt; 3 months</option>
-            <option value="3–12 months">3–12 months</option>
-            <option value="1–3 years">1–3 years</option>
-            <option value="> 3 years">&gt; 3 years</option>
-          </select>
-  
-          <button id="btn" type="submit">Submit</button>
-          <div id="status" class="status"></div>
-  
-          <div id="regTools" class="inline" style="display:none; margin-top:10px;">
-            <button id="copyRegBtn" class="smallbtn secondary" type="button">Copy RegID</button>
-            <span id="regSavedNote" class="hint" style="margin:0;"></span>
-          </div>
-        </form>
+    <div>
+      <label for="pref">Preference *</label>
+      <select id="pref" required>
+        <option value="" selected disabled>Select</option>
+        <option value="Handler">Handler</option>
+        <option value="Cutter">Cutter</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="pd">Practice duration</label>
+      <select id="pd">
+        <option value="" selected>Prefer not to say</option>
+        <option value="< 3 months">&lt; 3 months</option>
+        <option value="3–12 months">3–12 months</option>
+        <option value="1–3 years">1–3 years</option>
+        <option value="> 3 years">&gt; 3 years</option>
+      </select>
+    </div>
+
+  </div>
+  <!-- 两列结束 -->
+
+  <button id="btn" type="submit">Submit</button>
+  <div id="status" class="status"></div>
+
+</form>
+
   
         <div class="hr"></div>
   
