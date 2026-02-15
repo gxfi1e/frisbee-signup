@@ -841,6 +841,27 @@ function timeLeftText(cutoffIso){
   });
   
       // ---- TEAMS ----
+		function setTeamsBtnState_(st){
+  // 永远显示按钮（推荐：最不容易出 bug）
+  refreshTeamsBtn.style.display = "block";
+
+  // st 可能为 null（网络问题）
+  if(!st || !st.ok){
+    refreshTeamsBtn.disabled = false;
+    refreshTeamsBtn.textContent = "Refresh Teams";
+    return;
+  }
+
+  if(st.open){
+    refreshTeamsBtn.disabled = true;
+    refreshTeamsBtn.textContent = "Teams available after cutoff";
+  }else{
+    refreshTeamsBtn.disabled = false;
+    refreshTeamsBtn.textContent = "Refresh Teams";
+  }
+}
+
+		
       async function fetchAndRenderTeams(auto=false) {
         if (!auto) {
           teamsStatus.textContent = "";
@@ -924,34 +945,28 @@ function timeLeftText(cutoffIso){
         await fetchAndRenderTeams(false);
       });
   
-      async function autoTeamsIfClosed() {
-  
-        const st = await refresh();
-        await refreshPlayers(true);
-  
-        if (!st || !st.ok) return;
-  
-        if (st.open) {
- 		 refreshTeamsBtn.style.display = "none";
- 		 return;
-		}
+async function autoTeamsIfClosed() {
 
-  
-        // cutoff 之后
-        refreshTeamsBtn.disabled = false;
-        refreshTeamsBtn.style.opacity = 1;
-  
-        const loaded = await fetchAndRenderTeams(true);
-  
-        // 如果已成功加载 teams，就可以隐藏按钮
-        if (loaded) {
-          refreshTeamsBtn.style.display = "none";
-        }
-      }
-  
-  
-      renderGameInfo();
-      autoTeamsIfClosed();
+  const st = await refresh();
+  await refreshPlayers(true);
+
+  // ✅ 统一控制 Refresh Teams 按钮显示/禁用
+  setTeamsBtnState_(st);
+
+  if (!st || !st.ok) return;
+
+  // cutoff 后：自动尝试拉一次 teams（失败也没关系，按钮仍然可手动点）
+  if (!st.open) {
+    await fetchAndRenderTeams(true);
+  }
+}
+
+renderGameInfo();
+autoTeamsIfClosed();
+
+// ✅ 页面开着等到 15:00，会自动变可用
+setInterval(autoTeamsIfClosed, 45000);
+
     </script>
   </body>
   </html>
