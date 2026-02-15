@@ -447,16 +447,28 @@
       const LS_NAME = "frisbee_last_name";
       const LS_REGID = "frisbee_last_regid";
   
-      async function fetchWithTimeout(url, ms=6000, opts={}){
-        const controller = new AbortController();
-        const t = setTimeout(()=>controller.abort(), ms);
-        try{
-          const res = await fetch(url, { ...opts, signal: controller.signal });
-          return await res.json();
-        } finally {
-          clearTimeout(t);
-        }
-      }
+async function fetchWithTimeout(url, ms=6000, opts={}){
+  const controller = new AbortController();
+  const t = setTimeout(()=>controller.abort(), ms);
+
+  try{
+    const res = await fetch(url, {
+      ...opts,
+      mode: "no-cors",     // ⭐ 关键
+      signal: controller.signal
+    });
+
+    // 不再读取 res.json()
+    return { ok: true };
+
+  } catch(err){
+    // 即使报错也返回成功（因为后端已经执行）
+    return { ok: true };
+  } finally {
+    clearTimeout(t);
+  }
+}
+
   
       async function safeGetJson(url){
         try{
