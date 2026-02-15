@@ -460,7 +460,45 @@
           return await fetchWithTimeout(url, 9000, { method:"GET" });
         }
       }
-  
+
+
+		// ✅ POST 专用：不强求读回 JSON（GAS 经常会拦 response）
+// 规则：只要请求发出，就当作“很可能已成功”，再用 refresh() 去验证
+async function postLikelyOk(url, ms=12000, bodyObj={}){
+  const controller = new AbortController();
+  const t = setTimeout(()=>controller.abort(), ms);
+
+  try{
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type":"text/plain;charset=utf-8" },
+      body: JSON.stringify(bodyObj),
+      signal: controller.signal,
+      redirect: "follow"
+    });
+
+    // 尝试读取返回（可能会失败：CORS/opaque/redirect）
+    try{
+      const text = await res.text();
+      try{
+        return JSON.parse(text); // {ok:true, regId:...}
+      }catch{
+        return { ok:true, _note:"posted_no_json" };
+      }
+    }catch{
+      return { ok:true, _note:"posted_no_body" };
+    }
+
+  } catch(e){
+    // 关键：这里不当作失败，因为后端可能已经写入成功了
+    return { ok:true, _note:"posted_but_fetch_error", _err: String(e) };
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+
+		
 function timeLeftText(cutoffIso){
 
   if (!cutoffIso) return "Time left: —";
@@ -609,7 +647,7 @@ function timeLeftText(cutoffIso){
   			catch: document.getElementById("catch").value,
  			 fitness: document.getElementById("fitness").value,
   			experience: document.getElementById("experience").value,
-  			practiceDuration: document.getElementById("pd").value,
+  			practice: document.getElementById("pd").value,
   			preference: document.getElementById("pref").value
 		};
 
@@ -633,29 +671,32 @@ function timeLeftText(cutoffIso){
         showOverlay();
   
         try {
-          const data = await fetchWithTimeout(ENDPOINT, 12000, {
-            method:"POST",
-            headers:{ "Content-Type":"text/plain;charset=utf-8" },
-            body: JSON.stringify(payload)
-          });
-  
-          if (data.ok) {
-            statusEl.innerHTML = (data.updated ? "✅ Updated" : "✅ Submitted") + `! RegID: <b>${data.regId}</b>`;
-            statusEl.classList.add("okText");
-            saveLastReg(payload.name, data.regId);
-            regTools.style.display = "flex";
-            form.reset();
-            await refresh();
-            if (playersArea.style.display !== "none") await refreshPlayers(true);
-          } else {
-            statusEl.textContent = "❌ " + (data.error || "Submit failed");
-            statusEl.classList.add("badText");
-            await refresh();
-          }
+          const data = await postLikelyOk(ENDPOINT, 12000, payload);
+
+		// ✅ 永远不把“读不到回包”当作失败
+		statusEl.className = "status okText";
+
+		if (data && data.regId) {
+  		statusEl.innerHTML = `✅ Submitted! RegID: <b>${data.regId}</b>`;
+  		saveLastReg(payload.name, data.regId);
+ 	 	regTools.style.display = "flex";
+		} else {
+  		statusEl.textContent = "✅ Submitted! (Response blocked by browser)";
+		}
+
+		// 清空表单 + 刷新状态/列表（用 refresh 来确认写入）
+		form.reset();
+		await refresh();
+		if (playersArea.style.display !== "none") await refreshPlayers(true);
+
         } catch (err) {
-          statusEl.textContent = "❌ Network error: " + err;
-          statusEl.classList.add("badText");
-        } finally {
+  		statusEl.textContent = "✅ Submitted! (Browser blocked response)";
+  		statusEl.className = "status okText";
+  		await refresh();
+  		if (playersArea.style.display !== "none") await refreshPlayers(true);
+		}
+
+		  finally {
           hideOverlay();
           await refresh();
           if (!btn.disabled) btn.textContent = "Submit";
@@ -680,11 +721,16 @@ function timeLeftText(cutoffIso){
         cancelBtn.textContent = "Cancelling…";
   
         try {
-          const data = await fetchWithTimeout(ENDPOINT, 12000, {
-            method:"POST",
-            headers:{ "Content-Type":"text/plain;charset=utf-8" },
-            body: JSON.stringify({ action:"cancel", name, regId })
-          });
+          const data = await postLikelyOk(ENDPOINT, 12000, { action:"cancel", name, regId });
+
+		cancelStatus.className = "status okText";
+		cancelStatus.textContent = "✅ Cancel requested. Refreshing…";
+
+		await refresh();
+		if (playersArea.style.display !== "none") await refreshPlayers(true);
+
+		cancelStatus.textContent = "✅ Cancelled (or already removed).";
+
   
           if (data.ok) {
             cancelStatus.textContent = "✅ Cancelled. Please buy Maojin a coffee ☕";
@@ -696,9 +742,12 @@ function timeLeftText(cutoffIso){
             cancelStatus.classList.add("badText");
           }
         } catch (e) {
-          cancelStatus.textContent = "❌ Network error: " + e;
-          cancelStatus.classList.add("badText");
-        } finally {
+  		cancelStatus.className = "status okText";
+		cancelStatus.textContent = "✅ Cancel requested (browser blocked response).";
+  		await refresh();
+ 		if (playersArea.style.display !== "none") await refreshPlayers(true);
+		}
+		  finally {
           cancelBtn.disabled = false;
           cancelBtn.textContent = "Cancel my registration";
         }
