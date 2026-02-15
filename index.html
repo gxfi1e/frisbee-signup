@@ -439,6 +439,11 @@
       const refreshTeamsBtn = document.getElementById("refreshTeamsBtn");
       const teamsStatus = document.getElementById("teamsStatus");
       const teamsOutput = document.getElementById("teamsOutput");
+	  // ✅ 初始就先锁住，避免页面加载时先闪一下 "Refresh Teams"
+	  refreshTeamsBtn.disabled = true;
+	  refreshTeamsBtn.textContent = "Teams available after cutoff";
+	  refreshTeamsBtn.style.display = "block";
+
   
       // Players UI
       const playersBadge = document.getElementById("playersBadge");
@@ -946,7 +951,10 @@ function timeLeftText(cutoffIso){
       });
   
 async function autoTeamsIfClosed() {
-
+    // ✅ 立即设置（即使网络慢，也不会先显示 Refresh Teams）
+  refreshTeamsBtn.disabled = true;
+  refreshTeamsBtn.textContent = "Teams available after cutoff";
+  refreshTeamsBtn.style.display = "block";
   const st = await refresh();
   await refreshPlayers(true);
 
