@@ -735,55 +735,76 @@ function timeLeftText(cutoffIso){
         }
       });
   
-      // ---- CANCEL ----
-      cancelBtn.addEventListener("click", async () => {
-        cancelStatus.textContent = "";
-        cancelStatus.className = "status";
-  
-        const name = cancelName.value.trim();
-        const regId = cancelId.value.trim();
-        if (!name || !regId) {
-          cancelStatus.textContent = "Please provide both Name and RegID.";
-          cancelStatus.classList.add("badText");
-          return;
-        }
-        if (!confirm("Confirm cancellation? (Buy Maojin a coffee ☕)")) return;
-  
-        cancelBtn.disabled = true;
-        cancelBtn.textContent = "Cancelling…";
-  
-        try {
-          const data = await postLikelyOk(ENDPOINT, 12000, { action:"cancel", name, regId });
+     // ---- CANCEL ----
+cancelBtn.addEventListener("click", async () => {
+  cancelStatus.textContent = "";
+  cancelStatus.className = "status";
 
-		cancelStatus.className = "status okText";
-		cancelStatus.textContent = "✅ Cancel requested. Refreshing…";
+  const name = cancelName.value.trim();
+  const regId = cancelId.value.trim();
+  if (!name || !regId) {
+    cancelStatus.textContent = "Please provide both Name and RegID.";
+    cancelStatus.classList.add("badText");
+    return;
+  }
+  if (!confirm("Confirm cancellation? (Buy Maojin a coffee ☕)")) return;
 
-		await refresh();
-		if (playersArea.style.display !== "none") await refreshPlayers(true);
+  cancelBtn.disabled = true;
+  cancelBtn.textContent = "Cancelling…";
 
-		cancelStatus.textContent = "✅ Cancelled (or already removed).";
+  // ✅ 清本地 RegID/Name（避免重复误操作）
+  function clearLocalReg(){
+    try{
+      localStorage.removeItem(LS_NAME);
+      localStorage.removeItem(LS_REGID);
+    }catch(_){}
+    cancelName.value = "";
+    cancelId.value = "";
+    regSavedNote.textContent = "Cleared saved RegID ✅";
+    regTools.style.display = "none";
+  }
 
-  
-          if (data.ok) {
-            cancelStatus.textContent = "✅ Cancelled. Please buy Maojin a coffee ☕";
-            cancelStatus.classList.add("okText");
-            await refresh();
-            if (playersArea.style.display !== "none") await refreshPlayers(true);
-          } else {
-            cancelStatus.textContent = "❌ " + (data.error || "Cancel failed");
-            cancelStatus.classList.add("badText");
-          }
-        } catch (e) {
-  		cancelStatus.className = "status okText";
-		cancelStatus.textContent = "✅ Cancel requested (browser blocked response).";
-  		await refresh();
- 		if (playersArea.style.display !== "none") await refreshPlayers(true);
-		}
-		  finally {
-          cancelBtn.disabled = false;
-          cancelBtn.textContent = "Cancel my registration";
-        }
-      });
+  try {
+    const data = await postLikelyOk(ENDPOINT, 12000, { action:"cancel", name, regId });
+
+    // 先按“已发出请求”处理（因为 GAS 可能读不到回包）
+    cancelStatus.className = "status okText";
+    cancelStatus.textContent = "✅ Cancel requested. Refreshing…";
+
+    await refresh();
+    if (playersArea.style.display !== "none") await refreshPlayers(true);
+
+    // ✅ 关键：只要请求发出 & 刷新后一般就认为成功，并清掉本地 RegID
+    clearLocalReg();
+
+    // 如果后端明确返回 ok:false，再提示失败（但本地仍然清掉，避免误点重复 cancel）
+    if (data && data.ok === false) {
+      cancelStatus.className = "status badText";
+      cancelStatus.textContent = "❌ " + (data.error || "Cancel failed");
+      return;
+    }
+
+    cancelStatus.className = "status okText";
+    cancelStatus.textContent = "✅ Cancelled.";
+
+  } catch (e) {
+    // 浏览器阻止回包也不当成失败：刷新+清本地
+    cancelStatus.className = "status okText";
+    cancelStatus.textContent = "✅ Cancel requested (browser blocked response). Refreshing…";
+
+    await refresh();
+    if (playersArea.style.display !== "none") await refreshPlayers(true);
+
+    clearLocalReg();
+
+    cancelStatus.className = "status okText";
+    cancelStatus.textContent = "✅ Cancelled.";
+  } finally {
+    cancelBtn.disabled = false;
+    cancelBtn.textContent = "Cancel my registration";
+  }
+});
+
   // ---- PLAYERS ----
   let lastPlayersText = "";
   
@@ -867,88 +888,88 @@ function timeLeftText(cutoffIso){
 }
 
 		
-      async function fetchAndRenderTeams(auto=false) {
-        if (!auto) {
-          teamsStatus.textContent = "";
-          teamsStatus.className = "status";
-        }
-        teamsOutput.innerHTML = "";
-  
-        if (!auto) {
-          refreshTeamsBtn.disabled = true;
-          refreshTeamsBtn.textContent = "Refreshing…";
-        }
-  
-        try {
-          const data = await safeGetJson(ENDPOINT + "?action=teams");
-  
-          if (!data.ok) {
-            if (!auto) {
-              teamsStatus.textContent = "❌ " + (data.error || "Teams unavailable");
-              teamsStatus.classList.add("badText");
-            }
-            return false;
-          }
-  
-          teamsStatus.innerHTML = `✅ Teams ready (${data.nTeams} teams / ${data.nPlayers} players).`;
-          teamsStatus.classList.add("okText");
-  
-          const teamsText = data.teamsText || "";
-  
-          if (teamsText) {
-            const tools = document.createElement("div");
-            tools.className = "inline";
-            tools.style.marginBottom = "10px";
-            tools.innerHTML = `
-              <button class="smallbtn secondary" type="button" id="copyTeamsBtn">Copy teams text</button>
-              <button class="smallbtn secondary" type="button" id="waBtn">Share to WhatsApp</button>
-            `;
-            teamsOutput.appendChild(tools);
-  
-            document.getElementById("copyTeamsBtn").addEventListener("click", async ()=>{
-              const ok = await copyText(teamsText);
-              teamsStatus.textContent = ok ? "✅ Teams copied to clipboard." : "❌ Copy failed.";
-              teamsStatus.className = "status " + (ok ? "okText" : "badText");
-            });
-  
-            document.getElementById("waBtn").addEventListener("click", ()=>{
-              const url = "https://wa.me/?text=" + encodeURIComponent(teamsText);
-              window.open(url, "_blank");
-            });
-          }
-  
-      data.teams.forEach(t => {
-        const div = document.createElement("div");
-        div.className = "box";
-        div.innerHTML = `
-          <div class="teamtitle">${t.name}</div>
-          <ul class="list">
-            ${t.players.map(p => `<li>${escapeHtml(p.name)}</li>`).join("")}
-          </ul>
-        `;
-        teamsOutput.appendChild(div);
-      });
-  
-  
-          return true;
-        } catch (e) {
-          if (!auto) {
-            teamsStatus.textContent = "❌ Network error: " + e;
-            teamsStatus.classList.add("badText");
-          }
-          return false;
-        } finally {
-        // 只有按钮还在显示时才恢复
-        if (!auto && refreshTeamsBtn.style.display !== "none") {
-          refreshTeamsBtn.disabled = false;
-          refreshTeamsBtn.textContent = "Refresh Teams";
-          }
-        }
-      }
-  
-      refreshTeamsBtn.addEventListener("click", async () => {
-        await fetchAndRenderTeams(false);
-      });
+	      async function fetchAndRenderTeams(auto=false) {
+	        if (!auto) {
+	          teamsStatus.textContent = "";
+	          teamsStatus.className = "status";
+	        }
+	        teamsOutput.innerHTML = "";
+	  
+	        if (!auto) {
+	          refreshTeamsBtn.disabled = true;
+	          refreshTeamsBtn.textContent = "Refreshing…";
+	        }
+	  
+	        try {
+	          const data = await safeGetJson(ENDPOINT + "?action=teams");
+	  
+	          if (!data.ok) {
+	            if (!auto) {
+	              teamsStatus.textContent = "❌ " + (data.error || "Teams unavailable");
+	              teamsStatus.classList.add("badText");
+	            }
+	            return false;
+	          }
+	  
+	          teamsStatus.innerHTML = `✅ Teams ready (${data.nTeams} teams / ${data.nPlayers} players).`;
+	          teamsStatus.classList.add("okText");
+	  
+	          const teamsText = data.teamsText || "";
+	  
+	          if (teamsText) {
+	            const tools = document.createElement("div");
+	            tools.className = "inline";
+	            tools.style.marginBottom = "10px";
+	            tools.innerHTML = `
+	              <button class="smallbtn secondary" type="button" id="copyTeamsBtn">Copy teams text</button>
+	              <button class="smallbtn secondary" type="button" id="waBtn">Share to WhatsApp</button>
+	            `;
+	            teamsOutput.appendChild(tools);
+	  
+	            document.getElementById("copyTeamsBtn").addEventListener("click", async ()=>{
+	              const ok = await copyText(teamsText);
+	              teamsStatus.textContent = ok ? "✅ Teams copied to clipboard." : "❌ Copy failed.";
+	              teamsStatus.className = "status " + (ok ? "okText" : "badText");
+	            });
+	  
+	            document.getElementById("waBtn").addEventListener("click", ()=>{
+	              const url = "https://wa.me/?text=" + encodeURIComponent(teamsText);
+	              window.open(url, "_blank");
+	            });
+	          }
+	  
+	      data.teams.forEach(t => {
+	        const div = document.createElement("div");
+	        div.className = "box";
+	        div.innerHTML = `
+	          <div class="teamtitle">${t.name}</div>
+	          <ul class="list">
+	            ${t.players.map(p => `<li>${escapeHtml(p.name)}</li>`).join("")}
+	          </ul>
+	        `;
+	        teamsOutput.appendChild(div);
+	      });
+	  
+	  
+	          return true;
+	        } catch (e) {
+	          if (!auto) {
+	            teamsStatus.textContent = "❌ Network error: " + e;
+	            teamsStatus.classList.add("badText");
+	          }
+	          return false;
+	        } finally {
+	        // 只有按钮还在显示时才恢复
+	        if (!auto && refreshTeamsBtn.style.display !== "none") {
+	          refreshTeamsBtn.disabled = false;
+	          refreshTeamsBtn.textContent = "Refresh Teams";
+	          }
+	        }
+	      }
+	  
+	      refreshTeamsBtn.addEventListener("click", async () => {
+	        await fetchAndRenderTeams(false);
+	      });
   
 async function autoTeamsIfClosed() {
     // ✅ 立即设置（即使网络慢，也不会先显示 Refresh Teams）
