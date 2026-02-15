@@ -293,7 +293,7 @@
 
     <!-- Practice duration -->
     <div>
-      <label for="pd">Practice duration (optional)</label>
+      <label for="pd">Practice duration</label>
       <select id="pd">
         <option value="" selected>Prefer not to say</option>
         <option value="< 3 months">&lt; 3 months</option>
@@ -447,27 +447,27 @@
       const LS_NAME = "frisbee_last_name";
       const LS_REGID = "frisbee_last_regid";
   
-async function fetchWithTimeout(url, ms=6000, opts={}){
-  const controller = new AbortController();
-  const t = setTimeout(()=>controller.abort(), ms);
+	  async function fetchWithTimeout(url, ms=6000, opts={}){
+  		const controller = new AbortController();
+  		const t = setTimeout(()=>controller.abort(), ms);
 
-  try{
-    const res = await fetch(url, {
-      ...opts,
-      mode: "no-cors",     // ⭐ 关键
-      signal: controller.signal
-    });
+  		try{
+   		 const res = await fetch(url, {
+   		   ...opts,
+   		   mode: "no-cors",     // ⭐ 关键
+		      signal: controller.signal
+    		});
 
-    // 不再读取 res.json()
-    return { ok: true };
-
-  } catch(err){
-    // 即使报错也返回成功（因为后端已经执行）
-    return { ok: true };
-  } finally {
-    clearTimeout(t);
-  }
-}
+   		 // 不再读取 res.json()
+  		  return { ok: true };
+	
+  		} catch(err){
+  		  // 即使报错也返回成功（因为后端已经执行）
+  		  return { ok: true };
+ 		 } finally {
+ 	  	 clearTimeout(t);
+		  }
+		}
 
   
       async function safeGetJson(url){
@@ -495,10 +495,10 @@ function timeLeftText(cutoffIso){
   const minutes = totalMinutes % 60;
 
   if (hours > 0){
-    return `Time left: ${hours}h `;
+    return `${hours}h left`;
   }
 
-  return `Time left: ${minutes}m`;
+  return `${minutes}m left`;
 }
 
 
