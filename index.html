@@ -103,13 +103,18 @@
   
       /* Buttons */
       button{
-        width:100%;
-        margin-top:16px;
-        padding:12px 14px;
-        border:0;border-radius:12px;
-        font-size:16px;font-weight:700;
-        cursor:pointer;background:#111;color:#fff
-      }
+ 		 width:100%;
+		  margin-top:16px;
+ 		 padding:14px 16px;
+  		border:0;
+		  border-radius:14px;
+ 		 font-size:16px;
+		  font-weight:700;
+  		cursor:pointer;
+		  background:#111;
+ 		 color:#fff;
+		}
+
       button.secondary{background:#444}
       button:disabled{opacity:.55;cursor:not-allowed}
   
@@ -142,7 +147,7 @@
       }
       .playersArea{
         margin-top:8px;
-        max-height:240px;
+        max-height:320px;
         overflow:auto;
         padding-right:6px;
       }
@@ -208,6 +213,13 @@
 
   <label for="name">Name / Nickname *</label>
   <input id="name" required placeholder="e.g., Maojin" />
+	
+  <label for="gender">Gender *</label>
+	<select id="gender" required>
+ 	<option value="" selected disabled>Select</option>
+  	<option value="Male">Male</option>
+  	<option value="Female">Female</option>
+	</select>
 
   <!-- 两列开始 -->
   <div class="row">
@@ -466,7 +478,7 @@ function timeLeftText(cutoffIso){
   const minutes = totalMinutes % 60;
 
   if (hours > 0){
-    return ` ${hours}h left `;
+    return `${hours}h left `;
   }
 
   return `${minutes}m left`;
@@ -843,12 +855,11 @@ function timeLeftText(cutoffIso){
   
         if (!st || !st.ok) return;
   
-        // cutoff 之前
         if (st.open) {
-          refreshTeamsBtn.disabled = true;
-          refreshTeamsBtn.style.opacity = 0.5;
-          return;
-        }
+ 		 refreshTeamsBtn.style.display = "none";
+ 		 return;
+		}
+
   
         // cutoff 之后
         refreshTeamsBtn.disabled = false;
