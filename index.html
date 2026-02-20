@@ -868,7 +868,8 @@ cancelBtn.addEventListener("click", async () => {
   });
   
 
-// ---- TEAMS (NEW LOGIC) ----
+// ---- TEAMS (LOCKED AFTER SUCCESS) ----
+let teamsLockedAfterLoaded = false;
 
 // cutoff 前：按钮灰色显示提示语（不可点）
 function setTeamsBtnBeforeCutoff(){
@@ -893,7 +894,6 @@ function hideTeamsBtn(){
 
 // 拉取并渲染 teams（永远覆盖旧内容，保证“最新 teams”）
 async function fetchAndRenderTeams({ auto = false } = {}) {
-  // 永远清空输出，避免旧 teams 残留
   teamsOutput.innerHTML = "";
 
   if (!auto) {
@@ -953,6 +953,9 @@ async function fetchAndRenderTeams({ auto = false } = {}) {
       teamsOutput.appendChild(div);
     });
 
+    // ✅ 一旦成功展示 teams，就锁定：后续 interval 不再切按钮/闪烁
+    teamsLockedAfterLoaded = true;
+
     return true;
   } catch (e) {
     if (!auto) {
@@ -969,26 +972,29 @@ async function fetchAndRenderTeams({ auto = false } = {}) {
 }
 
 // 手动刷新（只在 cutoff 后、自动加载失败时需要）
+// 注意：不要重复绑定（确保你只保留这一处 addEventListener）
 refreshTeamsBtn.addEventListener("click", async () => {
   await fetchAndRenderTeams({ auto: false });
+  if (teamsLockedAfterLoaded) hideTeamsBtn();
 });
 
 // 根据 status(open/closed) 控制按钮，并在 cutoff 后自动拉取 teams
 async function autoTeamsByCutoff() {
-  // 先把按钮锁在 cutoff 前状态，避免页面刚加载时闪一下 Refresh
+  // ✅ 如果已经成功展示过 teams：保持图1状态，不再闪，不再改按钮
+  if (teamsLockedAfterLoaded) return;
+
+  // 只有在“未锁定”时才显示 cutoff 前提示（避免闪）
   setTeamsBtnBeforeCutoff();
 
   const st = await refresh();
   await refreshPlayers(true);
 
   if (!st || !st.ok) {
-    // 状态未知：仍保持“cutoff 前提示”
     setTeamsBtnBeforeCutoff();
     return;
   }
 
   if (st.open) {
-    // cutoff 前：灰色提示
     setTeamsBtnBeforeCutoff();
     return;
   }
@@ -996,10 +1002,9 @@ async function autoTeamsByCutoff() {
   // cutoff 后：先允许重试按钮存在（万一自动拉取失败）
   setTeamsBtnRetry();
 
-  // 自动拉取一次（auto=true 不扰动按钮文案）
   const loaded = await fetchAndRenderTeams({ auto: true });
 
-  // 成功：隐藏按钮，只显示最新 teams
+  // 成功：隐藏按钮，只显示最新 teams（并且锁定）
   if (loaded) hideTeamsBtn();
 }
 
