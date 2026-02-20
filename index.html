@@ -869,12 +869,6 @@ cancelBtn.addEventListener("click", async () => {
   
       // ---- TEAMS ----
 		function setTeamsBtnState_(st){
-
-let teamsRendered = false;
-let lastTeamsSig = "";
-let lastTeamsPlayersCount = -1;
-
-function setTeamsBtnState_(st){
   // 永远显示按钮（推荐：最不容易出 bug）
   refreshTeamsBtn.style.display = "block";
 
@@ -895,20 +889,20 @@ function setTeamsBtnState_(st){
 }
 
 		
-		async function fetchAndRenderTeams(auto=false) {
-  		if (!auto) {
-    		teamsStatus.textContent = "";
-    		teamsStatus.className = "status";
-    		teamsOutput.innerHTML = ""; // ✅ 只有手动刷新才清空重建，避免自动轮询跳屏
-  		}
-
-  		if (!auto) {
-    		refreshTeamsBtn.disabled = true;
-    		refreshTeamsBtn.textContent = "Refreshing…";
-  		}
-
-  		try {
-    		const data = await safeGetJson(ENDPOINT + "?action=teams");
+	      async function fetchAndRenderTeams(auto=false) {
+	        if (!auto) {
+	          teamsStatus.textContent = "";
+	          teamsStatus.className = "status";
+	        }
+	        teamsOutput.innerHTML = "";
+	  
+	        if (!auto) {
+	          refreshTeamsBtn.disabled = true;
+	          refreshTeamsBtn.textContent = "Refreshing…";
+	        }
+	  
+	        try {
+	          const data = await safeGetJson(ENDPOINT + "?action=teams");
 	  
 	          if (!data.ok) {
 	            if (!auto) {
@@ -920,24 +914,7 @@ function setTeamsBtnState_(st){
 	  
 	          teamsStatus.innerHTML = `✅ Teams ready (${data.nTeams} teams / ${data.nPlayers} players).`;
 	          teamsStatus.classList.add("okText");
-	          // ✅ 用 teams 内容做签名：auto 轮询如果没变化就别动 DOM（防止页面上下跳）
-				const sig = JSON.stringify({
-  				nTeams: data.nTeams,
-  				nPlayers: data.nPlayers,
-  				teamsText: data.teamsText || "",
-  				teams: (data.teams || []).map(t => ({
-    				name: t.name,
-    				players: (t.players || []).map(p => p.name)
-  				}))
-				});
-
-				// auto 模式：已渲染过且签名没变 → 直接返回（只更新状态文案）
-				if (auto && teamsRendered && sig === lastTeamsSig) {
-  				// 只更新状态，不重绘列表
-  				teamsStatus.innerHTML = `✅ Teams ready (${data.nTeams} teams / ${data.nPlayers} players).`;
-  				teamsStatus.className = "status okText";
-  				return true;
-				}
+	  
 	          const teamsText = data.teamsText || "";
 	  
 	          if (teamsText) {
@@ -974,9 +951,7 @@ function setTeamsBtnState_(st){
 	        teamsOutput.appendChild(div);
 	      });
 	  
-	            teamsRendered = true;
-				lastTeamsSig = sig;
-				lastTeamsPlayersCount = data.nPlayers;
+	  
 	          return true;
 	        } catch (e) {
 	          if (!auto) {
@@ -1012,10 +987,7 @@ async function autoTeamsIfClosed() {
 
   // cutoff 后：自动尝试拉一次 teams（失败也没关系，按钮仍然可手动点）
   if (!st.open) {
-  // ✅ 只在首次渲染 or 人数变化时才重新拉 teams，避免反复重绘导致跳屏
-  if (!teamsRendered || (st.count !== lastTeamsPlayersCount)) {
     await fetchAndRenderTeams(true);
-  }
   }
 }
 
