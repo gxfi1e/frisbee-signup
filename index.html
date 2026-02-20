@@ -867,136 +867,149 @@ cancelBtn.addEventListener("click", async () => {
     playersStatus.textContent = ok ? "Copied ✅" : "Copy failed ❌";
   });
   
-      // ---- TEAMS ----
-		function setTeamsBtnState_(st){
-  // 永远显示按钮（推荐：最不容易出 bug）
-  refreshTeamsBtn.style.display = "block";
+<script>
+// ---- TEAMS (NEW LOGIC) ----
 
-  // st 可能为 null（网络问题）
-  if(!st || !st.ok){
-    refreshTeamsBtn.disabled = false;
-    refreshTeamsBtn.textContent = "Refresh Teams";
-    return;
+// cutoff 前：按钮灰色显示提示语（不可点）
+function setTeamsBtnBeforeCutoff(){
+  refreshTeamsBtn.style.display = "block";
+  refreshTeamsBtn.disabled = true;
+  refreshTeamsBtn.style.opacity = 0.55;
+  refreshTeamsBtn.textContent = "Teams will be shown after cutoff.";
+}
+
+// cutoff 后但尚未成功加载：允许手动刷新
+function setTeamsBtnRetry(){
+  refreshTeamsBtn.style.display = "block";
+  refreshTeamsBtn.disabled = false;
+  refreshTeamsBtn.style.opacity = 1;
+  refreshTeamsBtn.textContent = "Refresh Teams";
+}
+
+// 成功拿到 teams 后：隐藏按钮（只显示最新结果）
+function hideTeamsBtn(){
+  refreshTeamsBtn.style.display = "none";
+}
+
+// 拉取并渲染 teams（永远覆盖旧内容，保证“最新 teams”）
+async function fetchAndRenderTeams({ auto = false } = {}) {
+  // 永远清空输出，避免旧 teams 残留
+  teamsOutput.innerHTML = "";
+
+  if (!auto) {
+    teamsStatus.textContent = "";
+    teamsStatus.className = "status";
+    refreshTeamsBtn.disabled = true;
+    refreshTeamsBtn.style.opacity = 0.8;
+    refreshTeamsBtn.textContent = "Refreshing…";
   }
 
-  if(st.open){
-    refreshTeamsBtn.disabled = true;
-    refreshTeamsBtn.textContent = "Teams available after cutoff";
-  }else{
-    refreshTeamsBtn.disabled = false;
-    refreshTeamsBtn.textContent = "Refresh Teams";
+  try {
+    const data = await safeGetJson(ENDPOINT + "?action=teams");
+
+    if (!data || !data.ok) {
+      if (!auto) {
+        teamsStatus.textContent = "❌ " + ((data && data.error) ? data.error : "Teams unavailable");
+        teamsStatus.className = "status badText";
+      }
+      return false;
+    }
+
+    teamsStatus.innerHTML = `✅ Teams ready (${data.nTeams} teams / ${data.nPlayers} players).`;
+    teamsStatus.className = "status okText";
+
+    const teamsText = data.teamsText || "";
+    if (teamsText) {
+      const tools = document.createElement("div");
+      tools.className = "inline";
+      tools.style.marginBottom = "10px";
+      tools.innerHTML = `
+        <button class="smallbtn secondary" type="button" id="copyTeamsBtn">Copy teams text</button>
+        <button class="smallbtn secondary" type="button" id="waBtn">Share to WhatsApp</button>
+      `;
+      teamsOutput.appendChild(tools);
+
+      document.getElementById("copyTeamsBtn").addEventListener("click", async () => {
+        const ok = await copyText(teamsText);
+        teamsStatus.textContent = ok ? "✅ Teams copied to clipboard." : "❌ Copy failed.";
+        teamsStatus.className = "status " + (ok ? "okText" : "badText");
+      });
+
+      document.getElementById("waBtn").addEventListener("click", () => {
+        const url = "https://wa.me/?text=" + encodeURIComponent(teamsText);
+        window.open(url, "_blank");
+      });
+    }
+
+    (data.teams || []).forEach(t => {
+      const div = document.createElement("div");
+      div.className = "box";
+      div.innerHTML = `
+        <div class="teamtitle">${escapeHtml(t.name || "")}</div>
+        <ul class="list">
+          ${(t.players || []).map(p => `<li>${escapeHtml(p.name || "")}</li>`).join("")}
+        </ul>
+      `;
+      teamsOutput.appendChild(div);
+    });
+
+    return true;
+  } catch (e) {
+    if (!auto) {
+      teamsStatus.textContent = "❌ Network error: " + e;
+      teamsStatus.className = "status badText";
+    }
+    return false;
+  } finally {
+    // 手动刷新结束后，如果按钮还在显示，就恢复成可点“Refresh Teams”
+    if (!auto && refreshTeamsBtn.style.display !== "none") {
+      setTeamsBtnRetry();
+    }
   }
 }
 
-		
-	      async function fetchAndRenderTeams(auto=false) {
-	        if (!auto) {
-	          teamsStatus.textContent = "";
-	          teamsStatus.className = "status";
-	        }
-	        teamsOutput.innerHTML = "";
-	  
-	        if (!auto) {
-	          refreshTeamsBtn.disabled = true;
-	          refreshTeamsBtn.textContent = "Refreshing…";
-	        }
-	  
-	        try {
-	          const data = await safeGetJson(ENDPOINT + "?action=teams");
-	  
-	          if (!data.ok) {
-	            if (!auto) {
-	              teamsStatus.textContent = "❌ " + (data.error || "Teams unavailable");
-	              teamsStatus.classList.add("badText");
-	            }
-	            return false;
-	          }
-	  
-	          teamsStatus.innerHTML = `✅ Teams ready (${data.nTeams} teams / ${data.nPlayers} players).`;
-	          teamsStatus.classList.add("okText");
-	  
-	          const teamsText = data.teamsText || "";
-	  
-	          if (teamsText) {
-	            const tools = document.createElement("div");
-	            tools.className = "inline";
-	            tools.style.marginBottom = "10px";
-	            tools.innerHTML = `
-	              <button class="smallbtn secondary" type="button" id="copyTeamsBtn">Copy teams text</button>
-	              <button class="smallbtn secondary" type="button" id="waBtn">Share to WhatsApp</button>
-	            `;
-	            teamsOutput.appendChild(tools);
-	  
-	            document.getElementById("copyTeamsBtn").addEventListener("click", async ()=>{
-	              const ok = await copyText(teamsText);
-	              teamsStatus.textContent = ok ? "✅ Teams copied to clipboard." : "❌ Copy failed.";
-	              teamsStatus.className = "status " + (ok ? "okText" : "badText");
-	            });
-	  
-	            document.getElementById("waBtn").addEventListener("click", ()=>{
-	              const url = "https://wa.me/?text=" + encodeURIComponent(teamsText);
-	              window.open(url, "_blank");
-	            });
-	          }
-	  
-	      data.teams.forEach(t => {
-	        const div = document.createElement("div");
-	        div.className = "box";
-	        div.innerHTML = `
-	          <div class="teamtitle">${t.name}</div>
-	          <ul class="list">
-	            ${t.players.map(p => `<li>${escapeHtml(p.name)}</li>`).join("")}
-	          </ul>
-	        `;
-	        teamsOutput.appendChild(div);
-	      });
-	  
-	  
-	          return true;
-	        } catch (e) {
-	          if (!auto) {
-	            teamsStatus.textContent = "❌ Network error: " + e;
-	            teamsStatus.classList.add("badText");
-	          }
-	          return false;
-	        } finally {
-	        // 只有按钮还在显示时才恢复
-	        if (!auto && refreshTeamsBtn.style.display !== "none") {
-	          refreshTeamsBtn.disabled = false;
-	          refreshTeamsBtn.textContent = "Refresh Teams";
-	          }
-	        }
-	      }
-	  
-	      refreshTeamsBtn.addEventListener("click", async () => {
-	        await fetchAndRenderTeams(false);
-	      });
-  
-async function autoTeamsIfClosed() {
-    // ✅ 立即设置（即使网络慢，也不会先显示 Refresh Teams）
-  refreshTeamsBtn.disabled = true;
-  refreshTeamsBtn.textContent = "Teams available after cutoff";
-  refreshTeamsBtn.style.display = "block";
+// 手动刷新（只在 cutoff 后、自动加载失败时需要）
+refreshTeamsBtn.addEventListener("click", async () => {
+  await fetchAndRenderTeams({ auto: false });
+});
+
+// 根据 status(open/closed) 控制按钮，并在 cutoff 后自动拉取 teams
+async function autoTeamsByCutoff() {
+  // 先把按钮锁在 cutoff 前状态，避免页面刚加载时闪一下 Refresh
+  setTeamsBtnBeforeCutoff();
+
   const st = await refresh();
   await refreshPlayers(true);
 
-  // ✅ 统一控制 Refresh Teams 按钮显示/禁用
-  setTeamsBtnState_(st);
-
-  if (!st || !st.ok) return;
-
-  // cutoff 后：自动尝试拉一次 teams（失败也没关系，按钮仍然可手动点）
-  if (!st.open) {
-    await fetchAndRenderTeams(true);
+  if (!st || !st.ok) {
+    // 状态未知：仍保持“cutoff 前提示”
+    setTeamsBtnBeforeCutoff();
+    return;
   }
+
+  if (st.open) {
+    // cutoff 前：灰色提示
+    setTeamsBtnBeforeCutoff();
+    return;
+  }
+
+  // cutoff 后：先允许重试按钮存在（万一自动拉取失败）
+  setTeamsBtnRetry();
+
+  // 自动拉取一次（auto=true 不扰动按钮文案）
+  const loaded = await fetchAndRenderTeams({ auto: true });
+
+  // 成功：隐藏按钮，只显示最新 teams
+  if (loaded) hideTeamsBtn();
 }
 
+// 页面启动
 renderGameInfo();
-autoTeamsIfClosed();
+autoTeamsByCutoff();
 
-// ✅ 页面开着等到 15:00，会自动变可用
-setInterval(autoTeamsIfClosed, 45000);
+// 页面开着等到 15:00：自动切换状态并拉 teams
+setInterval(autoTeamsByCutoff, 45000);
 
-    </script>
+</script>
   </body>
   </html>
