@@ -101,7 +101,25 @@
       }
       .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
       .hint{margin-top:6px;font-size:13px;color:#666}
-  
+
+	 /* Mobile tighten spacing (override) */
+@media (max-width: 520px){
+  label{
+    margin:12px 0 7px;      /* 原 14px 0 8px */
+    font-size:15px;
+  }
+  input,select{
+    padding:11px;          /* 原 12px */
+    font-size:15px;        /* 保持 16 防止 iOS 自动放大 */
+  }
+  .row{
+    gap:10px;              /* 原 12px */
+  }
+  .hint{
+    margin-top:5px;        /* 原 6px */
+    font-size:13px;
+  }
+}
       /* Buttons */
       button{
  		 width:100%;
