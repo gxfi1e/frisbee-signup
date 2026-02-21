@@ -1088,7 +1088,7 @@ autoTeamsByCutoff();
 setInterval(autoTeamsByCutoff, 45000);
 
 
-Chart.defaults.plugins.legend.onClick = null; // 或 () => {}
+Chart.defaults.plugins.legend.onClick = () => {};
 // ===== Analytics (auto-load on expand) =====
 const analyticsDetails = document.getElementById("analyticsDetails");
 const anaStatus = document.getElementById("anaStatus");
