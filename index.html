@@ -1143,21 +1143,6 @@ async function loadAnalytics(){
         datasets: [{ data: lvlLabels.map(k => st.levels[k] || 0) }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend:{position:"right"} }
-      }
-    });
-
-    // ----- Latest: Male vs Female avg (bar) -----
-    destroyChart("gender");
-    CH.gender = new Chart(document.getElementById("c_gender"), {
-      type: "bar",
-      data: {
-        labels: ["Male","Female"],
-        datasets: [{ label: "Avg", data: [st.maleAvg ?? 0, st.femaleAvg ?? 0] }]
-      },
-      options: {
   		responsive: true,
   		maintainAspectRatio: false,
   		plugins: {
@@ -1198,6 +1183,22 @@ async function loadAnalytics(){
     		}
   		}
 		}
+    });
+
+    // ----- Latest: Male vs Female avg (bar) -----
+    destroyChart("gender");
+    CH.gender = new Chart(document.getElementById("c_gender"), {
+      type: "bar",
+      data: {
+        labels: ["Male","Female"],
+        datasets: [{ label: "Avg", data: [st.maleAvg ?? 0, st.femaleAvg ?? 0] }]
+      },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend:{display:false} },
+        scales: { y: { min:0, max:5 } }
+      }
     });
 
     // ----- Latest: Percentiles (bar) -----
