@@ -372,7 +372,63 @@
         </div>
   
         <div class="hr"></div>
-  
+
+		<div class="hr"></div>
+
+<div class="box" id="analyticsBox">
+  <div class="headRow">
+    <div class="teamtitle" style="margin:0;">Analytics</div>
+    <div class="badge" id="anaWeekBadge">—</div>
+  </div>
+
+  <div class="inline" style="margin-top:6px;">
+    <button id="loadAnaBtn" class="smallbtn secondary" type="button">Load charts</button>
+    <span id="anaStatus" class="hint" style="margin:0;"></span>
+  </div>
+
+  <!-- Layout: left column (latest week charts), right column (trend charts) -->
+  <div class="row" style="margin-top:10px; grid-template-columns: 1.3fr 1fr;">
+    <div>
+      <div class="box">
+        <div class="teamtitle" style="margin:0;">Latest week</div>
+        <div class="hint" id="latestSummary" style="margin-top:6px;"></div>
+      </div>
+
+      <div class="box" style="margin-top:10px;">
+        <div class="teamtitle" style="margin:0;">Score Distribution</div>
+        <canvas id="c_hist" height="170"></canvas>
+      </div>
+
+      <div class="box" style="margin-top:10px;">
+        <div class="teamtitle" style="margin:0;">Skill Level Distribution</div>
+        <canvas id="c_levels" height="170"></canvas>
+      </div>
+
+      <div class="box" style="margin-top:10px;">
+        <div class="teamtitle" style="margin:0;">Male vs Female Avg</div>
+        <canvas id="c_gender" height="140"></canvas>
+      </div>
+
+      <div class="box" style="margin-top:10px;">
+        <div class="teamtitle" style="margin:0;">Score Percentiles</div>
+        <canvas id="c_percent" height="170"></canvas>
+      </div>
+    </div>
+
+    <div>
+      <div class="box">
+        <div class="teamtitle" style="margin:0;">Weekly Avg & Std Trend</div>
+        <canvas id="c_trend1" height="220"></canvas>
+      </div>
+
+      <div class="box" style="margin-top:10px;">
+        <div class="teamtitle" style="margin:0;">Weekly Elite% Trend</div>
+        <canvas id="c_trend2" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+		  
         <!-- Teams -->
         <div id="teamsSection">
           <div class="teamtitle">Teams (auto after cutoff)</div>
@@ -873,61 +929,7 @@ cancelBtn.addEventListener("click", async () => {
     playersStatus.textContent = ok ? "Copied ✅" : "Copy failed ❌";
   });
 
-<div class="hr"></div>
 
-<div class="box" id="analyticsBox">
-  <div class="headRow">
-    <div class="teamtitle" style="margin:0;">Analytics</div>
-    <div class="badge" id="anaWeekBadge">—</div>
-  </div>
-
-  <div class="inline" style="margin-top:6px;">
-    <button id="loadAnaBtn" class="smallbtn secondary" type="button">Load charts</button>
-    <span id="anaStatus" class="hint" style="margin:0;"></span>
-  </div>
-
-  <!-- Layout: left column (latest week charts), right column (trend charts) -->
-  <div class="row" style="margin-top:10px; grid-template-columns: 1.3fr 1fr;">
-    <div>
-      <div class="box">
-        <div class="teamtitle" style="margin:0;">Latest week</div>
-        <div class="hint" id="latestSummary" style="margin-top:6px;"></div>
-      </div>
-
-      <div class="box" style="margin-top:10px;">
-        <div class="teamtitle" style="margin:0;">Score Distribution</div>
-        <canvas id="c_hist" height="170"></canvas>
-      </div>
-
-      <div class="box" style="margin-top:10px;">
-        <div class="teamtitle" style="margin:0;">Skill Level Distribution</div>
-        <canvas id="c_levels" height="170"></canvas>
-      </div>
-
-      <div class="box" style="margin-top:10px;">
-        <div class="teamtitle" style="margin:0;">Male vs Female Avg</div>
-        <canvas id="c_gender" height="140"></canvas>
-      </div>
-
-      <div class="box" style="margin-top:10px;">
-        <div class="teamtitle" style="margin:0;">Score Percentiles</div>
-        <canvas id="c_percent" height="170"></canvas>
-      </div>
-    </div>
-
-    <div>
-      <div class="box">
-        <div class="teamtitle" style="margin:0;">Weekly Avg & Std Trend</div>
-        <canvas id="c_trend1" height="220"></canvas>
-      </div>
-
-      <div class="box" style="margin-top:10px;">
-        <div class="teamtitle" style="margin:0;">Weekly Elite% Trend</div>
-        <canvas id="c_trend2" height="220"></canvas>
-      </div>
-    </div>
-  </div>
-</div>		
 
 // ---- TEAMS (LOCKED AFTER SUCCESS) ----
 let teamsLockedAfterLoaded = false;
