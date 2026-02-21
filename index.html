@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>KAUST Happy Frisbee hat registration</title>
     <script src="./config.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
     <style>
       .spinner{
@@ -871,7 +872,62 @@ cancelBtn.addEventListener("click", async () => {
     const ok = await copyText(lastPlayersText);
     playersStatus.textContent = ok ? "Copied ✅" : "Copy failed ❌";
   });
-  
+
+<div class="hr"></div>
+
+<div class="box" id="analyticsBox">
+  <div class="headRow">
+    <div class="teamtitle" style="margin:0;">Analytics</div>
+    <div class="badge" id="anaWeekBadge">—</div>
+  </div>
+
+  <div class="inline" style="margin-top:6px;">
+    <button id="loadAnaBtn" class="smallbtn secondary" type="button">Load charts</button>
+    <span id="anaStatus" class="hint" style="margin:0;"></span>
+  </div>
+
+  <!-- Layout: left column (latest week charts), right column (trend charts) -->
+  <div class="row" style="margin-top:10px; grid-template-columns: 1.3fr 1fr;">
+    <div>
+      <div class="box">
+        <div class="teamtitle" style="margin:0;">Latest week</div>
+        <div class="hint" id="latestSummary" style="margin-top:6px;"></div>
+      </div>
+
+      <div class="box" style="margin-top:10px;">
+        <div class="teamtitle" style="margin:0;">Score Distribution</div>
+        <canvas id="c_hist" height="170"></canvas>
+      </div>
+
+      <div class="box" style="margin-top:10px;">
+        <div class="teamtitle" style="margin:0;">Skill Level Distribution</div>
+        <canvas id="c_levels" height="170"></canvas>
+      </div>
+
+      <div class="box" style="margin-top:10px;">
+        <div class="teamtitle" style="margin:0;">Male vs Female Avg</div>
+        <canvas id="c_gender" height="140"></canvas>
+      </div>
+
+      <div class="box" style="margin-top:10px;">
+        <div class="teamtitle" style="margin:0;">Score Percentiles</div>
+        <canvas id="c_percent" height="170"></canvas>
+      </div>
+    </div>
+
+    <div>
+      <div class="box">
+        <div class="teamtitle" style="margin:0;">Weekly Avg & Std Trend</div>
+        <canvas id="c_trend1" height="220"></canvas>
+      </div>
+
+      <div class="box" style="margin-top:10px;">
+        <div class="teamtitle" style="margin:0;">Weekly Elite% Trend</div>
+        <canvas id="c_trend2" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+</div>		
 
 // ---- TEAMS (LOCKED AFTER SUCCESS) ----
 let teamsLockedAfterLoaded = false;
@@ -1020,6 +1076,139 @@ autoTeamsByCutoff();
 // 页面开着等到 15:00：自动切换状态并拉 teams
 setInterval(autoTeamsByCutoff, 45000);
 
+
+
+const loadAnaBtn = document.getElementById("loadAnaBtn");
+const anaStatus = document.getElementById("anaStatus");
+const anaWeekBadge = document.getElementById("anaWeekBadge");
+const latestSummary = document.getElementById("latestSummary");
+
+let CH = {}; // store chart instances
+
+function destroyChart(id){
+  if(CH[id]){ CH[id].destroy(); CH[id]=null; }
+}
+
+function pct(x){ return (x*100).toFixed(1) + "%"; }
+
+loadAnaBtn.addEventListener("click", async ()=>{
+  anaStatus.textContent = "Loading…";
+  try{
+    const data = await safeGetJson(ENDPOINT + "?action=analytics");
+    if(!data || !data.ok) throw new Error((data && data.error) || "analytics failed");
+
+    const wk = data.latestWeek;
+    const st = data.latest;
+    const trend = data.trend || [];
+
+    anaWeekBadge.textContent = wk;
+    latestSummary.textContent =
+      `Players: ${st.n} · Avg: ${st.avg} · Std: ${st.std} · Elite: ${pct(st.eliteFrac)}`;
+
+    // ----- Latest: Histogram (bar) -----
+    destroyChart("hist");
+    CH.hist = new Chart(document.getElementById("c_hist"), {
+      type: "bar",
+      data: {
+        labels: Object.keys(st.bins),
+        datasets: [{ label: "Count", data: Object.values(st.bins) }]
+      },
+      options: {
+        plugins: { legend:{display:false} },
+        scales: { y: { beginAtZero:true } }
+      }
+    });
+
+    // ----- Latest: Skill levels (pie) -----
+    destroyChart("levels");
+    const lvlLabels = ["Beginner","Intermediate","Advanced","Elite"];
+    CH.levels = new Chart(document.getElementById("c_levels"), {
+      type: "pie",
+      data: {
+        labels: lvlLabels,
+        datasets: [{ data: lvlLabels.map(k => st.levels[k] || 0) }]
+      },
+      options: { plugins: { legend:{position:"right"} } }
+    });
+
+    // ----- Latest: Male vs Female avg (bar) -----
+    destroyChart("gender");
+    CH.gender = new Chart(document.getElementById("c_gender"), {
+      type: "bar",
+      data: {
+        labels: ["Male","Female"],
+        datasets: [{
+          label: "Avg",
+          data: [st.maleAvg ?? 0, st.femaleAvg ?? 0]
+        }]
+      },
+      options: {
+        plugins: { legend:{display:false} },
+        scales: { y: { min:0, max:5 } }
+      }
+    });
+
+    // ----- Latest: Percentiles (bar) -----
+    destroyChart("percent");
+    CH.percent = new Chart(document.getElementById("c_percent"), {
+      type: "bar",
+      data: {
+        labels: ["Avg","Std","Balance","Min","P25","Median","P75","Max"],
+        datasets: [{
+          label: "Value",
+          data: [st.avg, st.std, st.balance, st.min, st.p25, st.median, st.p75, st.max]
+        }]
+      },
+      options: {
+        plugins: { legend:{display:false} },
+        scales: { y: { min:0, max:5 } }
+      }
+    });
+
+    // ----- Trend: Avg & Std line -----
+    destroyChart("trend1");
+    const weeks = trend.map(x=>x.week);
+    const avgArr = trend.map(x=>x.avg);
+    const stdArr = trend.map(x=>x.std);
+
+    CH.trend1 = new Chart(document.getElementById("c_trend1"), {
+      type: "line",
+      data: {
+        labels: weeks,
+        datasets: [
+          { label:"Avg", data: avgArr, tension:0.25, pointRadius:4 },
+          { label:"Std", data: stdArr, tension:0.25, pointRadius:4 }
+        ]
+      },
+      options: {
+        plugins: { legend:{position:"right"} },
+        scales: { y: { min:0, max:5 } }
+      }
+    });
+
+    // ----- Trend: Elite% line -----
+    destroyChart("trend2");
+    const eliteArr = trend.map(x=> (x.eliteFrac ?? 0) * 100);
+
+    CH.trend2 = new Chart(document.getElementById("c_trend2"), {
+      type: "line",
+      data: {
+        labels: weeks,
+        datasets: [
+          { label:"Elite%", data: eliteArr, tension:0.25, pointRadius:4 }
+        ]
+      },
+      options: {
+        plugins: { legend:{position:"right"} },
+        scales: { y: { min:0, max:100 } }
+      }
+    });
+
+    anaStatus.textContent = "Updated ✅";
+  }catch(e){
+    anaStatus.textContent = "Failed / slow. Try again.";
+  }
+});		
 </script>
   </body>
   </html>
