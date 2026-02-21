@@ -165,6 +165,13 @@
         font-size:14px;
       }
       .playerMeta{color:#777;font-size:12px;white-space:nowrap}
+
+		/* Analytics charts responsive */
+#analyticsBox canvas{
+  width:100% !important;
+  height:220px !important;   /* 每行一个图，统一高度 */
+  display:block;
+}
     </style>
   </head>
   
@@ -372,63 +379,6 @@
         </div>
   
         <div class="hr"></div>
-
-		<div class="hr"></div>
-
-<div class="box" id="analyticsBox">
-  <div class="headRow">
-    <div class="teamtitle" style="margin:0;">Analytics</div>
-    <div class="badge" id="anaWeekBadge">—</div>
-  </div>
-
-  <div class="inline" style="margin-top:6px;">
-    <button id="loadAnaBtn" class="smallbtn secondary" type="button">Load charts</button>
-    <span id="anaStatus" class="hint" style="margin:0;"></span>
-  </div>
-
-  <!-- Layout: left column (latest week charts), right column (trend charts) -->
-  <div class="row" style="margin-top:10px; grid-template-columns: 1.3fr 1fr;">
-    <div>
-      <div class="box">
-        <div class="teamtitle" style="margin:0;">Latest week</div>
-        <div class="hint" id="latestSummary" style="margin-top:6px;"></div>
-      </div>
-
-      <div class="box" style="margin-top:10px;">
-        <div class="teamtitle" style="margin:0;">Score Distribution</div>
-        <canvas id="c_hist" height="170"></canvas>
-      </div>
-
-      <div class="box" style="margin-top:10px;">
-        <div class="teamtitle" style="margin:0;">Skill Level Distribution</div>
-        <canvas id="c_levels" height="170"></canvas>
-      </div>
-
-      <div class="box" style="margin-top:10px;">
-        <div class="teamtitle" style="margin:0;">Male vs Female Avg</div>
-        <canvas id="c_gender" height="140"></canvas>
-      </div>
-
-      <div class="box" style="margin-top:10px;">
-        <div class="teamtitle" style="margin:0;">Score Percentiles</div>
-        <canvas id="c_percent" height="170"></canvas>
-      </div>
-    </div>
-
-    <div>
-      <div class="box">
-        <div class="teamtitle" style="margin:0;">Weekly Avg & Std Trend</div>
-        <canvas id="c_trend1" height="220"></canvas>
-      </div>
-
-      <div class="box" style="margin-top:10px;">
-        <div class="teamtitle" style="margin:0;">Weekly Elite% Trend</div>
-        <canvas id="c_trend2" height="220"></canvas>
-      </div>
-    </div>
-  </div>
-</div>
-		  
         <!-- Teams -->
         <div id="teamsSection">
           <div class="teamtitle">Teams (auto after cutoff)</div>
@@ -440,10 +390,64 @@
           <div id="teamsStatus" class="status"></div>
           <div id="teamsOutput"></div>
         </div>
-  
+        <div class="hr"></div>
+
+<details id="analyticsDetails">
+  <summary><b>Analytics</b> (latest week + trends)</summary>
+
+  <div class="box" id="analyticsBox">
+    <div class="headRow">
+      <div class="teamtitle" style="margin:0;">Analytics</div>
+      <div class="badge" id="anaWeekBadge">—</div>
+    </div>
+
+    <div class="hint" id="anaStatus" style="margin-top:6px;"></div>
+
+    <!-- Latest week summary -->
+    <div class="box" style="margin-top:10px;">
+      <div class="teamtitle" style="margin:0;">Latest week</div>
+      <div class="hint" id="latestSummary" style="margin-top:6px;"></div>
+    </div>
+
+    <!-- 4 latest-week charts: one per row -->
+    <div class="box" style="margin-top:10px;">
+      <div class="teamtitle" style="margin:0;">Score Distribution</div>
+      <canvas id="c_hist"></canvas>
+    </div>
+
+    <div class="box" style="margin-top:10px;">
+      <div class="teamtitle" style="margin:0;">Skill Level Distribution</div>
+      <canvas id="c_levels"></canvas>
+    </div>
+
+    <div class="box" style="margin-top:10px;">
+      <div class="teamtitle" style="margin:0;">Male vs Female Avg</div>
+      <canvas id="c_gender"></canvas>
+    </div>
+
+    <div class="box" style="margin-top:10px;">
+      <div class="teamtitle" style="margin:0;">Score Percentiles</div>
+      <canvas id="c_percent"></canvas>
+    </div>
+
+    <!-- 2 trend charts -->
+    <div class="box" style="margin-top:10px;">
+      <div class="teamtitle" style="margin:0;">Weekly Avg & Std Trend</div>
+      <canvas id="c_trend1"></canvas>
+    </div>
+
+    <div class="box" style="margin-top:10px;">
+      <div class="teamtitle" style="margin:0;">Weekly Elite% Trend</div>
+      <canvas id="c_trend2"></canvas>
+    </div>
+  </div>
+</details>
+		  
         <div class="footer">Keep your <code>RegID</code>. Duplicate signups update your info (no extra row).</div>
       </div>
     </div>
+
+	  
   
     <script>
       const CFG = window.SIGNUP_CONFIG;
@@ -1080,12 +1084,15 @@ setInterval(autoTeamsByCutoff, 45000);
 
 
 
-const loadAnaBtn = document.getElementById("loadAnaBtn");
+// ===== Analytics (auto-load on expand) =====
+const analyticsDetails = document.getElementById("analyticsDetails");
 const anaStatus = document.getElementById("anaStatus");
 const anaWeekBadge = document.getElementById("anaWeekBadge");
 const latestSummary = document.getElementById("latestSummary");
 
-let CH = {}; // store chart instances
+let CH = {}; // chart instances
+let analyticsLoadedOnce = false;
+let analyticsLoading = false;
 
 function destroyChart(id){
   if(CH[id]){ CH[id].destroy(); CH[id]=null; }
@@ -1093,7 +1100,10 @@ function destroyChart(id){
 
 function pct(x){ return (x*100).toFixed(1) + "%"; }
 
-loadAnaBtn.addEventListener("click", async ()=>{
+async function loadAnalytics(){
+  if(analyticsLoading) return;
+  analyticsLoading = true;
+
   anaStatus.textContent = "Loading…";
   try{
     const data = await safeGetJson(ENDPOINT + "?action=analytics");
@@ -1116,6 +1126,8 @@ loadAnaBtn.addEventListener("click", async ()=>{
         datasets: [{ label: "Count", data: Object.values(st.bins) }]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend:{display:false} },
         scales: { y: { beginAtZero:true } }
       }
@@ -1130,7 +1142,11 @@ loadAnaBtn.addEventListener("click", async ()=>{
         labels: lvlLabels,
         datasets: [{ data: lvlLabels.map(k => st.levels[k] || 0) }]
       },
-      options: { plugins: { legend:{position:"right"} } }
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend:{position:"right"} }
+      }
     });
 
     // ----- Latest: Male vs Female avg (bar) -----
@@ -1139,12 +1155,11 @@ loadAnaBtn.addEventListener("click", async ()=>{
       type: "bar",
       data: {
         labels: ["Male","Female"],
-        datasets: [{
-          label: "Avg",
-          data: [st.maleAvg ?? 0, st.femaleAvg ?? 0]
-        }]
+        datasets: [{ label: "Avg", data: [st.maleAvg ?? 0, st.femaleAvg ?? 0] }]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend:{display:false} },
         scales: { y: { min:0, max:5 } }
       }
@@ -1162,12 +1177,14 @@ loadAnaBtn.addEventListener("click", async ()=>{
         }]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend:{display:false} },
         scales: { y: { min:0, max:5 } }
       }
     });
 
-    // ----- Trend: Avg & Std line -----
+    // ----- Trend: Avg & Std (line) -----
     destroyChart("trend1");
     const weeks = trend.map(x=>x.week);
     const avgArr = trend.map(x=>x.avg);
@@ -1183,12 +1200,14 @@ loadAnaBtn.addEventListener("click", async ()=>{
         ]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend:{position:"right"} },
         scales: { y: { min:0, max:5 } }
       }
     });
 
-    // ----- Trend: Elite% line -----
+    // ----- Trend: Elite% (line) -----
     destroyChart("trend2");
     const eliteArr = trend.map(x=> (x.eliteFrac ?? 0) * 100);
 
@@ -1196,21 +1215,34 @@ loadAnaBtn.addEventListener("click", async ()=>{
       type: "line",
       data: {
         labels: weeks,
-        datasets: [
-          { label:"Elite%", data: eliteArr, tension:0.25, pointRadius:4 }
-        ]
+        datasets: [{ label:"Elite%", data: eliteArr, tension:0.25, pointRadius:4 }]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend:{position:"right"} },
         scales: { y: { min:0, max:100 } }
       }
     });
 
     anaStatus.textContent = "Updated ✅";
+    analyticsLoadedOnce = true;
+
   }catch(e){
-    anaStatus.textContent = "Failed / slow. Try again.";
+    anaStatus.textContent = "Failed / slow. Close and open again.";
+  } finally {
+    analyticsLoading = false;
   }
-});		
+}
+
+// Auto-load when user expands the details (default collapsed)
+analyticsDetails.addEventListener("toggle", () => {
+  if(analyticsDetails.open && !analyticsLoadedOnce){
+    loadAnalytics();
+  }
+});
+loadAnalytics();   // 预加载：页面打开就拉数据，但 analytics 仍保持折叠
+		
 </script>
   </body>
   </html>
