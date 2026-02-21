@@ -343,17 +343,17 @@
   </div>
 
   <!-- Practice duration -->
-  <div>
-    <label for="pd">Practice duration</label>
-    <select id="pd">
-      <option value="" selected>Prefer not to say</option>
-      <option value="< 3 months">&lt; 3 months</option>
-      <option value="3–12 months">3–12 months</option>
-      <option value="1–3 years">1–3 years</option>
-      <option value="> 3 years">&gt; 3 years</option>
-    </select>
-  </div>
-
+<!-- Practice duration -->
+<div>
+  <label for="pd">Practice duration *</label>
+  <select id="pd" required>
+    <option value="" selected disabled>Select</option>
+    <option value="< 3 months">&lt; 3 months</option>
+    <option value="3–12 months">3–12 months</option>
+    <option value="1–3 years">1–3 years</option>
+    <option value="> 3 years">&gt; 3 years</option>
+  </select>
+</div>
 </div>
 <!-- 两列结束 -->
 
@@ -778,7 +778,8 @@ function timeLeftText(cutoffIso){
   			!payload.catch ||
   			!payload.fitness ||
   			!payload.experience ||
-  			!payload.preference
+  			!payload.preference ||
+        	!payload.practice
 		){
           statusEl.textContent = "Please complete all required fields.";
           statusEl.classList.add("badText");
