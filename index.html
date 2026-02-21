@@ -167,11 +167,16 @@
       .playerMeta{color:#777;font-size:12px;white-space:nowrap}
 
 		/* Analytics charts responsive */
+/* Mobile-friendly chart heights */
 #analyticsBox canvas{
   width:100% !important;
-  height:220px !important;   /* 每行一个图，统一高度 */
   display:block;
 }
+
+#c_hist, #c_percent { height:220px !important; }
+#c_levels { height:260px !important; }   /* 饼图高一点 */
+#c_gender { height:200px !important; }
+#c_trend1, #c_trend2 { height:240px !important; }
     </style>
   </head>
   
@@ -1125,12 +1130,12 @@ async function loadAnalytics(){
         labels: Object.keys(st.bins),
         datasets: [{ label: "Count", data: Object.values(st.bins) }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend:{display:false} },
-        scales: { y: { beginAtZero:true } }
-      }
+      options:{
+  responsive:true,
+  maintainAspectRatio:false,
+  plugins:{ legend:{display:false} },
+  scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 } } }
+}
     });
 
     // ----- Latest: Skill levels (pie) -----
@@ -1142,47 +1147,31 @@ async function loadAnalytics(){
         labels: lvlLabels,
         datasets: [{ data: lvlLabels.map(k => st.levels[k] || 0) }]
       },
-      options: {
-  		responsive: true,
-  		maintainAspectRatio: false,
-  		plugins: {
-    		legend: {
-      		position: "right",
-      		labels: {
-        		// legend 显示：Beginner 17.6%
-        		generateLabels(chart) {
-          		const data = chart.data;
-          		const ds = data.datasets[0];
-          		const total = ds.data.reduce((a,b)=>a+b,0) || 1;
-          		return data.labels.map((label, i) => {
-            		const v = ds.data[i] || 0;
-            		const p = (v / total) * 100;
-            		return {
-              		text: `${label} ${p.toFixed(1)}%`,
-              		fillStyle: ds.backgroundColor?.[i],
-              		strokeStyle: ds.borderColor?.[i],
-              		lineWidth: ds.borderWidth,
-              		hidden: !chart.getDataVisibility(i),
-              		index: i
-            		};
-          		});
-        		}
-      		}
-    		},
-    		tooltip: {
-      		callbacks: {
-        		// tooltip 显示：Beginner: 17.6% (3)
-        		label(ctx) {
-          		const ds = ctx.dataset;
-          		const total = ds.data.reduce((a,b)=>a+b,0) || 1;
-          		const v = ctx.parsed;
-          		const p = (v / total) * 100;
-         		 return `${ctx.label}: ${p.toFixed(1)}% (${v})`;
-        		}
-      		}
-    		}
-  		}
-		}
+options: {
+  responsive:true,
+  maintainAspectRatio:false,
+  plugins:{
+    legend:{
+      position:"bottom",
+      labels:{
+        boxWidth:10,
+        padding:10,
+        font:{ size:12 }
+      }
+    },
+    tooltip:{
+      callbacks:{
+        label(ctx){
+          const ds = ctx.dataset;
+          const total = ds.data.reduce((a,b)=>a+b,0) || 1;
+          const v = ctx.parsed;
+          const p = (v/total)*100;
+          return `${ctx.label}: ${p.toFixed(1)}% (${v})`;
+        }
+      }
+    }
+  }
+}
     });
 
     // ----- Latest: Male vs Female avg (bar) -----
@@ -1212,12 +1201,15 @@ async function loadAnalytics(){
           data: [st.avg, st.std, st.balance, st.min, st.p25, st.median, st.p75, st.max]
         }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend:{display:false} },
-        scales: { y: { min:0, max:5 } }
-      }
+      options:{
+  responsive:true,
+  maintainAspectRatio:false,
+  plugins:{ legend:{display:false} },
+  scales:{
+    x:{ ticks:{ maxRotation:0, minRotation:0, autoSkip:false, font:{ size:11 } } },
+    y:{ min:0, max:5, ticks:{ stepSize:1 } }
+  }
+}
     });
 
     // ----- Trend: Avg & Std (line) -----
@@ -1236,11 +1228,25 @@ async function loadAnalytics(){
         ]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend:{position:"right"} },
-        scales: { y: { min:0, max:5 } }
+  responsive:true,
+  maintainAspectRatio:false,
+  plugins:{
+    legend:{
+      position:"top",
+      align:"start",
+      labels:{
+        usePointStyle:true,
+        boxWidth:10,
+        padding:12
       }
+    }
+  },
+  elements:{ point:{ radius:4 }, line:{ borderWidth:2 } },
+  scales:{
+    x:{ ticks:{ maxRotation:0, autoSkip:true } },
+    y:{ min:0, max:5, ticks:{ stepSize:1 } }
+  }
+}
     });
 
     // ----- Trend: Elite% (line) -----
@@ -1254,11 +1260,24 @@ async function loadAnalytics(){
         datasets: [{ label:"Elite%", data: eliteArr, tension:0.25, pointRadius:4 }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend:{position:"right"} },
-        scales: { y: { min:0, max:100 } }
-      }
+  responsive:true,
+  maintainAspectRatio:false,
+  plugins:{
+    legend:{
+      position:"top",
+      align:"start",
+      labels:{ usePointStyle:true, boxWidth:10, padding:12 }
+    }
+  },
+  elements:{ point:{ radius:4 }, line:{ borderWidth:2 } },
+  scales:{
+    x:{ ticks:{ maxRotation:0, autoSkip:true } },
+    y:{
+      min:0, max:100,
+      ticks:{ callback:(v)=>v+"%" }
+    }
+  }
+}
     });
 
     anaStatus.textContent = "Updated ✅";
