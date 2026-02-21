@@ -213,10 +213,16 @@
 
 <div class="row">
 
-  <!-- Name -->
+<!-- Full Name -->
   <div>
-    <label for="name">Name / Nick *</label>
-    <input id="name" required placeholder="e.g., Maojin" />
+    <label for="name">Full Name (First + Last) *</label>
+    <input
+      id="name"
+      required
+      placeholder="e.g., Maojin Gong"
+      autocomplete="name"
+    />
+    <small>Please enter your full name to avoid duplicates.</small>
   </div>
 
   <!-- Gender -->
