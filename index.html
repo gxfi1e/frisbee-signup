@@ -1158,11 +1158,46 @@ async function loadAnalytics(){
         datasets: [{ label: "Avg", data: [st.maleAvg ?? 0, st.femaleAvg ?? 0] }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend:{display:false} },
-        scales: { y: { min:0, max:5 } }
-      }
+  		responsive: true,
+  		maintainAspectRatio: false,
+  		plugins: {
+    		legend: {
+      		position: "right",
+      		labels: {
+        		// legend 显示：Beginner 17.6%
+        		generateLabels(chart) {
+          		const data = chart.data;
+          		const ds = data.datasets[0];
+          		const total = ds.data.reduce((a,b)=>a+b,0) || 1;
+          		return data.labels.map((label, i) => {
+            		const v = ds.data[i] || 0;
+            		const p = (v / total) * 100;
+            		return {
+              		text: `${label} ${p.toFixed(1)}%`,
+              		fillStyle: ds.backgroundColor?.[i],
+              		strokeStyle: ds.borderColor?.[i],
+              		lineWidth: ds.borderWidth,
+              		hidden: !chart.getDataVisibility(i),
+              		index: i
+            		};
+          		});
+        		}
+      		}
+    		},
+    		tooltip: {
+      		callbacks: {
+        		// tooltip 显示：Beginner: 17.6% (3)
+        		label(ctx) {
+          		const ds = ctx.dataset;
+          		const total = ds.data.reduce((a,b)=>a+b,0) || 1;
+          		const v = ctx.parsed;
+          		const p = (v / total) * 100;
+         		 return `${ctx.label}: ${p.toFixed(1)}% (${v})`;
+        		}
+      		}
+    		}
+  		}
+		}
     });
 
     // ----- Latest: Percentiles (bar) -----
