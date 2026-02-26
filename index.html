@@ -350,6 +350,11 @@
       #scrollHint{ bottom: 10px; font-size: 12px; }
       #scrollHint button{ padding: 7px 10px; font-size: 12px; }
     }
+    /* Hide empty "Updated" pill placeholder */
+#playersStatus:empty { display: none; }
+
+/* When it has text, keep it as a pill */
+#playersStatus { display: inline-block; }
   </style>
 </head>
 
