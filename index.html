@@ -246,6 +246,52 @@ label{
   label{ margin:8px 0 6px; }
   .hint{ margin:6px 0 6px; padding:6px 10px; font-size:12px; }
 }
+		/* Floating scroll hint */
+#scrollHint{
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 14px;
+  z-index: 9998;
+
+  display: none;                 /* 默认隐藏，JS 控制显示 */
+  align-items: center;
+  gap: 10px;
+
+  max-width: 680px;              /* 跟 .wrap 对齐 */
+  width: calc(100% - 32px);
+
+  background: rgba(17,17,17,0.92);
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 999px;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+#scrollHint button{
+  width: auto;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  background: #fff;
+  color: #111;
+}
+
+#scrollHint .hintText{
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@media (max-width:520px){
+  #scrollHint{ bottom: 10px; font-size: 12px; }
+  #scrollHint button{ padding: 7px 10px; font-size: 12px; }
+}
 		
     </style>
   </head>
@@ -447,6 +493,7 @@ label{
   </div>
 
 </form>
+		<div id="belowSections"></div>
 
 
   
@@ -1402,7 +1449,56 @@ analyticsDetails.addEventListener("toggle", () => {
   }
 });
 loadAnalytics();   // 预加载：页面打开就拉数据，但 analytics 仍保持折叠
+		// ---- Floating "more below" hint ----
+const scrollHint = document.getElementById("scrollHint");
+const scrollHintBtn = document.getElementById("scrollHintBtn");
+const belowSections = document.getElementById("belowSections");
+
+function isNearBottom(){
+  const scrollY = window.scrollY || document.documentElement.scrollTop;
+  const vh = window.innerHeight;
+  const docH = document.documentElement.scrollHeight;
+  return (scrollY + vh) >= (docH - 120);
+}
+
+function isBelowAnchorVisible(){
+  if(!belowSections) return false;
+  const r = belowSections.getBoundingClientRect();
+  return r.top < window.innerHeight - 80; // 锚点进入视窗就算“看到了下面”
+}
+
+function updateScrollHint(){
+  // 条件：页面可以滚动 且 还没滚到下面区域
+  const canScroll = document.documentElement.scrollHeight > window.innerHeight + 80;
+  if(!canScroll) { scrollHint.style.display = "none"; return; }
+
+  if(isBelowAnchorVisible() || isNearBottom()){
+    scrollHint.style.display = "none";
+  }else{
+    scrollHint.style.display = "flex";
+  }
+}
+
+function scrollToBelow(){
+  if(!belowSections) return;
+  belowSections.scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
+// 点击条或按钮都滚动
+scrollHintBtn.addEventListener("click", scrollToBelow);
+scrollHint.addEventListener("click", (e) => {
+  if(e.target === scrollHintBtn) return;
+  scrollToBelow();
+});
+
+window.addEventListener("scroll", updateScrollHint, { passive:true });
+window.addEventListener("resize", updateScrollHint);
+setTimeout(updateScrollHint, 300);
 		
 </script>
+	  <div id="scrollHint" role="button" aria-label="Scroll to sections below">
+  <div class="hintText">↓ More below: Cancel · Registered players · Teams · Analytics</div>
+  <button type="button" id="scrollHintBtn">Go</button>
+</div>
   </body>
   </html>
