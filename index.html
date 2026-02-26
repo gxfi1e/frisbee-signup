@@ -274,7 +274,18 @@
       font-size: 13px;
       line-height: 1.2;
     }
-
+    /* ✅ Mobile: move "More below" to right side (like screenshot) */
+@media (max-width:520px){
+  #scrollHint{
+    left: auto;
+    right: 10px;
+    bottom: auto;
+    top: 62%;                  /* 位置可微调：55%~70% 都行 */
+    transform: translateY(-50%);/* 覆盖原来的 translateX(-50%) */
+    width: 230px;              /* 侧边占用宽度，避免挡内容；可调 180~260 */
+    max-width: calc(100% - 20px);
+  }
+}
     #scrollHint button{
       width: auto;
       margin: 0;
