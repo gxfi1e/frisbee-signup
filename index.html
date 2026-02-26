@@ -291,6 +291,43 @@
     max-width: calc(100% - 20px);
   }
 }
+
+    /* ===== ScrollHint: mobile vertical tab (no blocking) ===== */
+.desktopOnly{ display:block; }
+.mobileOnly{ display:none; }
+
+@media (max-width:520px){
+  .desktopOnly{ display:none; }
+  .mobileOnly{ display:block; }
+
+  /* 竖条：贴右侧，半出屏幕外，几乎不挡内容 */
+  #scrollHint{
+    left:auto;
+    right:-10px;                 /* 关键：往外推，让内容区不被遮挡 */
+    top:60%;
+    bottom:auto;
+    transform: translateY(-50%);
+    width:34px;                  /* 竖条宽度 */
+    height:140px;                /* 竖条高度 */
+    padding:10px 6px;
+    border-radius:999px;
+    flex-direction:column;
+    justify-content:center;
+    gap:0;
+  }
+
+  /* 竖排文字 */
+  #scrollHint .hintText{
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);   /* 让阅读方向更自然 */
+    white-space: nowrap;
+    overflow: visible;
+  }
+
+  /* 手机端不需要 Go 按钮（竖条本身可点） */
+  #scrollHint button{ display:none; }
+}
     
     #scrollHint button{
       width: auto;
@@ -625,10 +662,14 @@
     </div>
   </div>
 
-  <div id="scrollHint" role="button" aria-label="Scroll to sections below">
-    <div class="hintText">↓ More below: Cancel · Registered players · Teams · Analytics</div>
-    <button type="button" id="scrollHintBtn">Go</button>
+<div id="scrollHint" role="button" aria-label="Scroll to sections below">
+  <div class="hintText">
+    <span class="desktopOnly">↓ More below: Cancel · Registered players · Teams · Analytics</span>
+    <span class="mobileOnly">More below</span>
   </div>
+  <button type="button" id="scrollHintBtn">Go</button>
+</div>
+  
   <!-- ===================== PART 2 / 2 ===================== -->
   <script>
     const CFG = window.SIGNUP_CONFIG;
