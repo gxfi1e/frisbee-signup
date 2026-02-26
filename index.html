@@ -274,18 +274,24 @@
       font-size: 13px;
       line-height: 1.2;
     }
-    /* ✅ Mobile: move "More below" to right side (like screenshot) */
-@media (max-width:520px){
+    @media (max-width:520px){
   #scrollHint{
-    left: auto;
-    right: 10px;
-    bottom: auto;
-    top: 62%;                  /* 位置可微调：55%~70% 都行 */
-    transform: translateY(-50%);/* 覆盖原来的 translateX(-50%) */
-    width: 230px;              /* 侧边占用宽度，避免挡内容；可调 180~260 */
+    left:auto;
+    right:10px;
+
+    /* ✅ 默认靠右下，不去中间 */
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    top:auto;
+
+    /* ✅ 取消原先 translateX(-50%) 的居中逻辑 */
+    transform:none;
+
+    /* ✅ 宽度控制，不压太多内容 */
+    width: 240px;
     max-width: calc(100% - 20px);
   }
 }
+    
     #scrollHint button{
       width: auto;
       margin: 0;
@@ -1476,20 +1482,68 @@
       const r = belowSections.getBoundingClientRect();
       return r.top < window.innerHeight - 80; // 锚点进入视窗就算“看到了下面”
     }
+    let hintSuppressed = false;
 
-    function updateScrollHint(){
-      if(!scrollHint) return;
+function adjustHintForSubmit(){
+  if(!scrollHint || !btn) return;
 
-      // 条件：页面可以滚动 且 还没滚到下面区域
-      const canScroll = document.documentElement.scrollHeight > window.innerHeight + 80;
-      if(!canScroll) { scrollHint.style.display = "none"; return; }
+  // 只在手机端做动态避让
+  if(window.innerWidth > 520){
+    scrollHint.style.bottom = "";
+    return;
+  }
 
-      if(isBelowAnchorVisible() || isNearBottom()){
-        scrollHint.style.display = "none";
-      }else{
-        scrollHint.style.display = "flex";
-      }
-    }
+  const br = btn.getBoundingClientRect();
+
+  // Submit 在视口内：把提示条顶到 Submit 上方
+  const submitVisible = br.top < window.innerHeight && br.bottom > 0;
+  if(submitVisible){
+    // 让 scrollHint 的底部 = Submit 的顶部 - 12px
+    // bottom(px) = window.innerHeight - (br.top - 12)
+    const desiredBottom = Math.max(10, Math.round(window.innerHeight - br.top + 12));
+    // 不要顶太高，最多到屏幕高度的 55%
+    const cap = Math.round(window.innerHeight * 0.55);
+    scrollHint.style.bottom = Math.min(desiredBottom, cap) + "px";
+  }else{
+    // 不需要避让时交给 CSS 默认 bottom
+    scrollHint.style.bottom = "";
+  }
+}
+
+// ✅ 用户正在填表/点下拉框时隐藏，避免挡操作
+document.addEventListener("focusin", (e)=>{
+  if(form && form.contains(e.target)){
+    hintSuppressed = true;
+    if(scrollHint) scrollHint.style.display = "none";
+  }
+});
+document.addEventListener("focusout", (e)=>{
+  if(form && form.contains(e.target)){
+    hintSuppressed = false;
+    setTimeout(updateScrollHint, 150);
+  }
+});
+    
+function updateScrollHint(){
+  if(!scrollHint) return;
+
+  // ✅ 填表中就别显示
+  if(hintSuppressed){
+    scrollHint.style.display = "none";
+    return;
+  }
+
+  const canScroll = document.documentElement.scrollHeight > window.innerHeight + 80;
+  if(!canScroll) { scrollHint.style.display = "none"; return; }
+
+  if(isBelowAnchorVisible() || isNearBottom()){
+    scrollHint.style.display = "none";
+  }else{
+    scrollHint.style.display = "flex";
+    // ✅ 显示后再做避让（确保能拿到真实高度）
+    requestAnimationFrame(adjustHintForSubmit);
+  }
+}
 
     function scrollToBelow(){
       if(!belowSections) return;
