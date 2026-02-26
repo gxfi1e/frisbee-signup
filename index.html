@@ -1,301 +1,306 @@
-  <!doctype html>
-  <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>KAUST Happy Frisbee hat registration</title>
-    <script src="./config.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
-    <style>
-      .spinner{
-        width:36px;height:36px;margin:auto;border-radius:50%;
-        border:4px solid #ddd;border-top-color:#111;
-        animation: spin 1s linear infinite;
+<!-- ===================== PART 1 / 2 ===================== -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KAUST Happy Frisbee hat registration</title>
+  <script src="./config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    .spinner{
+      width:36px;height:36px;margin:auto;border-radius:50%;
+      border:4px solid #ddd;border-top-color:#111;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin{ to{ transform: rotate(360deg); } }
+
+    body{
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:#f6f7fb;margin:0;padding:24px;color:#111
+    }
+    .wrap{max-width:680px;margin:0 auto}
+    .card{
+      background:#fff;border-radius:16px;padding:18px;
+      box-shadow:0 10px 30px rgba(0,0,0,.08)
+    }
+    h1{
+      text-align:center;
+      margin:0 0 10px;
+      font-size:22px;
+    }
+
+    /* Pills: 1 line + swipe scroll */
+    .bar{
+      display:flex;
+      gap:6px;
+      align-items:center;
+      justify-content:center;
+      width:fit-content;
+      margin:6px auto;
+      overflow-x:auto;
+      flex-wrap:nowrap;
+      -webkit-overflow-scrolling: touch;
+    }
+    .bar::-webkit-scrollbar{ display:none; }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:12px;
+      background:#eee;
+      white-space:nowrap;
+      flex:0 0 auto;
+    }
+    .pill.ok{background:#e7f7ec}
+    .pill.bad{background:#fdecec}
+
+    /* Timezone line (right aligned) */
+    .metaRight{
+      margin:0 0 10px;
+      color:#777;
+      font-size:12px;
+      text-align:right;
+    }
+
+    /* Boxes */
+    .box{
+      background:#fafafa;
+      border:1px solid #eee;
+      border-radius:14px;
+      padding:10px 12px;
+      margin-top:10px;
+    }
+
+    /* Game info (compact) */
+    .gameLine1{
+      font-weight:800;
+      font-size:13px;
+      line-height:1.25;
+      margin:0 0 4px;
+    }
+    .gameLine2{
+      font-size:12px;
+      color:#666;
+      line-height:1.25;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+    }
+    .gameLine2 span{ white-space:nowrap; }
+    a{color:inherit}
+
+    /* Form */
+    label{display:block;font-weight:600;margin:14px 0 8px}
+    input,select{
+      width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;
+      font-size:16px;box-sizing:border-box;background:#fff
+    }
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .hint{
+      margin: 5px 0 12px;
+      padding: 8px 10px;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      background: #fafafa;
+      color: #555;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    /* Mobile tighten spacing (override) */
+    @media (max-width: 520px){
+      label{
+        margin:12px 0 7px;      /* 原 14px 0 8px */
+        font-size:15px;
       }
-      @keyframes spin{ to{ transform: rotate(360deg); } }
-  
-      body{
-        font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-        background:#f6f7fb;margin:0;padding:24px;color:#111
-      }
-      .wrap{max-width:680px;margin:0 auto}
-      .card{
-        background:#fff;border-radius:16px;padding:18px;
-        box-shadow:0 10px 30px rgba(0,0,0,.08)
-      }
-      h1{
-        text-align:center;
-        margin:0 0 10px;
-        font-size:22px;
-      }
-  
-      /* Pills: 1 line + swipe scroll */
-      .bar{
-        display:flex;
-        gap:6px;
-        align-items:center;
-        justify-content:center;
-        width:fit-content;
-        margin:6px auto;
-        overflow-x:auto;
-        flex-wrap:nowrap;
-        -webkit-overflow-scrolling: touch;
-      }
-      .bar::-webkit-scrollbar{ display:none; }
-  
-      .pill{
-        display:inline-flex;
-        align-items:center;
-        padding:4px 8px;
-        border-radius:999px;
-        font-size:12px;
-        background:#eee;
-        white-space:nowrap;
-        flex:0 0 auto;
-      }
-      .pill.ok{background:#e7f7ec}
-      .pill.bad{background:#fdecec}
-  
-      /* Timezone line (right aligned) */
-      .metaRight{
-        margin:0 0 10px;
-        color:#777;
-        font-size:12px;
-        text-align:right;
-      }
-  
-      /* Boxes */
-      .box{
-        background:#fafafa;
-        border:1px solid #eee;
-        border-radius:14px;
-        padding:10px 12px;
-        margin-top:10px;
-      }
-  
-      /* Game info (compact) */
-      .gameLine1{
-        font-weight:800;
-        font-size:13px;
-        line-height:1.25;
-        margin:0 0 4px;
-      }
-      .gameLine2{
-        font-size:12px;
-        color:#666;
-        line-height:1.25;
-        display:flex;
-        flex-wrap:wrap;
-        gap:10px;
-        align-items:center;
-      }
-      .gameLine2 span{ white-space:nowrap; }
-      a{color:inherit}
-  
-      /* Form */
-      label{display:block;font-weight:600;margin:14px 0 8px}
       input,select{
-        width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;
-        font-size:16px;box-sizing:border-box;background:#fff
+        padding:11px;          /* 原 12px */
+        font-size:15px;        /* 保持 16 防止 iOS 自动放大 */
       }
-      .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+      .row{
+        gap:10px;              /* 原 12px */
+      }
       .hint{
-  margin: 5px 0 12px;
-  padding: 8px 10px;
-  border: 1px solid #eee;
-  border-radius: 12px;
-  background: #fafafa;
-  color: #555;
-  font-size: 11px;
-  line-height: 1.35;
-}
-
-	 /* Mobile tighten spacing (override) */
-@media (max-width: 520px){
-  label{
-    margin:12px 0 7px;      /* 原 14px 0 8px */
-    font-size:15px;
-  }
-  input,select{
-    padding:11px;          /* 原 12px */
-    font-size:15px;        /* 保持 16 防止 iOS 自动放大 */
-  }
-  .row{
-    gap:10px;              /* 原 12px */
-  }
-  .hint{
-    margin-top:5px;        /* 原 6px */
-    font-size:13px;
-  }
-  }
-      /* Buttons */
-      button{
- 		 width:100%;
-		  margin-top:16px;
- 		 padding:14px 16px;
-  		border:0;
-		  border-radius:14px;
- 		 font-size:16px;
-		  font-weight:700;
-  		cursor:pointer;
-		  background:#111;
- 		 color:#fff;
-		}
-
-      button.secondary{background:#444}
-      button:disabled{opacity:.55;cursor:not-allowed}
-  
-      .status{margin-top:12px;font-size:14px}
-      .okText{color:#0a7a2f}
-      .badText{color:#b00020}
-  
-      .hr{height:1px;background:#eee;margin:18px 0}
-      details{margin-top:6px}
-      .footer{margin-top:14px;font-size:12px;color:#777;text-align:center}
-      code{background:#f3f3f3;padding:2px 6px;border-radius:6px}
-  
-      .inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-      .smallbtn{width:auto;padding:8px 12px;margin-top:0;border-radius:999px;font-size:13px}
-  
-      .teamtitle{font-weight:900;margin:0 0 6px;font-size:16px}
-      .list{margin:0;padding-left:18px}
-  
-      /* Registered players */
-      .headRow{
-        display:flex;align-items:center;justify-content:space-between;gap:10px;
-        margin-bottom:6px;
+        margin-top:5px;        /* 原 6px */
+        font-size:13px;
       }
-      .badge{
-        background:#eee;border-radius:999px;padding:6px 10px;font-size:13px;white-space:nowrap;
-      }
-      .statsRow{
-        color:#666;font-size:13px;display:flex;flex-wrap:wrap;gap:16px;
-        margin-bottom:10px;
-      }
-      .playersArea{
-        margin-top:8px;
-        max-height:320px;
-        overflow:auto;
-        padding-right:6px;
-      }
-      .playersArea::-webkit-scrollbar{ width:8px; }
-      .playersArea::-webkit-scrollbar-thumb{ background:#ddd;border-radius:8px; }
-  
-      .playerLine{
-        display:flex;justify-content:space-between;gap:10px;
-        padding:8px 10px;
-        border:1px solid #eee;
-        border-radius:12px;
-        background:#fff;
-        margin-bottom:8px;
-        font-size:14px;
-      }
-      .playerMeta{color:#777;font-size:12px;white-space:nowrap}
-      .footer{
-  margin-top:14px;
-  font-size:12px;
-  color:#666;
-  text-align:center;
-  background:#fafafa;
-  border:1px solid #eee;
-  padding:10px 12px;
-  border-radius:12px;
-      }
-		/* Analytics charts responsive */
-/* Mobile-friendly chart heights */
-#analyticsBox canvas{
-  width:100% !important;
-  display:block;
-}
+    }
 
-#c_hist, #c_percent { height:220px !important; }
-#c_levels { height:260px !important; }   /* 饼图高一点 */
-#c_gender { height:200px !important; }
-#c_trend1, #c_trend2 { height:240px !important; }
+    /* Buttons */
+    button{
+      width:100%;
+      margin-top:16px;
+      padding:14px 16px;
+      border:0;
+      border-radius:14px;
+      font-size:16px;
+      font-weight:700;
+      cursor:pointer;
+      background:#111;
+      color:#fff;
+    }
 
-		/* --- tighter spacing (desktop + mobile) --- */
+    button.secondary{background:#444}
+    button:disabled{opacity:.55;cursor:not-allowed}
 
-/* 1) 全局把段落默认 margin 清掉，避免 hint 额外撑高 */
-p{ margin:0; }
+    .status{margin-top:12px;font-size:14px}
+    .okText{color:#0a7a2f}
+    .badText{color:#b00020}
 
-/* 2) 缩小 label 上下间距（最关键） */
-label{
-  margin:10px 0 6px;   /* 原来 14px 0 8px */
-}
+    .hr{height:1px;background:#eee;margin:18px 0}
+    details{margin-top:6px}
+    .footer{margin-top:14px;font-size:12px;color:#777;text-align:center}
+    code{background:#f3f3f3;padding:2px 6px;border-radius:6px}
 
-/* 3) grid 间距略缩 */
-.row{
-  gap:10px;            /* 原来 12px */
-}
+    .inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .smallbtn{width:auto;padding:8px 12px;margin-top:0;border-radius:999px;font-size:13px}
 
-/* 4) hint 再紧一点 */
-.hint{
-  margin:6px 0 6px;    /* 原来 5px 0 12px */
-  padding:6px 10px;    /* 原来 8px 10px */
-  font-size:12px;      /* 你现在桌面 11px，手机 13px，有点反着了 */
-}
+    .teamtitle{font-weight:900;margin:0 0 6px;font-size:16px}
+    .list{margin:0;padding-left:18px}
 
-/* 5) 可选：让第二个 row（Throwing 开始那组）不要离 hint 太远 */
-.hint + .row{
-  margin-top:4px;      /* 没有也行，有的话更紧凑 */
-}
+    /* Registered players */
+    .headRow{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      margin-bottom:6px;
+    }
+    .badge{
+      background:#eee;border-radius:999px;padding:6px 10px;font-size:13px;white-space:nowrap;
+    }
+    .statsRow{
+      color:#666;font-size:13px;display:flex;flex-wrap:wrap;gap:16px;
+      margin-bottom:10px;
+    }
+    .playersArea{
+      margin-top:8px;
+      max-height:320px;
+      overflow:auto;
+      padding-right:6px;
+    }
+    .playersArea::-webkit-scrollbar{ width:8px; }
+    .playersArea::-webkit-scrollbar-thumb{ background:#ddd;border-radius:8px; }
 
-/* 6) 手机端再微调（可选） */
-@media (max-width: 520px){
-  label{ margin:8px 0 6px; }
-  .hint{ margin:6px 0 6px; padding:6px 10px; font-size:12px; }
-}
-		/* Floating scroll hint */
-#scrollHint{
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 14px;
-  z-index: 9998;
+    .playerLine{
+      display:flex;justify-content:space-between;gap:10px;
+      padding:8px 10px;
+      border:1px solid #eee;
+      border-radius:12px;
+      background:#fff;
+      margin-bottom:8px;
+      font-size:14px;
+    }
+    .playerMeta{color:#777;font-size:12px;white-space:nowrap}
+    .footer{
+      margin-top:14px;
+      font-size:12px;
+      color:#666;
+      text-align:center;
+      background:#fafafa;
+      border:1px solid #eee;
+      padding:10px 12px;
+      border-radius:12px;
+    }
 
-  display: none;                 /* 默认隐藏，JS 控制显示 */
-  align-items: center;
-  gap: 10px;
+    /* Analytics charts responsive */
+    /* Mobile-friendly chart heights */
+    #analyticsBox canvas{
+      width:100% !important;
+      display:block;
+    }
 
-  max-width: 680px;              /* 跟 .wrap 对齐 */
-  width: calc(100% - 32px);
+    #c_hist, #c_percent { height:220px !important; }
+    #c_levels { height:260px !important; }   /* 饼图高一点 */
+    #c_gender { height:200px !important; }
+    #c_trend1, #c_trend2 { height:240px !important; }
 
-  background: rgba(17,17,17,0.92);
-  color: #fff;
-  padding: 10px 12px;
-  border-radius: 999px;
+    /* --- tighter spacing (desktop + mobile) --- */
 
-  box-shadow: 0 10px 30px rgba(0,0,0,.25);
-  font-size: 13px;
-  line-height: 1.2;
-}
+    /* 1) 全局把段落默认 margin 清掉，避免 hint 额外撑高 */
+    p{ margin:0; }
 
-#scrollHint button{
-  width: auto;
-  margin: 0;
-  padding: 8px 12px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 800;
-  background: #fff;
-  color: #111;
-}
+    /* 2) 缩小 label 上下间距（最关键） */
+    label{
+      margin:10px 0 6px;   /* 原来 14px 0 8px */
+    }
 
-#scrollHint .hintText{
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
+    /* 3) grid 间距略缩 */
+    .row{
+      gap:10px;            /* 原来 12px */
+    }
 
-@media (max-width:520px){
-  #scrollHint{ bottom: 10px; font-size: 12px; }
-  #scrollHint button{ padding: 7px 10px; font-size: 12px; }
-}
-		
-    </style>
-  </head>
-  
+    /* 4) hint 再紧一点 */
+    .hint{
+      margin:6px 0 6px;    /* 原来 5px 0 12px */
+      padding:6px 10px;    /* 原来 8px 10px */
+      font-size:12px;      /* 你现在桌面 11px，手机 13px，有点反着了 */
+    }
+
+    /* 5) 可选：让第二个 row（Throwing 开始那组）不要离 hint 太远 */
+    .hint + .row{
+      margin-top:4px;      /* 没有也行，有的话更紧凑 */
+    }
+
+    /* 6) 手机端再微调（可选） */
+    @media (max-width: 520px){
+      label{ margin:8px 0 6px; }
+      .hint{ margin:6px 0 6px; padding:6px 10px; font-size:12px; }
+    }
+
+    /* Floating scroll hint */
+    #scrollHint{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 14px;
+      z-index: 9998;
+
+      display: none;                 /* 默认隐藏，JS 控制显示 */
+      align-items: center;
+      gap: 10px;
+
+      max-width: 680px;              /* 跟 .wrap 对齐 */
+      width: calc(100% - 32px);
+
+      background: rgba(17,17,17,0.92);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 999px;
+
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      font-size: 13px;
+      line-height: 1.2;
+    }
+
+    #scrollHint button{
+      width: auto;
+      margin: 0;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+      background: #fff;
+      color: #111;
+    }
+
+    #scrollHint .hintText{
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    @media (max-width:520px){
+      #scrollHint{ bottom: 10px; font-size: 12px; }
+      #scrollHint button{ padding: 7px 10px; font-size: 12px; }
+    }
+  </style>
+</head>
+
+<body>
+
   <!-- Overlay loading -->
   <div id="overlay" style="
     display:none;
@@ -319,1186 +324,1182 @@ label{
       <div style="color:#999; font-size:12px; margin-top:10px;">Do not close until you see confirmation.</div>
     </div>
   </div>
-  
-  <body>
-    <div class="wrap">
-      <div class="card">
-        <h1>Friday Frisbee Signup</h1>
-  
-        <div class="bar" aria-label="Status pills (swipe)">
-          <span id="countPill" class="pill">Loading...</span>
-          <span id="statusPill" class="pill">Loading...</span>
-          <span id="timeLeftPill" class="pill">Loading...</span>
-        </div>
-  
-        <div id="tzLine" class="metaRight"></div>
-  
-        <div class="box">
-          <div class="gameLine1" id="gameInfoLine1">Loading game info…</div>
-          <div class="gameLine2" id="gameInfoLine2"></div>
-        </div>
-  
-<form id="form">
 
-<div class="row">
+  <div class="wrap">
+    <div class="card">
+      <h1>Friday Frisbee Signup</h1>
 
-<!-- Full Name -->
-  <div>
-    <label for="name">Full Name *</label>
-    <input
-      id="name"
-      required
-      placeholder="e.g., Maojin Gong"
-      autocomplete="name"
-    />
-  </div>
-
-  <!-- Gender -->
-  <div>
-    <label for="gender">Gender *</label>
-    <select id="gender" required>
-      <option value="" selected disabled>Select</option>
-      <option value="Male">Male</option>
-      <option value="Female">Female</option>
-    </select>
-  </div>
-
-</div>
-
-<p class="hint">
-  Please rate yourself at pick-up game intensity (not training). If you are unsure between two levels, choose the lower one.
-</p>
-  <!-- 两列开始 -->
-<div class="row">
-
-<!-- Throwing -->
-<div>
-  <label for="throwing">Throwing *</label>
-  <select id="throwing" required>
-    <option value="" selected disabled>Select</option>
-
-    <option value="1">
-      1 — Even short open throws are often inaccurate; frequent turnovers
-    </option>
-
-    <option value="2">
-      2 — Short backhand OK; forehand or pressure causes many mistakes
-    </option>
-
-    <option value="3">
-      3 — Backhand + forehand usable in games (short–mid); long throws inconsistent
-    </option>
-
-    <option value="4">
-  		4 — Game-stable passer: low turnovers under mark pressure; can reliably complete open hucks or break throws when needed
-		</option>
-	<option value="5">
-      5 — Offensive driver: consistently breaks the mark and delivers accurate hucks at game speed (even under pressure) with controlled risk
-    </option>
-
-  </select>
-</div>
-
-<!-- Catch -->
-<div>
-  <label for="catch">Catch *</label>
-  <select id="catch" required>
-    <option value="" selected disabled>Select</option>
-
-    <option value="1">
-      1 — Drops many easy, uncontested catches
-    </option>
-
-    <option value="2">
-      2 — Catches when wide open; struggles on the run or with imperfect throws
-    </option>
-
-    <option value="3">
-      3 — Usually catches cleanly in games (open or light pressure)
-    </option>
-
-    <option value="4">
-      4 — Reliable under pressure: catches on the run with a defender close; rarely drops important discs
-    </option>
-
-    <option value="5">
-      5 — Playmaker in the air: strong in contested catches, confident on sky or layout plays, wins many 50–50 discs (not just occasionally)
-    </option>
-
-  </select>
-</div>
-
-<!-- Fitness -->
-<div>
-  <label for="fitness">Fitness *</label>
-  <select id="fitness" required>
-    <option value="" selected disabled>Select</option>
-		<option value="1">1 — Struggles to finish a point; needs long rest</option>
-		<option value="2">2 — Can play, but performance drops fast; frequent breaks needed</option>
-		<option value="3">3 — Can play most points with normal rest; steady pace</option>
-		<option value="4">4 — Repeated sprints + quick recovery; can take multiple hard points in a row</option>
-		<option value="5">5 — High speed + stamina all session; still sharp late in games</option>
-  </select>
-</div>
-
-<!-- Experience -->
-<div>
-  <label for="experience">Experience *</label>
-  <select id="experience" required>
-    <option value="" selected disabled>Select</option>
-		<option value="1">1 — New: still learning rules and basic positioning</option>
-		<option value="2">2 — Played a few times; knows basic rules and simple cuts</option>
-		<option value="3">3 — Regular pickup: understands basic offense/defense and marking</option>
-		<option value="4">4 — Organized games: understands team systems (stack, force, help defense) and makes good decisions</option>
-		<option value="5">5 — Competitive level: reads the field well, adapts under pressure, and leads play on offense/defense</option>
-  </select>
-</div>
-	
-  <!-- Preference -->
-  <div>
-    <label for="pref">Preference *</label>
-    <select id="pref" required>
-      <option value="" selected disabled>Select</option>
-      <option value="Handler">Handler</option>
-      <option value="Cutter">Cutter</option>
-    </select>
-  </div>
-
-<!-- Practice duration * -->
-<div>
-  <label for="pd">Practice duration *</label>
-  <select id="pd" required>
-    <option value="" selected disabled>Select</option>
-    <option value="< 3 months">&lt; 3 months</option>
-    <option value="3–12 months">3–12 months</option>
-    <option value="1–3 years">1–3 years</option>
-    <option value="3–5 years">3–5 years</option>
-    <option value="> 5 years">&gt; 5 years</option>
-  </select>
-</div>
-</div>
-<!-- 两列结束 -->
-
-
-  <button id="btn" type="submit">Submit</button>
-  <div class="footer">
-  After you submit, a <code>RegID</code> will be generated and saved on this device.
-  Keep it for cancellation. Please use your full name to avoid duplicate signups.
-  </div>
-  <div id="status" class="status"></div>
-  
-  <div id="regTools" class="inline" style="display:none; margin-top:10px;">
-    <button id="copyRegBtn" class="smallbtn secondary" type="button">Copy RegID</button>
-    <span id="regSavedNote" class="hint" style="margin:0;"></span>
-  </div>
-
-</form>
-		<div id="belowSections"></div>
-
-
-  
-        <div class="hr"></div>
-  
-        <details>
-          <summary><b>Cancel registration</b> (cost: buy Maojin a coffee ☕)</summary>
-          <div style="margin-top:10px;">
-            <label for="cancelName">Name / Nickname *</label>
-            <input id="cancelName" placeholder="must match your signup name" />
-            <label for="cancelId">RegID *</label>
-            <input id="cancelId" placeholder="e.g., FRI-20260212-ABCDEF12" />
-            <button id="cancelBtn" type="button">Cancel my registration</button>
-            <div id="cancelStatus" class="status"></div>
-            <div class="hint">Tip: your last RegID is saved on this device.</div>
-          </div>
-        </details>
-  
-        <div class="hr"></div>
-  
-        <!-- Registered players -->
-        <div class="box" id="playersSection">
-          <div class="headRow">
-            <div class="teamtitle" style="margin:0;">Registered players</div>
-            <div class="badge" id="playersBadge">—</div>
-          </div>
-  
-          <div class="statsRow">
-            <span id="genderStats">Male: —  Female: —</span>
-            <span id="prefStats">Handler: —  Cutter: —</span>
-          </div>
-  
-          <div class="inline" style="margin-top:6px;">
-            <button id="togglePlayersBtn" class="smallbtn secondary" type="button">Show</button>
-            <button id="copyPlayersBtn" class="smallbtn secondary" type="button" disabled>Copy</button>
-            <span id="playersStatus" class="hint" style="margin:0;"></span>
-          </div>
-  
-          <div id="playersArea" class="playersArea" style="display:none;">
-            <div id="playersList" style="margin-top:10px;">Loading…</div>
-          </div>
-        </div>
-  
-        <div class="hr"></div>
-        <!-- Teams -->
-        <div id="teamsSection">
-          <div class="teamtitle">Teams (auto after cutoff)</div>
-          <div class="hint" style="margin-top:6px;">
-            After Friday 15:00, teams are automatically generated and shown here.
-            If players ≥ <b id="fourTeamMin"></b> → 4 teams; otherwise 2 teams.
-          </div>
-          <button id="refreshTeamsBtn" type="button" class="secondary">Refresh Teams</button>
-          <div id="teamsStatus" class="status"></div>
-          <div id="teamsOutput"></div>
-        </div>
-        <div class="hr"></div>
-
-<details id="analyticsDetails">
-  <summary><b>Analytics</b> (latest week + trends)</summary>
-
-  <div class="box" id="analyticsBox">
-    <div class="headRow">
-      <div class="teamtitle" style="margin:0;">Analytics</div>
-      <div class="badge" id="anaWeekBadge">—</div>
-    </div>
-
-    <div class="hint" id="anaStatus" style="margin-top:6px;"></div>
-
-    <!-- Latest week summary -->
-    <div class="box" style="margin-top:10px;">
-      <div class="teamtitle" style="margin:0;">Latest week</div>
-      <div class="hint" id="latestSummary" style="margin-top:6px;"></div>
-    </div>
-
-    <!-- 4 latest-week charts: one per row -->
-    <div class="box" style="margin-top:10px;">
-      <div class="teamtitle" style="margin:0;">Score Distribution</div>
-      <canvas id="c_hist"></canvas>
-    </div>
-
-    <div class="box" style="margin-top:10px;">
-      <div class="teamtitle" style="margin:0;">Skill Level Distribution</div>
-      <canvas id="c_levels"></canvas>
-    </div>
-
-    <div class="box" style="margin-top:10px;">
-      <div class="teamtitle" style="margin:0;">Male vs Female Avg</div>
-      <canvas id="c_gender"></canvas>
-    </div>
-
-    <div class="box" style="margin-top:10px;">
-      <div class="teamtitle" style="margin:0;">Score Percentiles</div>
-      <canvas id="c_percent"></canvas>
-    </div>
-
-    <!-- 2 trend charts -->
-    <div class="box" style="margin-top:10px;">
-      <div class="teamtitle" style="margin:0;">Weekly Avg & Std Trend</div>
-      <canvas id="c_trend1"></canvas>
-    </div>
-
-    <div class="box" style="margin-top:10px;">
-      <div class="teamtitle" style="margin:0;">Weekly Elite% Trend</div>
-      <canvas id="c_trend2"></canvas>
-    </div>
-  </div>
-</details>
-		  
-        
+      <div class="bar" aria-label="Status pills (swipe)">
+        <span id="countPill" class="pill">Loading...</span>
+        <span id="statusPill" class="pill">Loading...</span>
+        <span id="timeLeftPill" class="pill">Loading...</span>
       </div>
-    </div>
 
-	  
-  
-    <script>
-      const CFG = window.SIGNUP_CONFIG;
-      const ENDPOINT = CFG.endpoint;
-  
-      const overlay = document.getElementById("overlay");
-      const overlayMsg = document.getElementById("overlayMsg");
-  
-      let submitting = false;
-      let slowTimer1 = null;
-      let slowTimer2 = null;
-  
-      function showOverlay(){
-        submitting = true;
-        overlay.style.display = "block";
-        overlayMsg.textContent = "Submitting to Google Sheets…";
-  
-        slowTimer1 = setTimeout(()=>{
-          if(submitting) overlayMsg.textContent = "Still working… Google may be slow. Please wait.";
-        }, 4000);
-  
-        slowTimer2 = setTimeout(()=>{
-          if(submitting) overlayMsg.textContent = "Almost done… Please keep this page open.";
-        }, 9000);
-      }
-  
-      function hideOverlay(){
-        submitting = false;
-        overlay.style.display = "none";
-        clearTimeout(slowTimer1);
-        clearTimeout(slowTimer2);
-      }
-  
-      const countPill = document.getElementById("countPill");
-      const statusPill = document.getElementById("statusPill");
-      const timeLeftPill = document.getElementById("timeLeftPill");
-      const tzLine = document.getElementById("tzLine");
-  
-      const form = document.getElementById("form");
-      const btn = document.getElementById("btn");
-      const statusEl = document.getElementById("status");
-  
-      const regTools = document.getElementById("regTools");
-      const copyRegBtn = document.getElementById("copyRegBtn");
-      const regSavedNote = document.getElementById("regSavedNote");
-  
-      const cancelBtn = document.getElementById("cancelBtn");
-      const cancelStatus = document.getElementById("cancelStatus");
-      const cancelName = document.getElementById("cancelName");
-      const cancelId = document.getElementById("cancelId");
-  
-      const gameInfoLine1 = document.getElementById("gameInfoLine1");
-      const gameInfoLine2 = document.getElementById("gameInfoLine2");
-      const fourTeamMin = document.getElementById("fourTeamMin");
-  
-      const refreshTeamsBtn = document.getElementById("refreshTeamsBtn");
-      const teamsStatus = document.getElementById("teamsStatus");
-      const teamsOutput = document.getElementById("teamsOutput");
-	  // ✅ 初始就先锁住，避免页面加载时先闪一下 "Refresh Teams"
-	  refreshTeamsBtn.disabled = true;
-	  refreshTeamsBtn.textContent = "Teams available after cutoff";
-	  refreshTeamsBtn.style.display = "block";
+      <div id="tzLine" class="metaRight"></div>
 
-  
-      // Players UI
-      const playersBadge = document.getElementById("playersBadge");
-      const genderStats = document.getElementById("genderStats");
-      const prefStats = document.getElementById("prefStats");
-      const togglePlayersBtn = document.getElementById("togglePlayersBtn");
-      const copyPlayersBtn = document.getElementById("copyPlayersBtn");
-      const playersStatus = document.getElementById("playersStatus");
-      const playersArea = document.getElementById("playersArea");
-      const playersList = document.getElementById("playersList");
-  
-      const LS_NAME = "frisbee_last_name";
-      const LS_REGID = "frisbee_last_regid";
-  
-      async function fetchWithTimeout(url, ms=6000, opts={}){
-        const controller = new AbortController();
-        const t = setTimeout(()=>controller.abort(), ms);
-        try{
-          const res = await fetch(url, { ...opts, signal: controller.signal });
-          return await res.json();
-        } finally {
-          clearTimeout(t);
-        }
-      }
-  
-      async function safeGetJson(url){
-        try{
-          return await fetchWithTimeout(url, 6000, { method:"GET" });
-        } catch(e){
-          return await fetchWithTimeout(url, 9000, { method:"GET" });
-        }
-      }
+      <div class="box">
+        <div class="gameLine1" id="gameInfoLine1">Loading game info…</div>
+        <div class="gameLine2" id="gameInfoLine2"></div>
+      </div>
 
+      <form id="form">
 
-		// ✅ POST 专用：不强求读回 JSON（GAS 经常会拦 response）
-// 规则：只要请求发出，就当作“很可能已成功”，再用 refresh() 去验证
-async function postLikelyOk(url, ms=12000, bodyObj={}){
-  const controller = new AbortController();
-  const t = setTimeout(()=>controller.abort(), ms);
+        <div class="row">
 
-  try{
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type":"text/plain;charset=utf-8" },
-      body: JSON.stringify(bodyObj),
-      signal: controller.signal,
-      redirect: "follow"
-    });
+          <!-- Full Name -->
+          <div>
+            <label for="name">Full Name *</label>
+            <input
+              id="name"
+              required
+              placeholder="e.g., Maojin Gong"
+              autocomplete="name"
+            />
+          </div>
 
-    // 尝试读取返回（可能会失败：CORS/opaque/redirect）
-    try{
-      const text = await res.text();
-      try{
-        return JSON.parse(text); // {ok:true, regId:...}
-      }catch{
-        return { ok:true, _note:"posted_no_json" };
-      }
-    }catch{
-      return { ok:true, _note:"posted_no_body" };
-    }
+          <!-- Gender -->
+          <div>
+            <label for="gender">Gender *</label>
+            <select id="gender" required>
+              <option value="" selected disabled>Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
 
-  } catch(e){
-    // 关键：这里不当作失败，因为后端可能已经写入成功了
-    return { ok:true, _note:"posted_but_fetch_error", _err: String(e) };
-  } finally {
-    clearTimeout(t);
-  }
-}
-
-
-		
-function timeLeftText(cutoffIso){
-
-  if (!cutoffIso) return "Time left: —";
-
-  const cut = new Date(cutoffIso).getTime();
-  if (Number.isNaN(cut)) return "Time left: —";
-
-  const now = Date.now();
-  const diff = cut - now;
-
-  if (diff <= 0) return "0m left";
-
-  const totalMinutes = Math.floor(diff / 60000);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-
-  if (hours > 0){
-    return `${hours}h left `;
-  }
-
-  return `${minutes}m left`;
-}
-
-
-  
-      async function getStatus() {
-        return await safeGetJson(ENDPOINT + "?action=status");
-      }
-  
-      function setPills(data) {
-        countPill.textContent = `${data.count} / ${data.max} registered`;
-  
-        if (data.isFull) {
-          statusPill.textContent = "FULL";
-          statusPill.className = "pill bad";
-        } else if (data.open) {
-          statusPill.textContent = "OPEN";
-          statusPill.className = "pill ok";
-        } else {
-          statusPill.textContent = "CLOSED";
-          statusPill.className = "pill bad";
-        }
-  
-        timeLeftPill.textContent = timeLeftText(data.cutoffIso);
-  
-        if (data.isFull) {
-          btn.disabled = true;
-          btn.textContent = "Full";
-        } else if (!data.open) {
-          btn.disabled = true;
-          btn.textContent = "Registration closed";
-        } else {
-          btn.disabled = false;
-          btn.textContent = "Submit";
-        }
-      }
-  
-      function saveLastReg(name, regId) {
-        localStorage.setItem(LS_NAME, name);
-        localStorage.setItem(LS_REGID, regId);
-        cancelName.value = name;
-        cancelId.value = regId;
-        regSavedNote.textContent = "Saved on this device ✅";
-      }
-  
-      async function copyText(text) {
-        try {
-          await navigator.clipboard.writeText(text);
-          return true;
-        } catch {
-          const ta = document.createElement("textarea");
-          ta.value = text;
-          document.body.appendChild(ta);
-          ta.select();
-          const ok = document.execCommand("copy");
-          document.body.removeChild(ta);
-          return ok;
-        }
-      }
-  
-      function escapeHtml(s){
-        return (s||"").toString()
-          .replaceAll("&","&amp;")
-          .replaceAll("<","&lt;")
-          .replaceAll(">","&gt;")
-          .replaceAll('"',"&quot;")
-          .replaceAll("'","&#039;");
-      }
-  
-      function renderGameInfo() {
-        const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
-        gameInfoLine1.innerHTML = `${CFG.gameTimeText} · ${loc}`;
-        gameInfoLine2.innerHTML = `
-          <span>Bring: 💧 👟 🥏 🔥</span>
-          <span>Format: 5v5 / 7v7 (with subs)</span>
-        `;
-        tzLine.textContent = `Registration closes: Fri 3:00 PM | Jeddah local time`;
-        fourTeamMin.textContent = CFG.teamsMinForFour;
-      }
-  
-      async function refresh() {
-        try {
-          const data = await getStatus();
-          if (!data.ok) throw new Error("status not ok");
-          setPills(data);
-          return data;
-        } catch {
-          countPill.textContent = "Status unavailable";
-          statusPill.textContent = "UNKNOWN";
-          timeLeftPill.textContent = "";
-          return null;
-        }
-      }
-  
-      (function initSaved(){
-        const n = localStorage.getItem(LS_NAME) || "";
-        const r = localStorage.getItem(LS_REGID) || "";
-        if (n) cancelName.value = n;
-        if (r) cancelId.value = r;
-      })();
-  
-      copyRegBtn.addEventListener("click", async () => {
-        const regId = localStorage.getItem(LS_REGID) || "";
-        if (!regId) {
-          regSavedNote.textContent = "No RegID saved yet.";
-          return;
-        }
-        const ok = await copyText(regId);
-        regSavedNote.textContent = ok ? "RegID copied ✅" : "Copy failed ❌";
-      });
-  
-      // ---- REGISTER ----
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-  
-        statusEl.textContent = "";
-        statusEl.className = "status";
-        regTools.style.display = "none";
-        regSavedNote.textContent = "";
-  
-        const payload = {
-			action: "register",
-  			name: document.getElementById("name").value.trim(),
-  			gender: document.getElementById("gender").value,
-  			throwing: document.getElementById("throwing").value,
-  			catch: document.getElementById("catch").value,
- 			 fitness: document.getElementById("fitness").value,
-  			experience: document.getElementById("experience").value,
-  			practice: document.getElementById("pd").value,
-  			preference: document.getElementById("pref").value
-		};
-
-  
-        if (
-  			!payload.name ||
-  			!payload.gender ||
-  			!payload.throwing ||
-  			!payload.catch ||
-  			!payload.fitness ||
-  			!payload.experience ||
-  			!payload.preference ||
-        	!payload.practice
-		){
-          statusEl.textContent = "Please complete all required fields.";
-          statusEl.classList.add("badText");
-          return;
-        }
-  
-        btn.disabled = true;
-        btn.textContent = "Submitting…";
-        showOverlay();
-  
-        try {
-          const data = await postLikelyOk(ENDPOINT, 12000, payload);
-
-		// ✅ 永远不把“读不到回包”当作失败
-		statusEl.className = "status okText";
-
-		if (data && data.regId) {
-  		statusEl.innerHTML = `✅ Submitted! RegID: <b>${data.regId}</b>`;
-  		saveLastReg(payload.name, data.regId);
-  		regTools.style.display = "flex";
-
-		} else {
-  		statusEl.textContent = "✅ Submitted! (Response blocked by browser)";
-
-  		// ✅ 回查 RegID（靠 GET 拿回 JSON，成功率高）
-  		try {
-    		const q = encodeURIComponent(payload.name);
-    		const back = await safeGetJson(ENDPOINT + "?action=lastReg&name=" + q);
-
-    		if (back && back.ok && back.regId) {
-      		statusEl.innerHTML = `✅ Submitted! RegID: <b>${back.regId}</b>`;
-      		saveLastReg(payload.name, back.regId);
-      		regTools.style.display = "flex";
-    		}
-  		} catch (e) {
-    		// 查不到就算了，仍然保持已提交提示
-  		}
-		}
-
-
-		// 清空表单 + 刷新状态/列表（用 refresh 来确认写入）
-		form.reset();
-		await refresh();
-		if (playersArea.style.display !== "none") await refreshPlayers(true);
-
-        } catch (err) {
-  		statusEl.textContent = "✅ Submitted! (Browser blocked response)";
-  		statusEl.className = "status okText";
-  		await refresh();
-  		if (playersArea.style.display !== "none") await refreshPlayers(true);
-		}
-
-		  finally {
-          hideOverlay();
-          await refresh();
-          if (!btn.disabled) btn.textContent = "Submit";
-        }
-      });
-  
-     // ---- CANCEL ----
-cancelBtn.addEventListener("click", async () => {
-  cancelStatus.textContent = "";
-  cancelStatus.className = "status";
-
-  const name = cancelName.value.trim();
-  const regId = cancelId.value.trim();
-  if (!name || !regId) {
-    cancelStatus.textContent = "Please provide both Name and RegID.";
-    cancelStatus.classList.add("badText");
-    return;
-  }
-  if (!confirm("Confirm cancellation? (Buy Maojin a coffee ☕)")) return;
-
-  cancelBtn.disabled = true;
-  cancelBtn.textContent = "Cancelling…";
-
-  // ✅ 清本地 RegID/Name（避免重复误操作）
-  function clearLocalReg(){
-    try{
-      localStorage.removeItem(LS_NAME);
-      localStorage.removeItem(LS_REGID);
-    }catch(_){}
-    cancelName.value = "";
-    cancelId.value = "";
-    regSavedNote.textContent = "Cleared saved RegID ✅";
-    regTools.style.display = "none";
-  }
-
-  try {
-    const data = await postLikelyOk(ENDPOINT, 12000, { action:"cancel", name, regId });
-
-    // 先按“已发出请求”处理（因为 GAS 可能读不到回包）
-    cancelStatus.className = "status okText";
-    cancelStatus.textContent = "✅ Cancel requested. Refreshing…";
-
-    await refresh();
-    if (playersArea.style.display !== "none") await refreshPlayers(true);
-
-    // ✅ 关键：只要请求发出 & 刷新后一般就认为成功，并清掉本地 RegID
-    clearLocalReg();
-
-    // 如果后端明确返回 ok:false，再提示失败（但本地仍然清掉，避免误点重复 cancel）
-    if (data && data.ok === false) {
-      cancelStatus.className = "status badText";
-      cancelStatus.textContent = "❌ " + (data.error || "Cancel failed");
-      return;
-    }
-
-    cancelStatus.className = "status okText";
-    cancelStatus.textContent = "✅ Cancelled.";
-
-  } catch (e) {
-    // 浏览器阻止回包也不当成失败：刷新+清本地
-    cancelStatus.className = "status okText";
-    cancelStatus.textContent = "✅ Cancel requested (browser blocked response). Refreshing…";
-
-    await refresh();
-    if (playersArea.style.display !== "none") await refreshPlayers(true);
-
-    clearLocalReg();
-
-    cancelStatus.className = "status okText";
-    cancelStatus.textContent = "✅ Cancelled.";
-  } finally {
-    cancelBtn.disabled = false;
-    cancelBtn.textContent = "Cancel my registration";
-  }
-});
-
-  // ---- PLAYERS ----
-  let lastPlayersText = "";
-  
-  async function refreshPlayers(silent=false){
-    if (!silent) playersStatus.textContent = "Loading…";
-    copyPlayersBtn.disabled = true;
-  
-    try{
-      const data = await safeGetJson(ENDPOINT + "?action=players");
-      if (!data.ok) throw new Error(data.error || "players not ok");
-  
-      playersBadge.textContent = `${data.count} players`;
-      genderStats.textContent = `Male: ${data.stats.male}   Female: ${data.stats.female}`;
-      prefStats.textContent = `Handler: ${data.stats.handler}   Cutter: ${data.stats.cutter}`;
-  
-      const lines = data.players.map((p, idx) => {
-        return {
-          idx: idx+1,
-          name: p.name,
-          gender: p.gender || "—"
-        };
-      });
-  
-      playersList.innerHTML = lines.map(x => `
-        <div class="playerLine">
-          <div><b>${x.idx}. ${escapeHtml(x.name)}</b></div>
-          <div class="playerMeta">${escapeHtml(x.gender)}</div>
         </div>
-      `).join("");
-  
-      lastPlayersText = lines.map(x => `${x.idx}. ${x.name} (${x.gender})`).join("\n");
-      copyPlayersBtn.disabled = !lastPlayersText;
-  
-      if (!silent) playersStatus.textContent = "Updated ✅";
-      return true;
-  
-    } catch(e){
-      if (!silent) playersStatus.textContent = "Slow / failed. Tap Show again.";
-      return false;
+
+        <p class="hint">
+          Please rate yourself at pick-up game intensity (not training). If you are unsure between two levels, choose the lower one.
+        </p>
+
+        <!-- 两列开始 -->
+        <div class="row">
+
+          <!-- Throwing -->
+          <div>
+            <label for="throwing">Throwing *</label>
+            <select id="throwing" required>
+              <option value="" selected disabled>Select</option>
+
+              <option value="1">
+                1 — Even short open throws are often inaccurate; frequent turnovers
+              </option>
+
+              <option value="2">
+                2 — Short backhand OK; forehand or pressure causes many mistakes
+              </option>
+
+              <option value="3">
+                3 — Backhand + forehand usable in games (short–mid); long throws inconsistent
+              </option>
+
+              <option value="4">
+                4 — Game-stable passer: low turnovers under mark pressure; can reliably complete open hucks or break throws when needed
+              </option>
+              <option value="5">
+                5 — Offensive driver: consistently breaks the mark and delivers accurate hucks at game speed (even under pressure) with controlled risk
+              </option>
+
+            </select>
+          </div>
+
+          <!-- Catch -->
+          <div>
+            <label for="catch">Catch *</label>
+            <select id="catch" required>
+              <option value="" selected disabled>Select</option>
+
+              <option value="1">
+                1 — Drops many easy, uncontested catches
+              </option>
+
+              <option value="2">
+                2 — Catches when wide open; struggles on the run or with imperfect throws
+              </option>
+
+              <option value="3">
+                3 — Usually catches cleanly in games (open or light pressure)
+              </option>
+
+              <option value="4">
+                4 — Reliable under pressure: catches on the run with a defender close; rarely drops important discs
+              </option>
+
+              <option value="5">
+                5 — Playmaker in the air: strong in contested catches, confident on sky or layout plays, wins many 50–50 discs (not just occasionally)
+              </option>
+
+            </select>
+          </div>
+
+          <!-- Fitness -->
+          <div>
+            <label for="fitness">Fitness *</label>
+            <select id="fitness" required>
+              <option value="" selected disabled>Select</option>
+              <option value="1">1 — Struggles to finish a point; needs long rest</option>
+              <option value="2">2 — Can play, but performance drops fast; frequent breaks needed</option>
+              <option value="3">3 — Can play most points with normal rest; steady pace</option>
+              <option value="4">4 — Repeated sprints + quick recovery; can take multiple hard points in a row</option>
+              <option value="5">5 — High speed + stamina all session; still sharp late in games</option>
+            </select>
+          </div>
+
+          <!-- Experience -->
+          <div>
+            <label for="experience">Experience *</label>
+            <select id="experience" required>
+              <option value="" selected disabled>Select</option>
+              <option value="1">1 — New: still learning rules and basic positioning</option>
+              <option value="2">2 — Played a few times; knows basic rules and simple cuts</option>
+              <option value="3">3 — Regular pickup: understands basic offense/defense and marking</option>
+              <option value="4">4 — Organized games: understands team systems (stack, force, help defense) and makes good decisions</option>
+              <option value="5">5 — Competitive level: reads the field well, adapts under pressure, and leads play on offense/defense</option>
+            </select>
+          </div>
+
+          <!-- Preference -->
+          <div>
+            <label for="pref">Preference *</label>
+            <select id="pref" required>
+              <option value="" selected disabled>Select</option>
+              <option value="Handler">Handler</option>
+              <option value="Cutter">Cutter</option>
+            </select>
+          </div>
+
+          <!-- Practice duration * -->
+          <div>
+            <label for="pd">Practice duration *</label>
+            <select id="pd" required>
+              <option value="" selected disabled>Select</option>
+              <option value="< 3 months">&lt; 3 months</option>
+              <option value="3–12 months">3–12 months</option>
+              <option value="1–3 years">1–3 years</option>
+              <option value="3–5 years">3–5 years</option>
+              <option value="> 5 years">&gt; 5 years</option>
+            </select>
+          </div>
+        </div>
+        <!-- 两列结束 -->
+
+        <button id="btn" type="submit">Submit</button>
+        <div class="footer">
+          After you submit, a <code>RegID</code> will be generated and saved on this device.
+          Keep it for cancellation. Please use your full name to avoid duplicate signups.
+        </div>
+        <div id="status" class="status"></div>
+
+        <div id="regTools" class="inline" style="display:none; margin-top:10px;">
+          <button id="copyRegBtn" class="smallbtn secondary" type="button">Copy RegID</button>
+          <span id="regSavedNote" class="hint" style="margin:0;"></span>
+        </div>
+
+      </form>
+
+      <div id="belowSections"></div>
+
+      <div class="hr"></div>
+
+      <details>
+        <summary><b>Cancel registration</b> (cost: buy Maojin a coffee ☕)</summary>
+        <div style="margin-top:10px;">
+          <label for="cancelName">Name / Nickname *</label>
+          <input id="cancelName" placeholder="must match your signup name" />
+          <label for="cancelId">RegID *</label>
+          <input id="cancelId" placeholder="e.g., FRI-20260212-ABCDEF12" />
+          <button id="cancelBtn" type="button">Cancel my registration</button>
+          <div id="cancelStatus" class="status"></div>
+          <div class="hint">Tip: your last RegID is saved on this device.</div>
+        </div>
+      </details>
+
+      <div class="hr"></div>
+
+      <!-- Registered players -->
+      <div class="box" id="playersSection">
+        <div class="headRow">
+          <div class="teamtitle" style="margin:0;">Registered players</div>
+          <div class="badge" id="playersBadge">—</div>
+        </div>
+
+        <div class="statsRow">
+          <span id="genderStats">Male: —  Female: —</span>
+          <span id="prefStats">Handler: —  Cutter: —</span>
+        </div>
+
+        <div class="inline" style="margin-top:6px;">
+          <button id="togglePlayersBtn" class="smallbtn secondary" type="button">Show</button>
+          <button id="copyPlayersBtn" class="smallbtn secondary" type="button" disabled>Copy</button>
+          <span id="playersStatus" class="hint" style="margin:0;"></span>
+        </div>
+
+        <div id="playersArea" class="playersArea" style="display:none;">
+          <div id="playersList" style="margin-top:10px;">Loading…</div>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+      <!-- Teams -->
+      <div id="teamsSection">
+        <div class="teamtitle">Teams (auto after cutoff)</div>
+        <div class="hint" style="margin-top:6px;">
+          After Friday 15:00, teams are automatically generated and shown here.
+          If players ≥ <b id="fourTeamMin"></b> → 4 teams; otherwise 2 teams.
+        </div>
+        <button id="refreshTeamsBtn" type="button" class="secondary">Refresh Teams</button>
+        <div id="teamsStatus" class="status"></div>
+        <div id="teamsOutput"></div>
+      </div>
+      <div class="hr"></div>
+
+      <details id="analyticsDetails">
+        <summary><b>Analytics</b> (latest week + trends)</summary>
+
+        <div class="box" id="analyticsBox">
+          <div class="headRow">
+            <div class="teamtitle" style="margin:0;">Analytics</div>
+            <div class="badge" id="anaWeekBadge">—</div>
+          </div>
+
+          <div class="hint" id="anaStatus" style="margin-top:6px;"></div>
+
+          <!-- Latest week summary -->
+          <div class="box" style="margin-top:10px;">
+            <div class="teamtitle" style="margin:0;">Latest week</div>
+            <div class="hint" id="latestSummary" style="margin-top:6px;"></div>
+          </div>
+
+          <!-- 4 latest-week charts: one per row -->
+          <div class="box" style="margin-top:10px;">
+            <div class="teamtitle" style="margin:0;">Score Distribution</div>
+            <canvas id="c_hist"></canvas>
+          </div>
+
+          <div class="box" style="margin-top:10px;">
+            <div class="teamtitle" style="margin:0;">Skill Level Distribution</div>
+            <canvas id="c_levels"></canvas>
+          </div>
+
+          <div class="box" style="margin-top:10px;">
+            <div class="teamtitle" style="margin:0;">Male vs Female Avg</div>
+            <canvas id="c_gender"></canvas>
+          </div>
+
+          <div class="box" style="margin-top:10px;">
+            <div class="teamtitle" style="margin:0;">Score Percentiles</div>
+            <canvas id="c_percent"></canvas>
+          </div>
+
+          <!-- 2 trend charts -->
+          <div class="box" style="margin-top:10px;">
+            <div class="teamtitle" style="margin:0;">Weekly Avg & Std Trend</div>
+            <canvas id="c_trend1"></canvas>
+          </div>
+
+          <div class="box" style="margin-top:10px;">
+            <div class="teamtitle" style="margin:0;">Weekly Elite% Trend</div>
+            <canvas id="c_trend2"></canvas>
+          </div>
+        </div>
+      </details>
+
+    </div>
+  </div>
+
+  <div id="scrollHint" role="button" aria-label="Scroll to sections below">
+    <div class="hintText">↓ More below: Cancel · Registered players · Teams · Analytics</div>
+    <button type="button" id="scrollHintBtn">Go</button>
+  </div>
+  <!-- ===================== PART 2 / 2 ===================== -->
+  <script>
+    const CFG = window.SIGNUP_CONFIG;
+    const ENDPOINT = CFG.endpoint;
+
+    const overlay = document.getElementById("overlay");
+    const overlayMsg = document.getElementById("overlayMsg");
+
+    let submitting = false;
+    let slowTimer1 = null;
+    let slowTimer2 = null;
+
+    function showOverlay(){
+      submitting = true;
+      overlay.style.display = "block";
+      overlayMsg.textContent = "Submitting to Google Sheets…";
+
+      slowTimer1 = setTimeout(()=>{
+        if(submitting) overlayMsg.textContent = "Still working… Google may be slow. Please wait.";
+      }, 4000);
+
+      slowTimer2 = setTimeout(()=>{
+        if(submitting) overlayMsg.textContent = "Almost done… Please keep this page open.";
+      }, 9000);
     }
-  }
-  
-  togglePlayersBtn.addEventListener("click", async ()=>{
-    const open = playersArea.style.display !== "none";
-    if (open){
-      playersArea.style.display = "none";
-      togglePlayersBtn.textContent = "Show";
-      playersStatus.textContent = "";
-      return;
+
+    function hideOverlay(){
+      submitting = false;
+      overlay.style.display = "none";
+      clearTimeout(slowTimer1);
+      clearTimeout(slowTimer2);
     }
-    playersArea.style.display = "block";
-    togglePlayersBtn.textContent = "Hide";
-    await refreshPlayers(false);
-  });
-  
-  copyPlayersBtn.addEventListener("click", async ()=>{
-    if (!lastPlayersText) return;
-    const ok = await copyText(lastPlayersText);
-    playersStatus.textContent = ok ? "Copied ✅" : "Copy failed ❌";
-  });
 
+    const countPill = document.getElementById("countPill");
+    const statusPill = document.getElementById("statusPill");
+    const timeLeftPill = document.getElementById("timeLeftPill");
+    const tzLine = document.getElementById("tzLine");
 
+    const form = document.getElementById("form");
+    const btn = document.getElementById("btn");
+    const statusEl = document.getElementById("status");
 
-// ---- TEAMS (LOCKED AFTER SUCCESS) ----
-let teamsLockedAfterLoaded = false;
+    const regTools = document.getElementById("regTools");
+    const copyRegBtn = document.getElementById("copyRegBtn");
+    const regSavedNote = document.getElementById("regSavedNote");
 
-// cutoff 前：按钮灰色显示提示语（不可点）
-function setTeamsBtnBeforeCutoff(){
-  refreshTeamsBtn.style.display = "block";
-  refreshTeamsBtn.disabled = true;
-  refreshTeamsBtn.style.opacity = 0.55;
-  refreshTeamsBtn.textContent = "Teams will be shown after cutoff.";
-}
+    const cancelBtn = document.getElementById("cancelBtn");
+    const cancelStatus = document.getElementById("cancelStatus");
+    const cancelName = document.getElementById("cancelName");
+    const cancelId = document.getElementById("cancelId");
 
-// cutoff 后但尚未成功加载：允许手动刷新
-function setTeamsBtnRetry(){
-  refreshTeamsBtn.style.display = "block";
-  refreshTeamsBtn.disabled = false;
-  refreshTeamsBtn.style.opacity = 1;
-  refreshTeamsBtn.textContent = "Refresh Teams";
-}
+    const gameInfoLine1 = document.getElementById("gameInfoLine1");
+    const gameInfoLine2 = document.getElementById("gameInfoLine2");
+    const fourTeamMin = document.getElementById("fourTeamMin");
 
-// 成功拿到 teams 后：隐藏按钮（只显示最新结果）
-function hideTeamsBtn(){
-  refreshTeamsBtn.style.display = "none";
-}
-
-// 拉取并渲染 teams（永远覆盖旧内容，保证“最新 teams”）
-async function fetchAndRenderTeams({ auto = false } = {}) {
-  teamsOutput.innerHTML = "";
-
-  if (!auto) {
-    teamsStatus.textContent = "";
-    teamsStatus.className = "status";
+    const refreshTeamsBtn = document.getElementById("refreshTeamsBtn");
+    const teamsStatus = document.getElementById("teamsStatus");
+    const teamsOutput = document.getElementById("teamsOutput");
+    // ✅ 初始就先锁住，避免页面加载时先闪一下 "Refresh Teams"
     refreshTeamsBtn.disabled = true;
-    refreshTeamsBtn.style.opacity = 0.8;
-    refreshTeamsBtn.textContent = "Refreshing…";
-  }
+    refreshTeamsBtn.textContent = "Teams available after cutoff";
+    refreshTeamsBtn.style.display = "block";
 
-  try {
-    const data = await safeGetJson(ENDPOINT + "?action=teams");
+    // Players UI
+    const playersBadge = document.getElementById("playersBadge");
+    const genderStats = document.getElementById("genderStats");
+    const prefStats = document.getElementById("prefStats");
+    const togglePlayersBtn = document.getElementById("togglePlayersBtn");
+    const copyPlayersBtn = document.getElementById("copyPlayersBtn");
+    const playersStatus = document.getElementById("playersStatus");
+    const playersArea = document.getElementById("playersArea");
+    const playersList = document.getElementById("playersList");
 
-    if (!data || !data.ok) {
+    const LS_NAME = "frisbee_last_name";
+    const LS_REGID = "frisbee_last_regid";
+
+    async function fetchWithTimeout(url, ms=6000, opts={}){
+      const controller = new AbortController();
+      const t = setTimeout(()=>controller.abort(), ms);
+      try{
+        const res = await fetch(url, { ...opts, signal: controller.signal });
+        return await res.json();
+      } finally {
+        clearTimeout(t);
+      }
+    }
+
+    async function safeGetJson(url){
+      try{
+        return await fetchWithTimeout(url, 6000, { method:"GET" });
+      } catch(e){
+        return await fetchWithTimeout(url, 9000, { method:"GET" });
+      }
+    }
+
+    // ✅ POST 专用：不强求读回 JSON（GAS 经常会拦 response）
+    // 规则：只要请求发出，就当作“很可能已成功”，再用 refresh() 去验证
+    async function postLikelyOk(url, ms=12000, bodyObj={}){
+      const controller = new AbortController();
+      const t = setTimeout(()=>controller.abort(), ms);
+
+      try{
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type":"text/plain;charset=utf-8" },
+          body: JSON.stringify(bodyObj),
+          signal: controller.signal,
+          redirect: "follow"
+        });
+
+        // 尝试读取返回（可能会失败：CORS/opaque/redirect）
+        try{
+          const text = await res.text();
+          try{
+            return JSON.parse(text); // {ok:true, regId:...}
+          }catch{
+            return { ok:true, _note:"posted_no_json" };
+          }
+        }catch{
+          return { ok:true, _note:"posted_no_body" };
+        }
+
+      } catch(e){
+        // 关键：这里不当作失败，因为后端可能已经写入成功了
+        return { ok:true, _note:"posted_but_fetch_error", _err: String(e) };
+      } finally {
+        clearTimeout(t);
+      }
+    }
+
+    function timeLeftText(cutoffIso){
+
+      if (!cutoffIso) return "Time left: —";
+
+      const cut = new Date(cutoffIso).getTime();
+      if (Number.isNaN(cut)) return "Time left: —";
+
+      const now = Date.now();
+      const diff = cut - now;
+
+      if (diff <= 0) return "0m left";
+
+      const totalMinutes = Math.floor(diff / 60000);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+
+      if (hours > 0){
+        return `${hours}h left `;
+      }
+
+      return `${minutes}m left`;
+    }
+
+    async function getStatus() {
+      return await safeGetJson(ENDPOINT + "?action=status");
+    }
+
+    function setPills(data) {
+      countPill.textContent = `${data.count} / ${data.max} registered`;
+
+      if (data.isFull) {
+        statusPill.textContent = "FULL";
+        statusPill.className = "pill bad";
+      } else if (data.open) {
+        statusPill.textContent = "OPEN";
+        statusPill.className = "pill ok";
+      } else {
+        statusPill.textContent = "CLOSED";
+        statusPill.className = "pill bad";
+      }
+
+      timeLeftPill.textContent = timeLeftText(data.cutoffIso);
+
+      if (data.isFull) {
+        btn.disabled = true;
+        btn.textContent = "Full";
+      } else if (!data.open) {
+        btn.disabled = true;
+        btn.textContent = "Registration closed";
+      } else {
+        btn.disabled = false;
+        btn.textContent = "Submit";
+      }
+    }
+
+    function saveLastReg(name, regId) {
+      localStorage.setItem(LS_NAME, name);
+      localStorage.setItem(LS_REGID, regId);
+      cancelName.value = name;
+      cancelId.value = regId;
+      regSavedNote.textContent = "Saved on this device ✅";
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      }
+    }
+
+    function escapeHtml(s){
+      return (s||"").toString()
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function renderGameInfo() {
+      const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
+      gameInfoLine1.innerHTML = `${CFG.gameTimeText} · ${loc}`;
+      gameInfoLine2.innerHTML = `
+        <span>Bring: 💧 👟 🥏 🔥</span>
+        <span>Format: 5v5 / 7v7 (with subs)</span>
+      `;
+      tzLine.textContent = `Registration closes: Fri 3:00 PM | Jeddah local time`;
+      fourTeamMin.textContent = CFG.teamsMinForFour;
+    }
+
+    async function refresh() {
+      try {
+        const data = await getStatus();
+        if (!data.ok) throw new Error("status not ok");
+        setPills(data);
+        return data;
+      } catch {
+        countPill.textContent = "Status unavailable";
+        statusPill.textContent = "UNKNOWN";
+        timeLeftPill.textContent = "";
+        return null;
+      }
+    }
+
+    (function initSaved(){
+      const n = localStorage.getItem(LS_NAME) || "";
+      const r = localStorage.getItem(LS_REGID) || "";
+      if (n) cancelName.value = n;
+      if (r) cancelId.value = r;
+    })();
+
+    copyRegBtn.addEventListener("click", async () => {
+      const regId = localStorage.getItem(LS_REGID) || "";
+      if (!regId) {
+        regSavedNote.textContent = "No RegID saved yet.";
+        return;
+      }
+      const ok = await copyText(regId);
+      regSavedNote.textContent = ok ? "RegID copied ✅" : "Copy failed ❌";
+    });
+
+    // ---- REGISTER ----
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      statusEl.textContent = "";
+      statusEl.className = "status";
+      regTools.style.display = "none";
+      regSavedNote.textContent = "";
+
+      const payload = {
+        action: "register",
+        name: document.getElementById("name").value.trim(),
+        gender: document.getElementById("gender").value,
+        throwing: document.getElementById("throwing").value,
+        catch: document.getElementById("catch").value,
+        fitness: document.getElementById("fitness").value,
+        experience: document.getElementById("experience").value,
+        practice: document.getElementById("pd").value,
+        preference: document.getElementById("pref").value
+      };
+
+      if (
+        !payload.name ||
+        !payload.gender ||
+        !payload.throwing ||
+        !payload.catch ||
+        !payload.fitness ||
+        !payload.experience ||
+        !payload.preference ||
+        !payload.practice
+      ){
+        statusEl.textContent = "Please complete all required fields.";
+        statusEl.classList.add("badText");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Submitting…";
+      showOverlay();
+
+      try {
+        const data = await postLikelyOk(ENDPOINT, 12000, payload);
+
+        // ✅ 永远不把“读不到回包”当作失败
+        statusEl.className = "status okText";
+
+        if (data && data.regId) {
+          statusEl.innerHTML = `✅ Submitted! RegID: <b>${data.regId}</b>`;
+          saveLastReg(payload.name, data.regId);
+          regTools.style.display = "flex";
+
+        } else {
+          statusEl.textContent = "✅ Submitted! (Response blocked by browser)";
+
+          // ✅ 回查 RegID（靠 GET 拿回 JSON，成功率高）
+          try {
+            const q = encodeURIComponent(payload.name);
+            const back = await safeGetJson(ENDPOINT + "?action=lastReg&name=" + q);
+
+            if (back && back.ok && back.regId) {
+              statusEl.innerHTML = `✅ Submitted! RegID: <b>${back.regId}</b>`;
+              saveLastReg(payload.name, back.regId);
+              regTools.style.display = "flex";
+            }
+          } catch (e) {
+            // 查不到就算了，仍然保持已提交提示
+          }
+        }
+
+        // 清空表单 + 刷新状态/列表（用 refresh 来确认写入）
+        form.reset();
+        await refresh();
+        if (playersArea.style.display !== "none") await refreshPlayers(true);
+
+      } catch (err) {
+        statusEl.textContent = "✅ Submitted! (Browser blocked response)";
+        statusEl.className = "status okText";
+        await refresh();
+        if (playersArea.style.display !== "none") await refreshPlayers(true);
+      }
+
+      finally {
+        hideOverlay();
+        await refresh();
+        if (!btn.disabled) btn.textContent = "Submit";
+      }
+    });
+
+    // ---- CANCEL ----
+    cancelBtn.addEventListener("click", async () => {
+      cancelStatus.textContent = "";
+      cancelStatus.className = "status";
+
+      const name = cancelName.value.trim();
+      const regId = cancelId.value.trim();
+      if (!name || !regId) {
+        cancelStatus.textContent = "Please provide both Name and RegID.";
+        cancelStatus.classList.add("badText");
+        return;
+      }
+      if (!confirm("Confirm cancellation? (Buy Maojin a coffee ☕)")) return;
+
+      cancelBtn.disabled = true;
+      cancelBtn.textContent = "Cancelling…";
+
+      // ✅ 清本地 RegID/Name（避免重复误操作）
+      function clearLocalReg(){
+        try{
+          localStorage.removeItem(LS_NAME);
+          localStorage.removeItem(LS_REGID);
+        }catch(_){}
+        cancelName.value = "";
+        cancelId.value = "";
+        regSavedNote.textContent = "Cleared saved RegID ✅";
+        regTools.style.display = "none";
+      }
+
+      try {
+        const data = await postLikelyOk(ENDPOINT, 12000, { action:"cancel", name, regId });
+
+        // 先按“已发出请求”处理（因为 GAS 可能读不到回包）
+        cancelStatus.className = "status okText";
+        cancelStatus.textContent = "✅ Cancel requested. Refreshing…";
+
+        await refresh();
+        if (playersArea.style.display !== "none") await refreshPlayers(true);
+
+        // ✅ 关键：只要请求发出 & 刷新后一般就认为成功，并清掉本地 RegID
+        clearLocalReg();
+
+        // 如果后端明确返回 ok:false，再提示失败（但本地仍然清掉，避免误点重复 cancel）
+        if (data && data.ok === false) {
+          cancelStatus.className = "status badText";
+          cancelStatus.textContent = "❌ " + (data.error || "Cancel failed");
+          return;
+        }
+
+        cancelStatus.className = "status okText";
+        cancelStatus.textContent = "✅ Cancelled.";
+
+      } catch (e) {
+        // 浏览器阻止回包也不当成失败：刷新+清本地
+        cancelStatus.className = "status okText";
+        cancelStatus.textContent = "✅ Cancel requested (browser blocked response). Refreshing…";
+
+        await refresh();
+        if (playersArea.style.display !== "none") await refreshPlayers(true);
+
+        clearLocalReg();
+
+        cancelStatus.className = "status okText";
+        cancelStatus.textContent = "✅ Cancelled.";
+      } finally {
+        cancelBtn.disabled = false;
+        cancelBtn.textContent = "Cancel my registration";
+      }
+    });
+
+    // ---- PLAYERS ----
+    let lastPlayersText = "";
+
+    async function refreshPlayers(silent=false){
+      if (!silent) playersStatus.textContent = "Loading…";
+      copyPlayersBtn.disabled = true;
+
+      try{
+        const data = await safeGetJson(ENDPOINT + "?action=players");
+        if (!data.ok) throw new Error(data.error || "players not ok");
+
+        playersBadge.textContent = `${data.count} players`;
+        genderStats.textContent = `Male: ${data.stats.male}   Female: ${data.stats.female}`;
+        prefStats.textContent = `Handler: ${data.stats.handler}   Cutter: ${data.stats.cutter}`;
+
+        const lines = data.players.map((p, idx) => {
+          return {
+            idx: idx+1,
+            name: p.name,
+            gender: p.gender || "—"
+          };
+        });
+
+        playersList.innerHTML = lines.map(x => `
+          <div class="playerLine">
+            <div><b>${x.idx}. ${escapeHtml(x.name)}</b></div>
+            <div class="playerMeta">${escapeHtml(x.gender)}</div>
+          </div>
+        `).join("");
+
+        lastPlayersText = lines.map(x => `${x.idx}. ${x.name} (${x.gender})`).join("\n");
+        copyPlayersBtn.disabled = !lastPlayersText;
+
+        if (!silent) playersStatus.textContent = "Updated ✅";
+        return true;
+
+      } catch(e){
+        if (!silent) playersStatus.textContent = "Slow / failed. Tap Show again.";
+        return false;
+      }
+    }
+
+    togglePlayersBtn.addEventListener("click", async ()=>{
+      const open = playersArea.style.display !== "none";
+      if (open){
+        playersArea.style.display = "none";
+        togglePlayersBtn.textContent = "Show";
+        playersStatus.textContent = "";
+        return;
+      }
+      playersArea.style.display = "block";
+      togglePlayersBtn.textContent = "Hide";
+      await refreshPlayers(false);
+    });
+
+    copyPlayersBtn.addEventListener("click", async ()=>{
+      if (!lastPlayersText) return;
+      const ok = await copyText(lastPlayersText);
+      playersStatus.textContent = ok ? "Copied ✅" : "Copy failed ❌";
+    });
+
+    // ---- TEAMS (LOCKED AFTER SUCCESS) ----
+    let teamsLockedAfterLoaded = false;
+
+    // cutoff 前：按钮灰色显示提示语（不可点）
+    function setTeamsBtnBeforeCutoff(){
+      refreshTeamsBtn.style.display = "block";
+      refreshTeamsBtn.disabled = true;
+      refreshTeamsBtn.style.opacity = 0.55;
+      refreshTeamsBtn.textContent = "Teams will be shown after cutoff.";
+    }
+
+    // cutoff 后但尚未成功加载：允许手动刷新
+    function setTeamsBtnRetry(){
+      refreshTeamsBtn.style.display = "block";
+      refreshTeamsBtn.disabled = false;
+      refreshTeamsBtn.style.opacity = 1;
+      refreshTeamsBtn.textContent = "Refresh Teams";
+    }
+
+    // 成功拿到 teams 后：隐藏按钮（只显示最新结果）
+    function hideTeamsBtn(){
+      refreshTeamsBtn.style.display = "none";
+    }
+
+    // 拉取并渲染 teams（永远覆盖旧内容，保证“最新 teams”）
+    async function fetchAndRenderTeams({ auto = false } = {}) {
+      teamsOutput.innerHTML = "";
+
       if (!auto) {
-        teamsStatus.textContent = "❌ " + ((data && data.error) ? data.error : "Teams unavailable");
-        teamsStatus.className = "status badText";
+        teamsStatus.textContent = "";
+        teamsStatus.className = "status";
+        refreshTeamsBtn.disabled = true;
+        refreshTeamsBtn.style.opacity = 0.8;
+        refreshTeamsBtn.textContent = "Refreshing…";
       }
-      return false;
-    }
 
-    teamsStatus.innerHTML = `✅ Teams ready (${data.nTeams} teams / ${data.nPlayers} players).`;
-    teamsStatus.className = "status okText";
+      try {
+        const data = await safeGetJson(ENDPOINT + "?action=teams");
 
-    const teamsText = data.teamsText || "";
-    if (teamsText) {
-      const tools = document.createElement("div");
-      tools.className = "inline";
-      tools.style.marginBottom = "10px";
-      tools.innerHTML = `
-        <button class="smallbtn secondary" type="button" id="copyTeamsBtn">Copy teams text</button>
-        <button class="smallbtn secondary" type="button" id="waBtn">Share to WhatsApp</button>
-      `;
-      teamsOutput.appendChild(tools);
+        if (!data || !data.ok) {
+          if (!auto) {
+            teamsStatus.textContent = "❌ " + ((data && data.error) ? data.error : "Teams unavailable");
+            teamsStatus.className = "status badText";
+          }
+          return false;
+        }
 
-      document.getElementById("copyTeamsBtn").addEventListener("click", async () => {
-        const ok = await copyText(teamsText);
-        teamsStatus.textContent = ok ? "✅ Teams copied to clipboard." : "❌ Copy failed.";
-        teamsStatus.className = "status " + (ok ? "okText" : "badText");
-      });
+        teamsStatus.innerHTML = `✅ Teams ready (${data.nTeams} teams / ${data.nPlayers} players).`;
+        teamsStatus.className = "status okText";
 
-      document.getElementById("waBtn").addEventListener("click", () => {
-        const url = "https://wa.me/?text=" + encodeURIComponent(teamsText);
-        window.open(url, "_blank");
-      });
-    }
+        const teamsText = data.teamsText || "";
+        if (teamsText) {
+          const tools = document.createElement("div");
+          tools.className = "inline";
+          tools.style.marginBottom = "10px";
+          tools.innerHTML = `
+            <button class="smallbtn secondary" type="button" id="copyTeamsBtn">Copy teams text</button>
+            <button class="smallbtn secondary" type="button" id="waBtn">Share to WhatsApp</button>
+          `;
+          teamsOutput.appendChild(tools);
 
-    (data.teams || []).forEach(t => {
-      const div = document.createElement("div");
-      div.className = "box";
-      div.innerHTML = `
-        <div class="teamtitle">${escapeHtml(t.name || "")}</div>
-        <ul class="list">
-          ${(t.players || []).map(p => `<li>${escapeHtml(p.name || "")}</li>`).join("")}
-        </ul>
-      `;
-      teamsOutput.appendChild(div);
-    });
+          document.getElementById("copyTeamsBtn").addEventListener("click", async () => {
+            const ok = await copyText(teamsText);
+            teamsStatus.textContent = ok ? "✅ Teams copied to clipboard." : "❌ Copy failed.";
+            teamsStatus.className = "status " + (ok ? "okText" : "badText");
+          });
 
-    // ✅ 一旦成功展示 teams，就锁定：后续 interval 不再切按钮/闪烁
-    teamsLockedAfterLoaded = true;
+          document.getElementById("waBtn").addEventListener("click", () => {
+            const url = "https://wa.me/?text=" + encodeURIComponent(teamsText);
+            window.open(url, "_blank");
+          });
+        }
 
-    return true;
-  } catch (e) {
-    if (!auto) {
-      teamsStatus.textContent = "❌ Network error: " + e;
-      teamsStatus.className = "status badText";
-    }
-    return false;
-  } finally {
-    // 手动刷新结束后，如果按钮还在显示，就恢复成可点“Refresh Teams”
-    if (!auto && refreshTeamsBtn.style.display !== "none") {
-      setTeamsBtnRetry();
-    }
-  }
-}
+        (data.teams || []).forEach(t => {
+          const div = document.createElement("div");
+          div.className = "box";
+          div.innerHTML = `
+            <div class="teamtitle">${escapeHtml(t.name || "")}</div>
+            <ul class="list">
+              ${(t.players || []).map(p => `<li>${escapeHtml(p.name || "")}</li>`).join("")}
+            </ul>
+          `;
+          teamsOutput.appendChild(div);
+        });
 
-// 手动刷新（只在 cutoff 后、自动加载失败时需要）
-// 注意：不要重复绑定（确保你只保留这一处 addEventListener）
-refreshTeamsBtn.addEventListener("click", async () => {
-  await fetchAndRenderTeams({ auto: false });
-  if (teamsLockedAfterLoaded) hideTeamsBtn();
-});
+        // ✅ 一旦成功展示 teams，就锁定：后续 interval 不再切按钮/闪烁
+        teamsLockedAfterLoaded = true;
 
-// 根据 status(open/closed) 控制按钮，并在 cutoff 后自动拉取 teams
-async function autoTeamsByCutoff() {
-  // ✅ 如果已经成功展示过 teams：保持图1状态，不再闪，不再改按钮
-  if (teamsLockedAfterLoaded) return;
-
-  // 只有在“未锁定”时才显示 cutoff 前提示（避免闪）
-  setTeamsBtnBeforeCutoff();
-
-  const st = await refresh();
-  await refreshPlayers(true);
-
-  if (!st || !st.ok) {
-    setTeamsBtnBeforeCutoff();
-    return;
-  }
-
-  if (st.open) {
-    setTeamsBtnBeforeCutoff();
-    return;
-  }
-
-  // cutoff 后：先允许重试按钮存在（万一自动拉取失败）
-  setTeamsBtnRetry();
-
-  const loaded = await fetchAndRenderTeams({ auto: true });
-
-  // 成功：隐藏按钮，只显示最新 teams（并且锁定）
-  if (loaded) hideTeamsBtn();
-}
-
-// 页面启动
-renderGameInfo();
-autoTeamsByCutoff();
-
-// 页面开着等到 15:00：自动切换状态并拉 teams
-setInterval(autoTeamsByCutoff, 45000);
-
-
-Chart.defaults.plugins.legend.onClick = () => {};
-// ===== Analytics (auto-load on expand) =====
-const analyticsDetails = document.getElementById("analyticsDetails");
-const anaStatus = document.getElementById("anaStatus");
-const anaWeekBadge = document.getElementById("anaWeekBadge");
-const latestSummary = document.getElementById("latestSummary");
-
-let CH = {}; // chart instances
-let analyticsLoadedOnce = false;
-let analyticsLoading = false;
-
-function destroyChart(id){
-  if(CH[id]){ CH[id].destroy(); CH[id]=null; }
-}
-
-function pct(x){ return (x*100).toFixed(1) + "%"; }
-
-async function loadAnalytics(){
-  if(analyticsLoading) return;
-  analyticsLoading = true;
-
-  anaStatus.textContent = "Loading…";
-  try{
-    const data = await safeGetJson(ENDPOINT + "?action=analytics");
-    if(!data || !data.ok) throw new Error((data && data.error) || "analytics failed");
-
-    const wk = data.latestWeek;
-    const st = data.latest;
-    const trend = data.trend || [];
-
-    anaWeekBadge.textContent = wk;
-    latestSummary.textContent =
-      `Players: ${st.n} · Avg: ${st.avg} · Std: ${st.std} · Elite: ${pct(st.eliteFrac)}`;
-
-    // ----- Latest: Histogram (bar) -----
-    destroyChart("hist");
-    CH.hist = new Chart(document.getElementById("c_hist"), {
-      type: "bar",
-      data: {
-        labels: Object.keys(st.bins),
-        datasets: [{ label: "Count", data: Object.values(st.bins) }]
-      },
-      options:{
-  responsive:true,
-  maintainAspectRatio:false,
-  plugins:{ legend:{display:false} },
-  scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 } } }
-}
-    });
-
-    // ----- Latest: Skill levels (pie) -----
-    destroyChart("levels");
-    const lvlLabels = ["Beginner","Intermediate","Advanced","Elite"];
-    CH.levels = new Chart(document.getElementById("c_levels"), {
-      type: "pie",
-      data: {
-        labels: lvlLabels,
-        datasets: [{ data: lvlLabels.map(k => st.levels[k] || 0) }]
-      },
-options: {
-  responsive:true,
-  maintainAspectRatio:false,
-  plugins:{
-    legend:{
-      position:"bottom",
-      labels:{
-        boxWidth:10,
-        padding:10,
-        font:{ size:12 }
-      }
-    },
-    tooltip:{
-      callbacks:{
-        label(ctx){
-          const ds = ctx.dataset;
-          const total = ds.data.reduce((a,b)=>a+b,0) || 1;
-          const v = ctx.parsed;
-          const p = (v/total)*100;
-          return `${ctx.label}: ${p.toFixed(1)}% (${v})`;
+        return true;
+      } catch (e) {
+        if (!auto) {
+          teamsStatus.textContent = "❌ Network error: " + e;
+          teamsStatus.className = "status badText";
+        }
+        return false;
+      } finally {
+        // 手动刷新结束后，如果按钮还在显示，就恢复成可点“Refresh Teams”
+        if (!auto && refreshTeamsBtn.style.display !== "none") {
+          setTeamsBtnRetry();
         }
       }
     }
-  }
-}
+
+    // 手动刷新（只在 cutoff 后、自动加载失败时需要）
+    // 注意：不要重复绑定（确保你只保留这一处 addEventListener）
+    refreshTeamsBtn.addEventListener("click", async () => {
+      await fetchAndRenderTeams({ auto: false });
+      if (teamsLockedAfterLoaded) hideTeamsBtn();
     });
 
-    // ----- Latest: Male vs Female avg (bar) -----
-    destroyChart("gender");
-    CH.gender = new Chart(document.getElementById("c_gender"), {
-      type: "bar",
-      data: {
-        labels: ["Male","Female"],
-        datasets: [{ label: "Avg", data: [st.maleAvg ?? 0, st.femaleAvg ?? 0] }]
-      },
-        options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend:{display:false} },
-        scales: { y: { min:0, max:5 } }
+    // 根据 status(open/closed) 控制按钮，并在 cutoff 后自动拉取 teams
+    async function autoTeamsByCutoff() {
+      // ✅ 如果已经成功展示过 teams：保持图1状态，不再闪，不再改按钮
+      if (teamsLockedAfterLoaded) return;
+
+      // 只有在“未锁定”时才显示 cutoff 前提示（避免闪）
+      setTeamsBtnBeforeCutoff();
+
+      const st = await refresh();
+      await refreshPlayers(true);
+
+      if (!st || !st.ok) {
+        setTeamsBtnBeforeCutoff();
+        return;
       }
-    });
 
-    // ----- Latest: Percentiles (bar) -----
-    destroyChart("percent");
-    CH.percent = new Chart(document.getElementById("c_percent"), {
-      type: "bar",
-      data: {
-        labels: ["Avg","Std","Balance","Min","P25","Median","P75","Max"],
-        datasets: [{
-          label: "Value",
-          data: [st.avg, st.std, st.balance, st.min, st.p25, st.median, st.p75, st.max]
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend:{display:false} },
-        scales: { y: { min:0, max:5 } }
+      if (st.open) {
+        setTeamsBtnBeforeCutoff();
+        return;
       }
-    });
 
-    // ----- Trend: Avg & Std (line) -----
-    destroyChart("trend1");
-    const weeks = trend.map(x=>x.week);
-    const avgArr = trend.map(x=>x.avg);
-    const stdArr = trend.map(x=>x.std);
+      // cutoff 后：先允许重试按钮存在（万一自动拉取失败）
+      setTeamsBtnRetry();
 
-    CH.trend1 = new Chart(document.getElementById("c_trend1"), {
-      type: "line",
-      data: {
-        labels: weeks,
-        datasets: [
-          { label:"Avg", data: avgArr, tension:0.25, pointRadius:4 },
-          { label:"Std", data: stdArr, tension:0.25, pointRadius:4 }
-        ]
-      },
-      options: {
-  responsive:true,
-  maintainAspectRatio:false,
-  plugins:{
-    legend:{
-      position:"top",
-      align:"start",
-      labels:{
-        usePointStyle:true,
-        boxWidth:10,
-        padding:12
+      const loaded = await fetchAndRenderTeams({ auto: true });
+
+      // 成功：隐藏按钮，只显示最新 teams（并且锁定）
+      if (loaded) hideTeamsBtn();
+    }
+
+    // 页面启动
+    renderGameInfo();
+    autoTeamsByCutoff();
+
+    // 页面开着等到 15:00：自动切换状态并拉 teams
+    setInterval(autoTeamsByCutoff, 45000);
+
+    // 防 Chart.js 未加载导致崩溃
+    if (window.Chart && Chart.defaults && Chart.defaults.plugins && Chart.defaults.plugins.legend){
+      Chart.defaults.plugins.legend.onClick = () => {};
+    }
+
+    // ===== Analytics (auto-load on expand) =====
+    const analyticsDetails = document.getElementById("analyticsDetails");
+    const anaStatus = document.getElementById("anaStatus");
+    const anaWeekBadge = document.getElementById("anaWeekBadge");
+    const latestSummary = document.getElementById("latestSummary");
+
+    let CH = {}; // chart instances
+    let analyticsLoadedOnce = false;
+    let analyticsLoading = false;
+
+    function destroyChart(id){
+      if(CH[id]){ CH[id].destroy(); CH[id]=null; }
+    }
+
+    function pct(x){ return (x*100).toFixed(1) + "%"; }
+
+    async function loadAnalytics(){
+      if(analyticsLoading) return;
+      analyticsLoading = true;
+
+      anaStatus.textContent = "Loading…";
+      try{
+        const data = await safeGetJson(ENDPOINT + "?action=analytics");
+        if(!data || !data.ok) throw new Error((data && data.error) || "analytics failed");
+
+        const wk = data.latestWeek;
+        const st = data.latest;
+        const trend = data.trend || [];
+
+        anaWeekBadge.textContent = wk;
+        latestSummary.textContent =
+          `Players: ${st.n} · Avg: ${st.avg} · Std: ${st.std} · Elite: ${pct(st.eliteFrac)}`;
+
+        // ----- Latest: Histogram (bar) -----
+        destroyChart("hist");
+        CH.hist = new Chart(document.getElementById("c_hist"), {
+          type: "bar",
+          data: {
+            labels: Object.keys(st.bins),
+            datasets: [{ label: "Count", data: Object.values(st.bins) }]
+          },
+          options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{ legend:{display:false} },
+            scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 } } }
+          }
+        });
+
+        // ----- Latest: Skill levels (pie) -----
+        destroyChart("levels");
+        const lvlLabels = ["Beginner","Intermediate","Advanced","Elite"];
+        CH.levels = new Chart(document.getElementById("c_levels"), {
+          type: "pie",
+          data: {
+            labels: lvlLabels,
+            datasets: [{ data: lvlLabels.map(k => st.levels[k] || 0) }]
+          },
+          options: {
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{
+              legend:{
+                position:"bottom",
+                labels:{
+                  boxWidth:10,
+                  padding:10,
+                  font:{ size:12 }
+                }
+              },
+              tooltip:{
+                callbacks:{
+                  label(ctx){
+                    const ds = ctx.dataset;
+                    const total = ds.data.reduce((a,b)=>a+b,0) || 1;
+                    const v = ctx.parsed;
+                    const p = (v/total)*100;
+                    return `${ctx.label}: ${p.toFixed(1)}% (${v})`;
+                  }
+                }
+              }
+            }
+          }
+        });
+
+        // ----- Latest: Male vs Female avg (bar) -----
+        destroyChart("gender");
+        CH.gender = new Chart(document.getElementById("c_gender"), {
+          type: "bar",
+          data: {
+            labels: ["Male","Female"],
+            datasets: [{ label: "Avg", data: [st.maleAvg ?? 0, st.femaleAvg ?? 0] }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend:{display:false} },
+            scales: { y: { min:0, max:5 } }
+          }
+        });
+
+        // ----- Latest: Percentiles (bar) -----
+        destroyChart("percent");
+        CH.percent = new Chart(document.getElementById("c_percent"), {
+          type: "bar",
+          data: {
+            labels: ["Avg","Std","Balance","Min","P25","Median","P75","Max"],
+            datasets: [{
+              label: "Value",
+              data: [st.avg, st.std, st.balance, st.min, st.p25, st.median, st.p75, st.max]
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend:{display:false} },
+            scales: { y: { min:0, max:5 } }
+          }
+        });
+
+        // ----- Trend: Avg & Std (line) -----
+        destroyChart("trend1");
+        const weeks = trend.map(x=>x.week);
+        const avgArr = trend.map(x=>x.avg);
+        const stdArr = trend.map(x=>x.std);
+
+        CH.trend1 = new Chart(document.getElementById("c_trend1"), {
+          type: "line",
+          data: {
+            labels: weeks,
+            datasets: [
+              { label:"Avg", data: avgArr, tension:0.25, pointRadius:4 },
+              { label:"Std", data: stdArr, tension:0.25, pointRadius:4 }
+            ]
+          },
+          options: {
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{
+              legend:{
+                position:"top",
+                align:"start",
+                labels:{
+                  usePointStyle:true,
+                  boxWidth:10,
+                  padding:12
+                }
+              }
+            },
+            elements:{ point:{ radius:4 }, line:{ borderWidth:2 } },
+            scales:{
+              x:{ ticks:{ maxRotation:0, autoSkip:true } },
+              y:{ min:0, max:5, ticks:{ stepSize:1 } }
+            }
+          }
+        });
+
+        // ----- Trend: Elite% (line) -----
+        destroyChart("trend2");
+        const eliteArr = trend.map(x=> (x.eliteFrac ?? 0) * 100);
+
+        CH.trend2 = new Chart(document.getElementById("c_trend2"), {
+          type: "line",
+          data: {
+            labels: weeks,
+            datasets: [{ label:"Elite%", data: eliteArr, tension:0.25, pointRadius:4 }]
+          },
+          options: {
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{
+              legend:{
+                position:"top",
+                align:"start",
+                labels:{ usePointStyle:true, boxWidth:10, padding:12 }
+              }
+            },
+            elements:{ point:{ radius:4 }, line:{ borderWidth:2 } },
+            scales:{
+              x:{ ticks:{ maxRotation:0, autoSkip:true } },
+              y:{
+                min:0, max:100,
+                ticks:{ callback:(v)=>v+"%" }
+              }
+            }
+          }
+        });
+
+        anaStatus.textContent = "Updated ✅";
+        analyticsLoadedOnce = true;
+
+      }catch(e){
+        anaStatus.textContent = "Failed / slow. Close and open again.";
+      } finally {
+        analyticsLoading = false;
       }
     }
-  },
-  elements:{ point:{ radius:4 }, line:{ borderWidth:2 } },
-  scales:{
-    x:{ ticks:{ maxRotation:0, autoSkip:true } },
-    y:{ min:0, max:5, ticks:{ stepSize:1 } }
-  }
-}
+
+    // Auto-load when user expands the details (default collapsed)
+    analyticsDetails.addEventListener("toggle", () => {
+      if(analyticsDetails.open && !analyticsLoadedOnce){
+        loadAnalytics();
+      }
     });
+    loadAnalytics();   // 预加载：页面打开就拉数据，但 analytics 仍保持折叠
 
-    // ----- Trend: Elite% (line) -----
-    destroyChart("trend2");
-    const eliteArr = trend.map(x=> (x.eliteFrac ?? 0) * 100);
+    // ---- Floating "more below" hint ----
+    const scrollHint = document.getElementById("scrollHint");
+    const scrollHintBtn = document.getElementById("scrollHintBtn");
+    const belowSections = document.getElementById("belowSections");
 
-    CH.trend2 = new Chart(document.getElementById("c_trend2"), {
-      type: "line",
-      data: {
-        labels: weeks,
-        datasets: [{ label:"Elite%", data: eliteArr, tension:0.25, pointRadius:4 }]
-      },
-      options: {
-  responsive:true,
-  maintainAspectRatio:false,
-  plugins:{
-    legend:{
-      position:"top",
-      align:"start",
-      labels:{ usePointStyle:true, boxWidth:10, padding:12 }
+    function isNearBottom(){
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+      const vh = window.innerHeight;
+      const docH = document.documentElement.scrollHeight;
+      return (scrollY + vh) >= (docH - 120);
     }
-  },
-  elements:{ point:{ radius:4 }, line:{ borderWidth:2 } },
-  scales:{
-    x:{ ticks:{ maxRotation:0, autoSkip:true } },
-    y:{
-      min:0, max:100,
-      ticks:{ callback:(v)=>v+"%" }
+
+    function isBelowAnchorVisible(){
+      if(!belowSections) return false;
+      const r = belowSections.getBoundingClientRect();
+      return r.top < window.innerHeight - 80; // 锚点进入视窗就算“看到了下面”
     }
-  }
-}
-    });
 
-    anaStatus.textContent = "Updated ✅";
-    analyticsLoadedOnce = true;
+    function updateScrollHint(){
+      if(!scrollHint) return;
 
-  }catch(e){
-    anaStatus.textContent = "Failed / slow. Close and open again.";
-  } finally {
-    analyticsLoading = false;
-  }
-}
+      // 条件：页面可以滚动 且 还没滚到下面区域
+      const canScroll = document.documentElement.scrollHeight > window.innerHeight + 80;
+      if(!canScroll) { scrollHint.style.display = "none"; return; }
 
-// Auto-load when user expands the details (default collapsed)
-analyticsDetails.addEventListener("toggle", () => {
-  if(analyticsDetails.open && !analyticsLoadedOnce){
-    loadAnalytics();
-  }
-});
-loadAnalytics();   // 预加载：页面打开就拉数据，但 analytics 仍保持折叠
-		// ---- Floating "more below" hint ----
-const scrollHint = document.getElementById("scrollHint");
-const scrollHintBtn = document.getElementById("scrollHintBtn");
-const belowSections = document.getElementById("belowSections");
+      if(isBelowAnchorVisible() || isNearBottom()){
+        scrollHint.style.display = "none";
+      }else{
+        scrollHint.style.display = "flex";
+      }
+    }
 
-function isNearBottom(){
-  const scrollY = window.scrollY || document.documentElement.scrollTop;
-  const vh = window.innerHeight;
-  const docH = document.documentElement.scrollHeight;
-  return (scrollY + vh) >= (docH - 120);
-}
+    function scrollToBelow(){
+      if(!belowSections) return;
+      belowSections.scrollIntoView({ behavior:"smooth", block:"start" });
+    }
 
-function isBelowAnchorVisible(){
-  if(!belowSections) return false;
-  const r = belowSections.getBoundingClientRect();
-  return r.top < window.innerHeight - 80; // 锚点进入视窗就算“看到了下面”
-}
+    // 点击条或按钮都滚动
+    if(scrollHintBtn){
+      scrollHintBtn.addEventListener("click", scrollToBelow);
+    }
+    if(scrollHint){
+      scrollHint.addEventListener("click", (e) => {
+        if(e.target === scrollHintBtn) return;
+        scrollToBelow();
+      });
+    }
 
-function updateScrollHint(){
-  // 条件：页面可以滚动 且 还没滚到下面区域
-  const canScroll = document.documentElement.scrollHeight > window.innerHeight + 80;
-  if(!canScroll) { scrollHint.style.display = "none"; return; }
+    window.addEventListener("scroll", updateScrollHint, { passive:true });
+    window.addEventListener("resize", updateScrollHint);
+    setTimeout(updateScrollHint, 300);
+  </script>
 
-  if(isBelowAnchorVisible() || isNearBottom()){
-    scrollHint.style.display = "none";
-  }else{
-    scrollHint.style.display = "flex";
-  }
-}
-
-function scrollToBelow(){
-  if(!belowSections) return;
-  belowSections.scrollIntoView({ behavior:"smooth", block:"start" });
-}
-
-// 点击条或按钮都滚动
-scrollHintBtn.addEventListener("click", scrollToBelow);
-scrollHint.addEventListener("click", (e) => {
-  if(e.target === scrollHintBtn) return;
-  scrollToBelow();
-});
-
-window.addEventListener("scroll", updateScrollHint, { passive:true });
-window.addEventListener("resize", updateScrollHint);
-setTimeout(updateScrollHint, 300);
-		
-</script>
-	  <div id="scrollHint" role="button" aria-label="Scroll to sections below">
-  <div class="hintText">↓ More below: Cancel · Registered players · Teams · Analytics</div>
-  <button type="button" id="scrollHintBtn">Go</button>
-</div>
-  </body>
-  </html>
+</body>
+</html>
