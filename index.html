@@ -371,17 +371,38 @@
   box-shadow:0 -10px 30px rgba(0,0,0,.18);
 }
 #pickTop{
-  position:sticky; top:0;
+  position:sticky;
+  top:0;
   background:#fff;
   padding:10px 12px;
   border-bottom:1px solid #eee;
-  display:flex; align-items:center; justify-content:flex-end;
+  min-height:44px;       /* 给列表一个顶部呼吸区 */
 }
+
+/* ✅ 右上角圆形关闭按钮：阴影和 × 完全重叠 */
 #pickClose{
-  border:0; background:#eee; color:#111;
+  position:absolute;
+  top:10px;
+  right:12px;
+  z-index:3;
+
+  width:44px;
+  height:44px;
   border-radius:999px;
-  width:36px; height:32px;
-  font-size:18px; font-weight:900;
+
+  border:0;
+  background:#eee;
+  color:#111;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-size:24px;
+  font-weight:900;
+  line-height:1;         /* 关键：避免 × 垂直偏移 */
+  padding:0;             /* 关键：避免内边距导致偏移 */
+
   cursor:pointer;
 }
 .pickItem{
@@ -1659,13 +1680,12 @@ function updateScrollHint(){
   const overlay = document.createElement("div");
   overlay.id = "pickOverlay";
   overlay.innerHTML = `
-    <div id="pickSheet" role="dialog" aria-modal="true">
-      <div id="pickTop">
-        <button id="pickClose" type="button" aria-label="Close">×</button>
-      </div>
-      <div id="pickList"></div>
-    </div>
-  `;
+  <div id="pickSheet" role="dialog" aria-modal="true">
+    <button id="pickClose" type="button" aria-label="Close">×</button>
+    <div id="pickTop"></div>
+    <div id="pickList"></div>
+  </div>
+`;
   document.body.appendChild(overlay);
 
   const list = overlay.querySelector("#pickList");
