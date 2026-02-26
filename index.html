@@ -128,7 +128,7 @@
     margin-top:5px;        /* 原 6px */
     font-size:13px;
   }
-}
+  }
       /* Buttons */
       button{
  		 width:100%;
@@ -213,6 +213,40 @@
 #c_levels { height:260px !important; }   /* 饼图高一点 */
 #c_gender { height:200px !important; }
 #c_trend1, #c_trend2 { height:240px !important; }
+
+		/* --- tighter spacing (desktop + mobile) --- */
+
+/* 1) 全局把段落默认 margin 清掉，避免 hint 额外撑高 */
+p{ margin:0; }
+
+/* 2) 缩小 label 上下间距（最关键） */
+label{
+  margin:10px 0 6px;   /* 原来 14px 0 8px */
+}
+
+/* 3) grid 间距略缩 */
+.row{
+  gap:10px;            /* 原来 12px */
+}
+
+/* 4) hint 再紧一点 */
+.hint{
+  margin:6px 0 6px;    /* 原来 5px 0 12px */
+  padding:6px 10px;    /* 原来 8px 10px */
+  font-size:12px;      /* 你现在桌面 11px，手机 13px，有点反着了 */
+}
+
+/* 5) 可选：让第二个 row（Throwing 开始那组）不要离 hint 太远 */
+.hint + .row{
+  margin-top:4px;      /* 没有也行，有的话更紧凑 */
+}
+
+/* 6) 手机端再微调（可选） */
+@media (max-width: 520px){
+  label{ margin:8px 0 6px; }
+  .hint{ margin:6px 0 6px; padding:6px 10px; font-size:12px; }
+}
+		
     </style>
   </head>
   
