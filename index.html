@@ -100,7 +100,16 @@
         font-size:16px;box-sizing:border-box;background:#fff
       }
       .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-      .hint{margin-top:6px;font-size:13px;color:#666}
+      .hint{
+  margin: 6px 0 14px;
+  padding: 10px 12px;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  background: #fafafa;
+  color: #555;
+  font-size: 13px;
+  line-height: 1.35;
+}
 
 	 /* Mobile tighten spacing (override) */
 @media (max-width: 520px){
@@ -276,20 +285,37 @@
 
 </div>
 
-
+<p class="hint">
+  Please rate yourself at Friday game intensity (not training). If you are unsure between two levels, choose the lower one.
+</p>
   <!-- 两列开始 -->
 <div class="row">
 
-  <!-- Throwing -->
+<!-- Throwing -->
 <div>
   <label for="throwing">Throwing *</label>
   <select id="throwing" required>
     <option value="" selected disabled>Select</option>
-    <option value="1">1 — Short throws often miss (open space)</option>
-    <option value="2">2 — Backhand OK short; forehand unreliable</option>
-    <option value="3">3 — Backhand + forehand work in games (short–mid)</option>
-    <option value="4">4 — Accurate in games with a mark nearby</option>
-    <option value="5">5 — Can break the mark consistently (game speed)</option>
+
+    <option value="1">
+      1 — Even short open throws are often inaccurate; frequent turnovers
+    </option>
+
+    <option value="2">
+      2 — Short backhand OK; forehand or pressure causes many mistakes
+    </option>
+
+    <option value="3">
+      3 — Backhand + forehand usable in games (short–mid); long throws inconsistent
+    </option>
+
+    <option value="4">
+  		4 — Game-stable passer: low turnovers under mark pressure; can reliably complete open hucks or break throws when needed
+		</option>
+	<option value="5">
+      5 — Offensive driver: consistently breaks the mark and delivers accurate hucks at game speed (even under pressure) with controlled risk
+    </option>
+
   </select>
 </div>
 
@@ -298,11 +324,27 @@
   <label for="catch">Catch *</label>
   <select id="catch" required>
     <option value="" selected disabled>Select</option>
-    <option value="1">1 — Drops many easy catches</option>
-    <option value="2">2 — Catches when open; struggles on the run</option>
-    <option value="3">3 — Usually catches cleanly in games</option>
-    <option value="4">4 — Catches reliably with a defender close</option>
-    <option value="5">5 — Reliable in tight/contested catches</option>
+
+    <option value="1">
+      1 — Drops many easy, uncontested catches
+    </option>
+
+    <option value="2">
+      2 — Catches when wide open; struggles on the run or with imperfect throws
+    </option>
+
+    <option value="3">
+      3 — Usually catches cleanly in games (open or light pressure)
+    </option>
+
+    <option value="4">
+      4 — Reliable under pressure: catches on the run with a defender close; rarely drops important discs
+    </option>
+
+    <option value="5">
+      5 — Playmaker in the air: strong in contested catches, confident on sky or layout plays, wins many 50–50 discs (not just occasionally)
+    </option>
+
   </select>
 </div>
 
@@ -311,11 +353,11 @@
   <label for="fitness">Fitness *</label>
   <select id="fitness" required>
     <option value="" selected disabled>Select</option>
-    <option value="1">1 — Tires quickly in a point</option>
-    <option value="2">2 — Can play, but needs frequent breaks</option>
-    <option value="3">3 — Can play full game with normal rest</option>
-    <option value="4">4 — Repeated sprints + quick recovery</option>
-    <option value="5">5 — High speed + stamina all session</option>
+		<option value="1">1 — Struggles to finish a point; needs long rest</option>
+		<option value="2">2 — Can play, but performance drops fast; frequent breaks needed</option>
+		<option value="3">3 — Can play most points with normal rest; steady pace</option>
+		<option value="4">4 — Repeated sprints + quick recovery; can take multiple hard points in a row</option>
+		<option value="5">5 — High speed + stamina all session; still sharp late in games</option>
   </select>
 </div>
 
@@ -324,11 +366,11 @@
   <label for="experience">Experience *</label>
   <select id="experience" required>
     <option value="" selected disabled>Select</option>
-    <option value="1">1 — New: still learning rules/flow</option>
-    <option value="2">2 — Played a few times; basic rules known</option>
-    <option value="3">3 — Regular pickup; knows basic team play</option>
-    <option value="4">4 — Organized league/tournament experience</option>
-    <option value="5">5 — Competitive tournaments; calm under pressure</option>
+		<option value="1">1 — New: still learning rules and basic positioning</option>
+		<option value="2">2 — Played a few times; knows basic rules and simple cuts</option>
+		<option value="3">3 — Regular pickup: understands basic offense/defense and marking</option>
+		<option value="4">4 — Organized games: understands team systems (stack, force, help defense) and makes good decisions</option>
+		<option value="5">5 — Competitive level: reads the field well, adapts under pressure, and leads play on offense/defense</option>
   </select>
 </div>
 	
