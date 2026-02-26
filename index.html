@@ -1709,15 +1709,48 @@ function updateScrollHint(){
   closeBtn.addEventListener("click", closePicker);
 
   // 拦截原生打开（用 pointerdown/touchstart 比 click 更可靠）
-  selects.forEach(sel=>{
-    const handler = (e)=>{
-      e.preventDefault();
-      e.stopPropagation();
-      openPicker(sel);
-    };
-    sel.addEventListener("pointerdown", handler, { passive:false });
-    sel.addEventListener("touchstart", handler, { passive:false });
-  });
+// ✅ 只在“轻点”打开：滑动不触发
+let lastTouchOpenAt = 0;
+
+selects.forEach(sel=>{
+  let sx = 0, sy = 0;
+  let moved = false;
+
+  // 记录起点（不 preventDefault，允许正常滚动）
+  sel.addEventListener("touchstart", (e)=>{
+    if(e.touches.length !== 1) return;
+    const t = e.touches[0];
+    sx = t.clientX; sy = t.clientY;
+    moved = false;
+  }, { passive:true });
+
+  // 判定是否在滑动
+  sel.addEventListener("touchmove", (e)=>{
+    if(e.touches.length !== 1) return;
+    const t = e.touches[0];
+    const dx = Math.abs(t.clientX - sx);
+    const dy = Math.abs(t.clientY - sy);
+    if(dx > 10 || dy > 10) moved = true;   // ✅ 阈值可调：8~14
+  }, { passive:true });
+
+  // 结束时：如果没移动，才打开 picker，并阻止系统原生 select
+  sel.addEventListener("touchend", (e)=>{
+    if(moved) return;                      // ✅ 滑动：不弹
+    lastTouchOpenAt = Date.now();
+    e.preventDefault();
+    e.stopPropagation();
+    openPicker(sel);
+  }, { passive:false });
+
+  // 桌面/鼠标：用 click 打开
+  sel.addEventListener("click", (e)=>{
+    // 防止 touchend 后又触发 click（某些浏览器会）
+    if(Date.now() - lastTouchOpenAt < 500) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openPicker(sel);
+  }, true);
+});
 })();
   </script>
 
