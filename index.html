@@ -1,4 +1,3 @@
-<!-- ===================== PART 1 / 2 ===================== -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -18,20 +17,27 @@
 
     body{
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background:#f6f7fb;margin:0;padding:24px;color:#111
+      background:#f6f7fb;
+      margin:0;
+      padding:24px;
+      color:#111;
     }
     .wrap{max-width:680px;margin:0 auto}
     .card{
-      background:#fff;border-radius:16px;padding:18px;
-      box-shadow:0 10px 30px rgba(0,0,0,.08)
+      background:#fff;
+      border-radius:16px;
+      padding:18px;
+      box-shadow:0 10px 30px rgba(0,0,0,.08);
     }
     h1{
       text-align:center;
       margin:0 0 10px;
       font-size:22px;
     }
+    p{margin:0}
+    a{color:inherit}
+    code{background:#f3f3f3;padding:2px 6px;border-radius:6px}
 
-    /* Pills: 1 line + swipe scroll */
     .bar{
       display:flex;
       gap:6px;
@@ -43,7 +49,7 @@
       flex-wrap:nowrap;
       -webkit-overflow-scrolling: touch;
     }
-    .bar::-webkit-scrollbar{ display:none; }
+    .bar::-webkit-scrollbar{display:none}
 
     .pill{
       display:inline-flex;
@@ -58,7 +64,6 @@
     .pill.ok{background:#e7f7ec}
     .pill.bad{background:#fdecec}
 
-    /* Timezone line (right aligned) */
     .metaRight{
       margin:0 0 10px;
       color:#777;
@@ -66,7 +71,6 @@
       text-align:right;
     }
 
-    /* Boxes */
     .box{
       background:#fafafa;
       border:1px solid #eee;
@@ -75,7 +79,6 @@
       margin-top:10px;
     }
 
-    /* Game info (compact) */
     .gameLine1{
       font-weight:800;
       font-size:13px;
@@ -91,47 +94,39 @@
       gap:10px;
       align-items:center;
     }
-    .gameLine2 span{ white-space:nowrap; }
-    a{color:inherit}
+    .gameLine2 span{white-space:nowrap}
 
-    /* Form */
-    label{display:block;font-weight:600;margin:14px 0 8px}
+    label{
+      display:block;
+      font-weight:600;
+      margin:10px 0 6px;
+    }
     input,select{
-      width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;
-      font-size:16px;box-sizing:border-box;background:#fff
+      width:100%;
+      padding:12px;
+      border:1px solid #ddd;
+      border-radius:12px;
+      font-size:16px;
+      box-sizing:border-box;
+      background:#fff;
     }
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
     .hint{
-      margin: 5px 0 12px;
-      padding: 8px 10px;
-      border: 1px solid #eee;
-      border-radius: 12px;
-      background: #fafafa;
-      color: #555;
-      font-size: 11px;
-      line-height: 1.35;
+      margin:6px 0 6px;
+      padding:6px 10px;
+      border:1px solid #eee;
+      border-radius:12px;
+      background:#fafafa;
+      color:#555;
+      font-size:12px;
+      line-height:1.35;
     }
+    .hint + .row{margin-top:4px}
 
-    /* Mobile tighten spacing (override) */
-    @media (max-width: 520px){
-      label{
-        margin:12px 0 7px;      /* 原 14px 0 8px */
-        font-size:15px;
-      }
-      input,select{
-        padding:11px;          /* 原 12px */
-        font-size:15px;        /* 保持 16 防止 iOS 自动放大 */
-      }
-      .row{
-        gap:10px;              /* 原 12px */
-      }
-      .hint{
-        margin-top:5px;        /* 原 6px */
-        font-size:13px;
-      }
-    }
-
-    /* Buttons */
     button{
       width:100%;
       margin-top:16px;
@@ -144,56 +139,17 @@
       background:#111;
       color:#fff;
     }
-
     button.secondary{background:#444}
     button:disabled{opacity:.55;cursor:not-allowed}
 
     .status{margin-top:12px;font-size:14px}
     .okText{color:#0a7a2f}
     .badText{color:#b00020}
+    .warnText{color:#8a5a00}
 
     .hr{height:1px;background:#eee;margin:18px 0}
     details{margin-top:6px}
-    .footer{margin-top:14px;font-size:12px;color:#777;text-align:center}
-    code{background:#f3f3f3;padding:2px 6px;border-radius:6px}
 
-    .inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .smallbtn{width:auto;padding:8px 12px;margin-top:0;border-radius:999px;font-size:13px}
-
-    .teamtitle{font-weight:900;margin:0 0 6px;font-size:16px}
-    .list{margin:0;padding-left:18px}
-
-    /* Registered players */
-    .headRow{
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-      margin-bottom:6px;
-    }
-    .badge{
-      background:#eee;border-radius:999px;padding:6px 10px;font-size:13px;white-space:nowrap;
-    }
-    .statsRow{
-      color:#666;font-size:13px;display:flex;flex-wrap:wrap;gap:16px;
-      margin-bottom:10px;
-    }
-    .playersArea{
-      margin-top:8px;
-      max-height:320px;
-      overflow:auto;
-      padding-right:6px;
-    }
-    .playersArea::-webkit-scrollbar{ width:8px; }
-    .playersArea::-webkit-scrollbar-thumb{ background:#ddd;border-radius:8px; }
-
-    .playerLine{
-      display:flex;justify-content:space-between;gap:10px;
-      padding:8px 10px;
-      border:1px solid #eee;
-      border-radius:12px;
-      background:#fff;
-      margin-bottom:8px;
-      font-size:14px;
-    }
-    .playerMeta{color:#777;font-size:12px;white-space:nowrap}
     .footer{
       margin-top:14px;
       font-size:12px;
@@ -205,220 +161,216 @@
       border-radius:12px;
     }
 
-    /* Analytics charts responsive */
-    /* Mobile-friendly chart heights */
+    .inline{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .smallbtn{
+      width:auto;
+      padding:8px 12px;
+      margin-top:0;
+      border-radius:999px;
+      font-size:13px;
+    }
+
+    .teamtitle{
+      font-weight:900;
+      margin:0 0 6px;
+      font-size:16px;
+    }
+    .list{margin:0;padding-left:18px}
+
+    .headRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:6px;
+    }
+    .badge{
+      background:#eee;
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:13px;
+      white-space:nowrap;
+    }
+    .statsRow{
+      color:#666;
+      font-size:13px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:16px;
+      margin-bottom:10px;
+    }
+    .playersArea{
+      margin-top:8px;
+      max-height:320px;
+      overflow:auto;
+      padding-right:6px;
+    }
+    .playersArea::-webkit-scrollbar{width:8px}
+    .playersArea::-webkit-scrollbar-thumb{background:#ddd;border-radius:8px}
+
+    .playerLine{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:8px 10px;
+      border:1px solid #eee;
+      border-radius:12px;
+      background:#fff;
+      margin-bottom:8px;
+      font-size:14px;
+    }
+    .playerMeta{
+      color:#777;
+      font-size:12px;
+      white-space:nowrap;
+    }
+
+    #playersStatus:empty{display:none}
+    #playersStatus{display:inline-block}
+
     #analyticsBox canvas{
       width:100% !important;
       display:block;
     }
+    #c_hist, #c_percent{height:220px !important}
+    #c_levels{height:260px !important}
+    #c_gender{height:200px !important}
+    #c_trend1, #c_trend2{height:240px !important}
 
-    #c_hist, #c_percent { height:220px !important; }
-    #c_levels { height:260px !important; }   /* 饼图高一点 */
-    #c_gender { height:200px !important; }
-    #c_trend1, #c_trend2 { height:240px !important; }
+    .desktopOnly{display:block}
+    .mobileOnly{display:none}
 
-    /* --- tighter spacing (desktop + mobile) --- */
-
-    /* 1) 全局把段落默认 margin 清掉，避免 hint 额外撑高 */
-    p{ margin:0; }
-
-    /* 2) 缩小 label 上下间距（最关键） */
-    label{
-      margin:10px 0 6px;   /* 原来 14px 0 8px */
-    }
-
-    /* 3) grid 间距略缩 */
-    .row{
-      gap:10px;            /* 原来 12px */
-    }
-
-    /* 4) hint 再紧一点 */
-    .hint{
-      margin:6px 0 6px;    /* 原来 5px 0 12px */
-      padding:6px 10px;    /* 原来 8px 10px */
-      font-size:12px;      /* 你现在桌面 11px，手机 13px，有点反着了 */
-    }
-
-    /* 5) 可选：让第二个 row（Throwing 开始那组）不要离 hint 太远 */
-    .hint + .row{
-      margin-top:4px;      /* 没有也行，有的话更紧凑 */
-    }
-
-    /* 6) 手机端再微调（可选） */
-    @media (max-width: 520px){
-      label{ margin:8px 0 6px; }
-      .hint{ margin:6px 0 6px; padding:6px 10px; font-size:12px; }
-    }
-
-    /* Floating scroll hint */
     #scrollHint{
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 14px;
-      z-index: 9998;
-
-      display: none;                 /* 默认隐藏，JS 控制显示 */
-      align-items: center;
-      gap: 10px;
-
-      max-width: 680px;              /* 跟 .wrap 对齐 */
-      width: calc(100% - 32px);
-
-      background: rgba(17,17,17,0.92);
-      color: #fff;
-      padding: 10px 12px;
-      border-radius: 999px;
-
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
-      font-size: 13px;
-      line-height: 1.2;
+      position:fixed;
+      left:50%;
+      transform:translateX(-50%);
+      bottom:14px;
+      z-index:9998;
+      display:none;
+      align-items:center;
+      gap:10px;
+      max-width:680px;
+      width:calc(100% - 32px);
+      background:rgba(17,17,17,0.92);
+      color:#fff;
+      padding:10px 12px;
+      border-radius:999px;
+      box-shadow:0 10px 30px rgba(0,0,0,.25);
+      font-size:13px;
+      line-height:1.2;
     }
-    @media (max-width:520px){
-  #scrollHint{
-    left:auto;
-    right:10px;
-
-    /* ✅ 默认靠右下，不去中间 */
-    bottom: calc(10px + env(safe-area-inset-bottom));
-    top:auto;
-
-    /* ✅ 取消原先 translateX(-50%) 的居中逻辑 */
-    transform:none;
-
-    /* ✅ 宽度控制，不压太多内容 */
-    width: 240px;
-    max-width: calc(100% - 20px);
-  }
-}
-
-    /* ===== ScrollHint: mobile vertical tab (no blocking) ===== */
-.desktopOnly{ display:block; }
-.mobileOnly{ display:none; }
-
-@media (max-width:520px){
-  .desktopOnly{ display:none; }
-  .mobileOnly{ display:block; }
-
-  /* 竖条：贴右侧，半出屏幕外，几乎不挡内容 */
-  #scrollHint{
-    left:auto;
-    right:-10px;                 /* 关键：往外推，让内容区不被遮挡 */
-    top:60%;
-    bottom:auto;
-    transform: translateY(-50%);
-    width:34px;                  /* 竖条宽度 */
-    height:140px;                /* 竖条高度 */
-    padding:10px 6px;
-    border-radius:999px;
-    flex-direction:column;
-    justify-content:center;
-    gap:0;
-  }
-
-  /* 竖排文字 */
-  #scrollHint .hintText{
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    transform: rotate(180deg);   /* 让阅读方向更自然 */
-    white-space: nowrap;
-    overflow: visible;
-  }
-
-  /* 手机端不需要 Go 按钮（竖条本身可点） */
-  #scrollHint button{ display:none; }
-}
-    
     #scrollHint button{
-      width: auto;
-      margin: 0;
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 800;
-      background: #fff;
-      color: #111;
+      width:auto;
+      margin:0;
+      padding:8px 12px;
+      border-radius:999px;
+      font-size:13px;
+      font-weight:800;
+      background:#fff;
+      color:#111;
+    }
+    #scrollHint .hintText{
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
     }
 
-    #scrollHint .hintText{
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
+    #pickOverlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.35);
+      display:none;
+      z-index:10050;
     }
+    #pickSheet{
+      position:absolute;
+      left:0;
+      right:0;
+      bottom:0;
+      background:#fff;
+      border-radius:16px 16px 0 0;
+      max-height:72vh;
+      overflow:auto;
+      box-shadow:0 -10px 30px rgba(0,0,0,.18);
+    }
+    #pickTop{
+      position:sticky;
+      top:0;
+      background:#fff;
+      padding:10px 12px;
+      border-bottom:1px solid #eee;
+      min-height:44px;
+    }
+    #pickClose{
+      position:absolute;
+      top:10px;
+      right:12px;
+      z-index:3;
+      width:44px;
+      height:44px;
+      border-radius:999px;
+      border:0;
+      background:#eee;
+      color:#111;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:24px;
+      font-weight:900;
+      line-height:1;
+      padding:0;
+      cursor:pointer;
+    }
+    .pickItem{
+      padding:14px 14px;
+      font-size:15px;
+      line-height:1.25;
+      border-bottom:1px solid #f0f0f0;
+    }
+    .pickItem:last-child{border-bottom:0}
+    .pickItem.active{background:#f6f7fb}
 
     @media (max-width:520px){
-      #scrollHint{ bottom: 10px; font-size: 12px; }
-      #scrollHint button{ padding: 7px 10px; font-size: 12px; }
+      label{margin:8px 0 6px;font-size:15px}
+      input,select{padding:11px;font-size:15px}
+      .row{gap:10px}
+      .hint{margin:6px 0 6px;padding:6px 10px;font-size:12px}
+
+      .desktopOnly{display:none}
+      .mobileOnly{display:block}
+
+      #scrollHint{
+        left:auto;
+        right:-10px;
+        top:60%;
+        bottom:auto;
+        transform:translateY(-50%);
+        width:34px;
+        height:140px;
+        padding:10px 6px;
+        border-radius:999px;
+        flex-direction:column;
+        justify-content:center;
+        gap:0;
+      }
+      #scrollHint .hintText{
+        writing-mode:vertical-rl;
+        text-orientation:mixed;
+        transform:rotate(180deg);
+        white-space:nowrap;
+        overflow:visible;
+      }
+      #scrollHint button{display:none}
     }
-    /* Hide empty "Updated" pill placeholder */
-#playersStatus:empty { display: none; }
-
-/* When it has text, keep it as a pill */
-#playersStatus { display: inline-block; }
-
-    /* ===== Mobile custom select picker ===== */
-#pickOverlay{
-  position:fixed; inset:0;
-  background:rgba(0,0,0,.35);
-  display:none; z-index:10050;
-}
-#pickSheet{
-  position:absolute; left:0; right:0; bottom:0;
-  background:#fff;
-  border-radius:16px 16px 0 0;
-  max-height:72vh;
-  overflow:auto;
-  box-shadow:0 -10px 30px rgba(0,0,0,.18);
-}
-#pickTop{
-  position:sticky;
-  top:0;
-  background:#fff;
-  padding:10px 12px;
-  border-bottom:1px solid #eee;
-  min-height:44px;       /* 给列表一个顶部呼吸区 */
-}
-
-/* ✅ 右上角圆形关闭按钮：阴影和 × 完全重叠 */
-#pickClose{
-  position:absolute;
-  top:10px;
-  right:12px;
-  z-index:3;
-
-  width:44px;
-  height:44px;
-  border-radius:999px;
-
-  border:0;
-  background:#eee;
-  color:#111;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  font-size:24px;
-  font-weight:900;
-  line-height:1;         /* 关键：避免 × 垂直偏移 */
-  padding:0;             /* 关键：避免内边距导致偏移 */
-
-  cursor:pointer;
-}
-.pickItem{
-  padding:14px 14px;              /* ✅ 间距 */
-  font-size:15px;                 /* ✅ 字体大小 */
-  line-height:1.25;               /* ✅ 行距 */
-  border-bottom:1px solid #f0f0f0;
-}
-.pickItem:last-child{ border-bottom:0; }
-.pickItem.active{ background:#f6f7fb; }
   </style>
 </head>
 
 <body>
-
-  <!-- Overlay loading -->
   <div id="overlay" style="
     display:none;
     position:fixed;
@@ -460,10 +412,7 @@
       </div>
 
       <form id="form">
-
         <div class="row">
-
-          <!-- Full Name -->
           <div>
             <label for="name">Full Name *</label>
             <input
@@ -474,7 +423,6 @@
             />
           </div>
 
-          <!-- Gender -->
           <div>
             <label for="gender">Gender *</label>
             <select id="gender" required>
@@ -483,74 +431,37 @@
               <option value="Female">Female</option>
             </select>
           </div>
-
         </div>
 
         <p class="hint">
           Please rate yourself at pick-up game intensity (not training). If you are unsure between two levels, choose the lower one.
         </p>
 
-        <!-- 两列开始 -->
         <div class="row">
-
-          <!-- Throwing -->
           <div>
             <label for="throwing">Throwing *</label>
             <select id="throwing" required>
               <option value="" selected disabled>Select</option>
-
-              <option value="1">
-                1 — Even short open throws are often inaccurate; frequent turnovers
-              </option>
-
-              <option value="2">
-                2 — Short backhand OK; forehand or pressure causes many mistakes
-              </option>
-
-              <option value="3">
-                3 — Backhand + forehand usable in games (short–mid); long throws inconsistent
-              </option>
-
-              <option value="4">
-                4 — Game-stable passer: low turnovers under mark pressure; can reliably complete open hucks or break throws when needed
-              </option>
-              <option value="5">
-                5 — Offensive driver: consistently breaks the mark and delivers accurate hucks at game speed (even under pressure) with controlled risk
-              </option>
-
+              <option value="1">1 — Even short open throws are often inaccurate; frequent turnovers</option>
+              <option value="2">2 — Short backhand OK; forehand or pressure causes many mistakes</option>
+              <option value="3">3 — Backhand + forehand usable in games (short–mid); long throws inconsistent</option>
+              <option value="4">4 — Game-stable passer: low turnovers under mark pressure; can reliably complete open hucks or break throws when needed</option>
+              <option value="5">5 — Offensive driver: consistently breaks the mark and delivers accurate hucks at game speed (even under pressure) with controlled risk</option>
             </select>
           </div>
 
-          <!-- Catch -->
           <div>
             <label for="catch">Catch *</label>
             <select id="catch" required>
               <option value="" selected disabled>Select</option>
-
-              <option value="1">
-                1 — Drops many easy, uncontested catches
-              </option>
-
-              <option value="2">
-                2 — Catches when wide open; struggles on the run or with imperfect throws
-              </option>
-
-              <option value="3">
-                3 — Usually catches cleanly in games (open or light pressure)
-              </option>
-
-              <option value="4">
-                4 — Reliable under pressure: catches on the run with a defender close; rarely drops important discs
-              </option>
-
-              <option value="5">
-                5 — Playmaker in the air: strong in contested catches, confident on sky or layout plays, wins many 50–50 discs (not just occasionally)
-              </option>
-
+              <option value="1">1 — Drops many easy, uncontested catches</option>
+              <option value="2">2 — Catches when wide open; struggles on the run or with imperfect throws</option>
+              <option value="3">3 — Usually catches cleanly in games (open or light pressure)</option>
+              <option value="4">4 — Reliable under pressure: catches on the run with a defender close; rarely drops important discs</option>
+              <option value="5">5 — Playmaker in the air: strong in contested catches, confident on sky or layout plays, wins many 50–50 discs (not just occasionally)</option>
             </select>
           </div>
 
-          <!-- Fitness -->
           <div>
             <label for="fitness">Fitness *</label>
             <select id="fitness" required>
@@ -563,7 +474,6 @@
             </select>
           </div>
 
-          <!-- Experience -->
           <div>
             <label for="experience">Experience *</label>
             <select id="experience" required>
@@ -576,7 +486,6 @@
             </select>
           </div>
 
-          <!-- Preference -->
           <div>
             <label for="pref">Preference *</label>
             <select id="pref" required>
@@ -586,7 +495,6 @@
             </select>
           </div>
 
-          <!-- Practice duration * -->
           <div>
             <label for="pd">Practice duration *</label>
             <select id="pd" required>
@@ -599,7 +507,6 @@
             </select>
           </div>
         </div>
-        <!-- 两列结束 -->
 
         <button id="btn" type="submit">Submit</button>
         <div class="footer">
@@ -612,7 +519,6 @@
           <button id="copyRegBtn" class="smallbtn secondary" type="button">Copy RegID</button>
           <span id="regSavedNote" class="hint" style="margin:0;"></span>
         </div>
-
       </form>
 
       <div id="belowSections"></div>
@@ -634,7 +540,6 @@
 
       <div class="hr"></div>
 
-      <!-- Registered players -->
       <div class="box" id="playersSection">
         <div class="headRow">
           <div class="teamtitle" style="margin:0;">Registered players</div>
@@ -658,7 +563,7 @@
       </div>
 
       <div class="hr"></div>
-      <!-- Teams -->
+
       <div id="teamsSection">
         <div class="teamtitle">Teams (auto after cutoff)</div>
         <div class="hint" style="margin-top:6px;">
@@ -669,6 +574,7 @@
         <div id="teamsStatus" class="status"></div>
         <div id="teamsOutput"></div>
       </div>
+
       <div class="hr"></div>
 
       <details id="analyticsDetails">
@@ -682,13 +588,11 @@
 
           <div class="hint" id="anaStatus" style="margin-top:6px;"></div>
 
-          <!-- Latest week summary -->
           <div class="box" style="margin-top:10px;">
             <div class="teamtitle" style="margin:0;">Latest week</div>
             <div class="hint" id="latestSummary" style="margin-top:6px;"></div>
           </div>
 
-          <!-- 4 latest-week charts: one per row -->
           <div class="box" style="margin-top:10px;">
             <div class="teamtitle" style="margin:0;">Score Distribution</div>
             <canvas id="c_hist"></canvas>
@@ -709,7 +613,6 @@
             <canvas id="c_percent"></canvas>
           </div>
 
-          <!-- 2 trend charts -->
           <div class="box" style="margin-top:10px;">
             <div class="teamtitle" style="margin:0;">Weekly Avg & Std Trend</div>
             <canvas id="c_trend1"></canvas>
@@ -721,22 +624,22 @@
           </div>
         </div>
       </details>
-
     </div>
   </div>
 
-<div id="scrollHint" role="button" aria-label="Scroll to sections below">
-  <div class="hintText">
-    <span class="desktopOnly">↓ More below: Cancel · Registered players · Teams · Analytics</span>
-    <span class="mobileOnly">More below</span>
+  <div id="scrollHint" role="button" aria-label="Scroll to sections below">
+    <div class="hintText">
+      <span class="desktopOnly">↓ More below: Cancel · Registered players · Teams · Analytics</span>
+      <span class="mobileOnly">More below</span>
+    </div>
+    <button type="button" id="scrollHintBtn">Go</button>
   </div>
-  <button type="button" id="scrollHintBtn">Go</button>
-</div>
-  
-  <!-- ===================== PART 2 / 2 ===================== -->
+
   <script>
     const CFG = window.SIGNUP_CONFIG;
     const ENDPOINT = CFG.endpoint;
+
+    // Score stays internal/admin-only. Frontend does not display player score.
 
     const overlay = document.getElementById("overlay");
     const overlayMsg = document.getElementById("overlayMsg");
@@ -745,9 +648,10 @@
     let slowTimer1 = null;
     let slowTimer2 = null;
 
-    function showOverlay(){
+    function showOverlay(text = "Submitting registration…"){
       submitting = true;
       overlay.style.display = "block";
+      overlay.querySelector("div div:nth-child(2)").textContent = text;
       overlayMsg.textContent = "Submitting to Google Sheets…";
 
       slowTimer1 = setTimeout(()=>{
@@ -791,12 +695,11 @@
     const refreshTeamsBtn = document.getElementById("refreshTeamsBtn");
     const teamsStatus = document.getElementById("teamsStatus");
     const teamsOutput = document.getElementById("teamsOutput");
-    // ✅ 初始就先锁住，避免页面加载时先闪一下 "Refresh Teams"
+
     refreshTeamsBtn.disabled = true;
     refreshTeamsBtn.textContent = "Teams available after cutoff";
     refreshTeamsBtn.style.display = "block";
 
-    // Players UI
     const playersBadge = document.getElementById("playersBadge");
     const genderStats = document.getElementById("genderStats");
     const prefStats = document.getElementById("prefStats");
@@ -809,28 +712,50 @@
     const LS_NAME = "frisbee_last_name";
     const LS_REGID = "frisbee_last_regid";
 
+    function escapeHtml(s){
+      return (s||"").toString()
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function setStatusMessage(el, text, type){
+      el.textContent = text;
+      el.className = "status";
+      if(type === "ok") el.classList.add("okText");
+      if(type === "bad") el.classList.add("badText");
+      if(type === "warn") el.classList.add("warnText");
+    }
+
     async function fetchWithTimeout(url, ms=6000, opts={}){
       const controller = new AbortController();
       const t = setTimeout(()=>controller.abort(), ms);
       try{
         const res = await fetch(url, { ...opts, signal: controller.signal });
-        return await res.json();
+        return res;
       } finally {
         clearTimeout(t);
       }
     }
 
     async function safeGetJson(url){
-      try{
-        return await fetchWithTimeout(url, 6000, { method:"GET" });
-      } catch(e){
-        return await fetchWithTimeout(url, 9000, { method:"GET" });
+      const attempts = [6000, 9000];
+      let lastErr = null;
+
+      for(const ms of attempts){
+        try{
+          const res = await fetchWithTimeout(url, ms, { method:"GET" });
+          return await res.json();
+        }catch(e){
+          lastErr = e;
+        }
       }
+      throw lastErr || new Error("GET failed");
     }
 
-    // ✅ POST 专用：不强求读回 JSON（GAS 经常会拦 response）
-    // 规则：只要请求发出，就当作“很可能已成功”，再用 refresh() 去验证
-    async function postLikelyOk(url, ms=12000, bodyObj={}){
+    async function postJsonStrict(url, bodyObj, ms=12000){
       const controller = new AbortController();
       const t = setTimeout(()=>controller.abort(), ms);
 
@@ -843,28 +768,87 @@
           redirect: "follow"
         });
 
-        // 尝试读取返回（可能会失败：CORS/opaque/redirect）
+        let text = "";
         try{
-          const text = await res.text();
-          try{
-            return JSON.parse(text); // {ok:true, regId:...}
-          }catch{
-            return { ok:true, _note:"posted_no_json" };
-          }
-        }catch{
-          return { ok:true, _note:"posted_no_body" };
+          text = await res.text();
+        }catch(_){}
+
+        let data = null;
+        if(text){
+          try{ data = JSON.parse(text); }catch(_){}
         }
 
-      } catch(e){
-        // 关键：这里不当作失败，因为后端可能已经写入成功了
-        return { ok:true, _note:"posted_but_fetch_error", _err: String(e) };
+        if(!res.ok){
+          return {
+            confirmed:false,
+            data,
+            error:data?.error || `HTTP ${res.status}`
+          };
+        }
+
+        if(data && typeof data === "object"){
+          return {
+            confirmed: !!data.ok,
+            data,
+            error: data.ok ? null : (data.error || "Request failed")
+          };
+        }
+
+        return {
+          confirmed:false,
+          data:null,
+          error:"Response not readable from browser"
+        };
+      }catch(e){
+        return {
+          confirmed:false,
+          data:null,
+          error:String(e)
+        };
       } finally {
         clearTimeout(t);
       }
     }
 
-    function timeLeftText(cutoffIso){
+    async function lookupLastReg(name){
+      const q = encodeURIComponent((name || "").trim());
+      if(!q) return null;
+      try{
+        return await safeGetJson(ENDPOINT + "?action=lastReg&name=" + q);
+      }catch(_){
+        return null;
+      }
+    }
 
+    async function confirmCancelByLookup(name, oldRegId){
+      const back = await lookupLastReg(name);
+
+      if(!back || back.ok === false){
+        return { confirmed:true, reason:"not_found" };
+      }
+
+      if(back.regId && back.regId !== oldRegId){
+        return { confirmed:true, reason:"different_active_regid" };
+      }
+
+      return { confirmed:false, reason:"same_active_regid" };
+    }
+
+    function normalizeStatus(data){
+      const count = Number(data?.count) || 0;
+      const max = Number(data?.max) || 0;
+      const isFull = max > 0 && count >= max;
+      const open = !!data?.open && !isFull;
+      return {
+        ...data,
+        count,
+        max,
+        isFull,
+        open
+      };
+    }
+
+    function timeLeftText(cutoffIso){
       if (!cutoffIso) return "Time left: —";
 
       const cut = new Date(cutoffIso).getTime();
@@ -879,15 +863,13 @@
       const hours = Math.floor(totalMinutes / 60);
       const minutes = totalMinutes % 60;
 
-      if (hours > 0){
-        return `${hours}h left `;
-      }
-
+      if (hours > 0) return `${hours}h left`;
       return `${minutes}m left`;
     }
 
     async function getStatus() {
-      return await safeGetJson(ENDPOINT + "?action=status");
+      const raw = await safeGetJson(ENDPOINT + "?action=status");
+      return normalizeStatus(raw);
     }
 
     function setPills(data) {
@@ -918,12 +900,43 @@
       }
     }
 
+    async function refresh() {
+      try {
+        const data = await getStatus();
+        if (!data.ok) throw new Error("status not ok");
+        setPills(data);
+        return data;
+      } catch {
+        countPill.textContent = "Status unavailable";
+        statusPill.textContent = "UNKNOWN";
+        statusPill.className = "pill";
+        timeLeftPill.textContent = "";
+        return null;
+      }
+    }
+
+    async function refreshVisibleSections(){
+      await refresh();
+      await refreshPlayers(true);
+    }
+
     function saveLastReg(name, regId) {
       localStorage.setItem(LS_NAME, name);
       localStorage.setItem(LS_REGID, regId);
       cancelName.value = name;
       cancelId.value = regId;
       regSavedNote.textContent = "Saved on this device ✅";
+    }
+
+    function clearLocalReg(){
+      try{
+        localStorage.removeItem(LS_NAME);
+        localStorage.removeItem(LS_REGID);
+      }catch(_){}
+      cancelName.value = "";
+      cancelId.value = "";
+      regTools.style.display = "none";
+      regSavedNote.textContent = "Cleared saved RegID ✅";
     }
 
     async function copyText(text) {
@@ -941,15 +954,6 @@
       }
     }
 
-    function escapeHtml(s){
-      return (s||"").toString()
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-
     function renderGameInfo() {
       const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
       gameInfoLine1.innerHTML = `${CFG.gameTimeText} · ${loc}`;
@@ -959,20 +963,6 @@
       `;
       tzLine.textContent = `Registration closes: Fri 3:00 PM | Jeddah local time`;
       fourTeamMin.textContent = CFG.teamsMinForFour;
-    }
-
-    async function refresh() {
-      try {
-        const data = await getStatus();
-        if (!data.ok) throw new Error("status not ok");
-        setPills(data);
-        return data;
-      } catch {
-        countPill.textContent = "Status unavailable";
-        statusPill.textContent = "UNKNOWN";
-        timeLeftPill.textContent = "";
-        return null;
-      }
     }
 
     (function initSaved(){
@@ -992,7 +982,6 @@
       regSavedNote.textContent = ok ? "RegID copied ✅" : "Copy failed ❌";
     });
 
-    // ---- REGISTER ----
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
@@ -1023,134 +1012,119 @@
         !payload.preference ||
         !payload.practice
       ){
-        statusEl.textContent = "Please complete all required fields.";
-        statusEl.classList.add("badText");
+        setStatusMessage(statusEl, "Please complete all required fields.", "bad");
         return;
       }
 
       btn.disabled = true;
       btn.textContent = "Submitting…";
-      showOverlay();
+      showOverlay("Submitting registration…");
+
+      let submitConfirmed = false;
 
       try {
-        const data = await postLikelyOk(ENDPOINT, 12000, payload);
+        const result = await postJsonStrict(ENDPOINT, payload, 12000);
 
-        // ✅ 永远不把“读不到回包”当作失败
-        statusEl.className = "status okText";
+        if (result.confirmed && result.data?.ok && result.data?.regId) {
+          submitConfirmed = true;
+          const label = result.data.updated ? "Updated" : "Submitted";
+          statusEl.innerHTML = `✅ ${label}! RegID: <b>${escapeHtml(result.data.regId)}</b>`;
+          statusEl.className = "status okText";
 
-        if (data && data.regId) {
-          statusEl.innerHTML = `✅ Submitted! RegID: <b>${data.regId}</b>`;
-          saveLastReg(payload.name, data.regId);
+          saveLastReg(payload.name, result.data.regId);
           regTools.style.display = "flex";
-
+          form.reset();
+        } else if (result.data && result.data.ok === false) {
+          setStatusMessage(statusEl, result.data.error || "Registration failed.", "bad");
         } else {
-          statusEl.textContent = "✅ Submitted! (Response blocked by browser)";
+          const maybeBack = await lookupLastReg(payload.name);
+          const extra = (maybeBack && maybeBack.ok && maybeBack.regId)
+            ? ` Active RegID currently found for this name: ${maybeBack.regId}.`
+            : "";
 
-          // ✅ 回查 RegID（靠 GET 拿回 JSON，成功率高）
-          try {
-            const q = encodeURIComponent(payload.name);
-            const back = await safeGetJson(ENDPOINT + "?action=lastReg&name=" + q);
-
-            if (back && back.ok && back.regId) {
-              statusEl.innerHTML = `✅ Submitted! RegID: <b>${back.regId}</b>`;
-              saveLastReg(payload.name, back.regId);
-              regTools.style.display = "flex";
-            }
-          } catch (e) {
-            // 查不到就算了，仍然保持已提交提示
-          }
+          setStatusMessage(
+            statusEl,
+            "Request was sent, but registration could not be verified from the browser. Please refresh and check before submitting again." + extra,
+            "warn"
+          );
         }
-
-        // 清空表单 + 刷新状态/列表（用 refresh 来确认写入）
-        form.reset();
-        await refresh();
-        if (playersArea.style.display !== "none") await refreshPlayers(true);
-
       } catch (err) {
-        statusEl.textContent = "✅ Submitted! (Browser blocked response)";
-        statusEl.className = "status okText";
-        await refresh();
-        if (playersArea.style.display !== "none") await refreshPlayers(true);
-      }
-
-      finally {
+        setStatusMessage(
+          statusEl,
+          "Request was sent, but registration could not be verified from the browser. Please refresh and check before submitting again.",
+          "warn"
+        );
+      } finally {
         hideOverlay();
-        await refresh();
+        await refreshVisibleSections();
         if (!btn.disabled) btn.textContent = "Submit";
+        if (!submitConfirmed) {
+          // keep current form values when submission is not confirmed
+        }
       }
     });
 
-    // ---- CANCEL ----
     cancelBtn.addEventListener("click", async () => {
       cancelStatus.textContent = "";
       cancelStatus.className = "status";
 
       const name = cancelName.value.trim();
       const regId = cancelId.value.trim();
+
       if (!name || !regId) {
-        cancelStatus.textContent = "Please provide both Name and RegID.";
-        cancelStatus.classList.add("badText");
+        setStatusMessage(cancelStatus, "Please provide both Name and RegID.", "bad");
         return;
       }
       if (!confirm("Confirm cancellation? (Buy Maojin a coffee ☕)")) return;
 
       cancelBtn.disabled = true;
       cancelBtn.textContent = "Cancelling…";
+      showOverlay("Cancelling registration…");
 
-      // ✅ 清本地 RegID/Name（避免重复误操作）
-      function clearLocalReg(){
-        try{
-          localStorage.removeItem(LS_NAME);
-          localStorage.removeItem(LS_REGID);
-        }catch(_){}
-        cancelName.value = "";
-        cancelId.value = "";
-        regSavedNote.textContent = "Cleared saved RegID ✅";
-        regTools.style.display = "none";
-      }
+      let cancelConfirmed = false;
 
       try {
-        const data = await postLikelyOk(ENDPOINT, 12000, { action:"cancel", name, regId });
+        const result = await postJsonStrict(ENDPOINT, { action:"cancel", name, regId }, 12000);
 
-        // 先按“已发出请求”处理（因为 GAS 可能读不到回包）
-        cancelStatus.className = "status okText";
-        cancelStatus.textContent = "✅ Cancel requested. Refreshing…";
-
-        await refresh();
-        if (playersArea.style.display !== "none") await refreshPlayers(true);
-
-        // ✅ 关键：只要请求发出 & 刷新后一般就认为成功，并清掉本地 RegID
-        clearLocalReg();
-
-        // 如果后端明确返回 ok:false，再提示失败（但本地仍然清掉，避免误点重复 cancel）
-        if (data && data.ok === false) {
-          cancelStatus.className = "status badText";
-          cancelStatus.textContent = "❌ " + (data.error || "Cancel failed");
-          return;
+        if (result.confirmed && result.data?.ok) {
+          cancelConfirmed = true;
+        } else if (!(result.data && result.data.ok === false)) {
+          const checked = await confirmCancelByLookup(name, regId);
+          cancelConfirmed = checked.confirmed;
         }
 
-        cancelStatus.className = "status okText";
-        cancelStatus.textContent = "✅ Cancelled.";
-
+        if (cancelConfirmed) {
+          clearLocalReg();
+          setStatusMessage(cancelStatus, "✅ Cancelled.", "ok");
+        } else if (result.data && result.data.ok === false) {
+          setStatusMessage(cancelStatus, result.data.error || "Cancel failed.", "bad");
+        } else {
+          setStatusMessage(
+            cancelStatus,
+            "Cancellation could not be confirmed. Your saved RegID was kept.",
+            "warn"
+          );
+        }
       } catch (e) {
-        // 浏览器阻止回包也不当成失败：刷新+清本地
-        cancelStatus.className = "status okText";
-        cancelStatus.textContent = "✅ Cancel requested (browser blocked response). Refreshing…";
-
-        await refresh();
-        if (playersArea.style.display !== "none") await refreshPlayers(true);
-
-        clearLocalReg();
-
-        cancelStatus.className = "status okText";
-        cancelStatus.textContent = "✅ Cancelled.";
+        const checked = await confirmCancelByLookup(name, regId);
+        if (checked.confirmed) {
+          clearLocalReg();
+          setStatusMessage(cancelStatus, "✅ Cancelled.", "ok");
+        } else {
+          setStatusMessage(
+            cancelStatus,
+            "Cancellation could not be confirmed. Your saved RegID was kept.",
+            "warn"
+          );
+        }
       } finally {
+        hideOverlay();
+        await refreshVisibleSections();
         cancelBtn.disabled = false;
         cancelBtn.textContent = "Cancel my registration";
       }
     });
 
-    // ---- PLAYERS ----
     let lastPlayersText = "";
 
     async function refreshPlayers(silent=false){
@@ -1165,13 +1139,11 @@
         genderStats.textContent = `Male: ${data.stats.male}   Female: ${data.stats.female}`;
         prefStats.textContent = `Handler: ${data.stats.handler}   Cutter: ${data.stats.cutter}`;
 
-        const lines = data.players.map((p, idx) => {
-          return {
-            idx: idx+1,
-            name: p.name,
-            gender: p.gender || "—"
-          };
-        });
+        const lines = data.players.map((p, idx) => ({
+          idx: idx+1,
+          name: p.name,
+          gender: p.gender || "—"
+        }));
 
         playersList.innerHTML = lines.map(x => `
           <div class="playerLine">
@@ -1211,10 +1183,8 @@
       playersStatus.textContent = ok ? "Copied ✅" : "Copy failed ❌";
     });
 
-    // ---- TEAMS (LOCKED AFTER SUCCESS) ----
     let teamsLockedAfterLoaded = false;
 
-    // cutoff 前：按钮灰色显示提示语（不可点）
     function setTeamsBtnBeforeCutoff(){
       refreshTeamsBtn.style.display = "block";
       refreshTeamsBtn.disabled = true;
@@ -1222,7 +1192,6 @@
       refreshTeamsBtn.textContent = "Teams will be shown after cutoff.";
     }
 
-    // cutoff 后但尚未成功加载：允许手动刷新
     function setTeamsBtnRetry(){
       refreshTeamsBtn.style.display = "block";
       refreshTeamsBtn.disabled = false;
@@ -1230,12 +1199,10 @@
       refreshTeamsBtn.textContent = "Refresh Teams";
     }
 
-    // 成功拿到 teams 后：隐藏按钮（只显示最新结果）
     function hideTeamsBtn(){
       refreshTeamsBtn.style.display = "none";
     }
 
-    // 拉取并渲染 teams（永远覆盖旧内容，保证“最新 teams”）
     async function fetchAndRenderTeams({ auto = false } = {}) {
       teamsOutput.innerHTML = "";
 
@@ -1252,8 +1219,7 @@
 
         if (!data || !data.ok) {
           if (!auto) {
-            teamsStatus.textContent = "❌ " + ((data && data.error) ? data.error : "Teams unavailable");
-            teamsStatus.className = "status badText";
+            setStatusMessage(teamsStatus, (data && data.error) ? data.error : "Teams unavailable", "bad");
           }
           return false;
         }
@@ -1274,8 +1240,7 @@
 
           document.getElementById("copyTeamsBtn").addEventListener("click", async () => {
             const ok = await copyText(teamsText);
-            teamsStatus.textContent = ok ? "✅ Teams copied to clipboard." : "❌ Copy failed.";
-            teamsStatus.className = "status " + (ok ? "okText" : "badText");
+            setStatusMessage(teamsStatus, ok ? "✅ Teams copied to clipboard." : "❌ Copy failed.", ok ? "ok" : "bad");
           });
 
           document.getElementById("waBtn").addEventListener("click", () => {
@@ -1296,37 +1261,28 @@
           teamsOutput.appendChild(div);
         });
 
-        // ✅ 一旦成功展示 teams，就锁定：后续 interval 不再切按钮/闪烁
         teamsLockedAfterLoaded = true;
-
         return true;
       } catch (e) {
         if (!auto) {
-          teamsStatus.textContent = "❌ Network error: " + e;
-          teamsStatus.className = "status badText";
+          setStatusMessage(teamsStatus, "Network error: " + e, "bad");
         }
         return false;
       } finally {
-        // 手动刷新结束后，如果按钮还在显示，就恢复成可点“Refresh Teams”
         if (!auto && refreshTeamsBtn.style.display !== "none") {
           setTeamsBtnRetry();
         }
       }
     }
 
-    // 手动刷新（只在 cutoff 后、自动加载失败时需要）
-    // 注意：不要重复绑定（确保你只保留这一处 addEventListener）
     refreshTeamsBtn.addEventListener("click", async () => {
       await fetchAndRenderTeams({ auto: false });
       if (teamsLockedAfterLoaded) hideTeamsBtn();
     });
 
-    // 根据 status(open/closed) 控制按钮，并在 cutoff 后自动拉取 teams
     async function autoTeamsByCutoff() {
-      // ✅ 如果已经成功展示过 teams：保持图1状态，不再闪，不再改按钮
       if (teamsLockedAfterLoaded) return;
 
-      // 只有在“未锁定”时才显示 cutoff 前提示（避免闪）
       setTeamsBtnBeforeCutoff();
 
       const st = await refresh();
@@ -1342,34 +1298,26 @@
         return;
       }
 
-      // cutoff 后：先允许重试按钮存在（万一自动拉取失败）
       setTeamsBtnRetry();
 
       const loaded = await fetchAndRenderTeams({ auto: true });
-
-      // 成功：隐藏按钮，只显示最新 teams（并且锁定）
       if (loaded) hideTeamsBtn();
     }
 
-    // 页面启动
     renderGameInfo();
     autoTeamsByCutoff();
-
-    // 页面开着等到 15:00：自动切换状态并拉 teams
     setInterval(autoTeamsByCutoff, 45000);
 
-    // 防 Chart.js 未加载导致崩溃
     if (window.Chart && Chart.defaults && Chart.defaults.plugins && Chart.defaults.plugins.legend){
       Chart.defaults.plugins.legend.onClick = () => {};
     }
 
-    // ===== Analytics (auto-load on expand) =====
     const analyticsDetails = document.getElementById("analyticsDetails");
     const anaStatus = document.getElementById("anaStatus");
     const anaWeekBadge = document.getElementById("anaWeekBadge");
     const latestSummary = document.getElementById("latestSummary");
 
-    let CH = {}; // chart instances
+    let CH = {};
     let analyticsLoadedOnce = false;
     let analyticsLoading = false;
 
@@ -1396,7 +1344,6 @@
         latestSummary.textContent =
           `Players: ${st.n} · Avg: ${st.avg} · Std: ${st.std} · Elite: ${pct(st.eliteFrac)}`;
 
-        // ----- Latest: Histogram (bar) -----
         destroyChart("hist");
         CH.hist = new Chart(document.getElementById("c_hist"), {
           type: "bar",
@@ -1412,7 +1359,6 @@
           }
         });
 
-        // ----- Latest: Skill levels (pie) -----
         destroyChart("levels");
         const lvlLabels = ["Beginner","Intermediate","Advanced","Elite"];
         CH.levels = new Chart(document.getElementById("c_levels"), {
@@ -1448,7 +1394,6 @@
           }
         });
 
-        // ----- Latest: Male vs Female avg (bar) -----
         destroyChart("gender");
         CH.gender = new Chart(document.getElementById("c_gender"), {
           type: "bar",
@@ -1464,7 +1409,6 @@
           }
         });
 
-        // ----- Latest: Percentiles (bar) -----
         destroyChart("percent");
         CH.percent = new Chart(document.getElementById("c_percent"), {
           type: "bar",
@@ -1483,7 +1427,6 @@
           }
         });
 
-        // ----- Trend: Avg & Std (line) -----
         destroyChart("trend1");
         const weeks = trend.map(x=>x.week);
         const avgArr = trend.map(x=>x.avg);
@@ -1520,7 +1463,6 @@
           }
         });
 
-        // ----- Trend: Elite% (line) -----
         destroyChart("trend2");
         const eliteArr = trend.map(x=> (x.eliteFrac ?? 0) * 100);
 
@@ -1561,15 +1503,13 @@
       }
     }
 
-    // Auto-load when user expands the details (default collapsed)
     analyticsDetails.addEventListener("toggle", () => {
       if(analyticsDetails.open && !analyticsLoadedOnce){
         loadAnalytics();
       }
     });
-    loadAnalytics();   // 预加载：页面打开就拉数据，但 analytics 仍保持折叠
+    loadAnalytics();
 
-    // ---- Floating "more below" hint ----
     const scrollHint = document.getElementById("scrollHint");
     const scrollHintBtn = document.getElementById("scrollHintBtn");
     const belowSections = document.getElementById("belowSections");
@@ -1584,77 +1524,71 @@
     function isBelowAnchorVisible(){
       if(!belowSections) return false;
       const r = belowSections.getBoundingClientRect();
-      return r.top < window.innerHeight - 80; // 锚点进入视窗就算“看到了下面”
+      return r.top < window.innerHeight - 80;
     }
+
     let hintSuppressed = false;
 
-function adjustHintForSubmit(){
-  if(!scrollHint || !btn) return;
+    function adjustHintForSubmit(){
+      if(!scrollHint || !btn) return;
 
-  // 只在手机端做动态避让
-  if(window.innerWidth > 520){
-    scrollHint.style.bottom = "";
-    return;
-  }
+      if(window.innerWidth > 520){
+        scrollHint.style.bottom = "";
+        return;
+      }
 
-  const br = btn.getBoundingClientRect();
+      const br = btn.getBoundingClientRect();
+      const submitVisible = br.top < window.innerHeight && br.bottom > 0;
+      if(submitVisible){
+        const desiredBottom = Math.max(10, Math.round(window.innerHeight - br.top + 12));
+        const cap = Math.round(window.innerHeight * 0.55);
+        scrollHint.style.bottom = Math.min(desiredBottom, cap) + "px";
+      }else{
+        scrollHint.style.bottom = "";
+      }
+    }
 
-  // Submit 在视口内：把提示条顶到 Submit 上方
-  const submitVisible = br.top < window.innerHeight && br.bottom > 0;
-  if(submitVisible){
-    // 让 scrollHint 的底部 = Submit 的顶部 - 12px
-    // bottom(px) = window.innerHeight - (br.top - 12)
-    const desiredBottom = Math.max(10, Math.round(window.innerHeight - br.top + 12));
-    // 不要顶太高，最多到屏幕高度的 55%
-    const cap = Math.round(window.innerHeight * 0.55);
-    scrollHint.style.bottom = Math.min(desiredBottom, cap) + "px";
-  }else{
-    // 不需要避让时交给 CSS 默认 bottom
-    scrollHint.style.bottom = "";
-  }
-}
+    document.addEventListener("focusin", (e)=>{
+      if(form && form.contains(e.target)){
+        hintSuppressed = true;
+        if(scrollHint) scrollHint.style.display = "none";
+      }
+    });
 
-// ✅ 用户正在填表/点下拉框时隐藏，避免挡操作
-document.addEventListener("focusin", (e)=>{
-  if(form && form.contains(e.target)){
-    hintSuppressed = true;
-    if(scrollHint) scrollHint.style.display = "none";
-  }
-});
-document.addEventListener("focusout", (e)=>{
-  if(form && form.contains(e.target)){
-    hintSuppressed = false;
-    setTimeout(updateScrollHint, 150);
-  }
-});
-    
-function updateScrollHint(){
-  if(!scrollHint) return;
+    document.addEventListener("focusout", (e)=>{
+      if(form && form.contains(e.target)){
+        hintSuppressed = false;
+        setTimeout(updateScrollHint, 150);
+      }
+    });
 
-  // ✅ 填表中就别显示
-  if(hintSuppressed){
-    scrollHint.style.display = "none";
-    return;
-  }
+    function updateScrollHint(){
+      if(!scrollHint) return;
 
-  const canScroll = document.documentElement.scrollHeight > window.innerHeight + 80;
-  if(!canScroll) { scrollHint.style.display = "none"; return; }
+      if(hintSuppressed){
+        scrollHint.style.display = "none";
+        return;
+      }
 
-  if(isBelowAnchorVisible() || isNearBottom()){
-    scrollHint.style.display = "none";
-  }else{
-    scrollHint.style.display = "flex";
-    // ✅ 显示后再做避让（确保能拿到真实高度）
-    requestAnimationFrame(adjustHintForSubmit);
-  }
-}
+      const canScroll = document.documentElement.scrollHeight > window.innerHeight + 80;
+      if(!canScroll){
+        scrollHint.style.display = "none";
+        return;
+      }
+
+      if(isBelowAnchorVisible() || isNearBottom()){
+        scrollHint.style.display = "none";
+      }else{
+        scrollHint.style.display = "flex";
+        requestAnimationFrame(adjustHintForSubmit);
+      }
+    }
 
     function scrollToBelow(){
       if(!belowSections) return;
       belowSections.scrollIntoView({ behavior:"smooth", block:"start" });
     }
 
-    // 点击条或按钮都滚动
     if(scrollHintBtn){
       scrollHintBtn.addEventListener("click", scrollToBelow);
     }
@@ -1668,111 +1602,101 @@ function updateScrollHint(){
     window.addEventListener("scroll", updateScrollHint, { passive:true });
     window.addEventListener("resize", updateScrollHint);
     setTimeout(updateScrollHint, 300);
+
     (function mobileSelectPicker(){
-  const isMobile = window.matchMedia("(max-width:520px)").matches;
-  if(!isMobile) return;
+      const isMobile = window.matchMedia("(max-width:520px)").matches;
+      if(!isMobile) return;
 
-  // 只拦截你表单里的 select（避免影响别的）
-  const selects = document.querySelectorAll("#form select");
-  if(!selects.length) return;
+      const selects = document.querySelectorAll("#form select");
+      if(!selects.length) return;
 
-  // build overlay
-  const overlay = document.createElement("div");
-  overlay.id = "pickOverlay";
-  overlay.innerHTML = `
-  <div id="pickSheet" role="dialog" aria-modal="true">
-    <button id="pickClose" type="button" aria-label="Close">×</button>
-    <div id="pickTop"></div>
-    <div id="pickList"></div>
-  </div>
-`;
-  document.body.appendChild(overlay);
+      const overlay = document.createElement("div");
+      overlay.id = "pickOverlay";
+      overlay.innerHTML = `
+        <div id="pickSheet" role="dialog" aria-modal="true">
+          <button id="pickClose" type="button" aria-label="Close">×</button>
+          <div id="pickTop"></div>
+          <div id="pickList"></div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
 
-  const list = overlay.querySelector("#pickList");
-  const closeBtn = overlay.querySelector("#pickClose");
-  let activeSelect = null;
+      const list = overlay.querySelector("#pickList");
+      const closeBtn = overlay.querySelector("#pickClose");
+      let activeSelect = null;
 
-  function closePicker(){
-    overlay.style.display = "none";
-    document.body.style.overflow = "";
-    list.innerHTML = "";
-    activeSelect = null;
-  }
+      function closePicker(){
+        overlay.style.display = "none";
+        document.body.style.overflow = "";
+        list.innerHTML = "";
+        activeSelect = null;
+      }
 
-  function openPicker(sel){
-    activeSelect = sel;
-    list.innerHTML = "";
+      function openPicker(sel){
+        activeSelect = sel;
+        list.innerHTML = "";
 
-    // 把原 option 原样搬过来（不改内容）
-    const opts = Array.from(sel.options);
-    opts.forEach(opt=>{
-      if(opt.disabled) return; // 跳过 disabled 的 Select 占位
-      const div = document.createElement("div");
-      div.className = "pickItem" + (opt.value === sel.value ? " active" : "");
-      div.textContent = opt.textContent; // ✅ 完全不改文字内容
-      div.addEventListener("click", ()=>{
-        sel.value = opt.value;
-        sel.dispatchEvent(new Event("change", { bubbles:true }));
-        closePicker();
+        const opts = Array.from(sel.options);
+        opts.forEach(opt=>{
+          if(opt.disabled) return;
+          const div = document.createElement("div");
+          div.className = "pickItem" + (opt.value === sel.value ? " active" : "");
+          div.textContent = opt.textContent;
+          div.addEventListener("click", ()=>{
+            sel.value = opt.value;
+            sel.dispatchEvent(new Event("change", { bubbles:true }));
+            closePicker();
+          });
+          list.appendChild(div);
+        });
+
+        overlay.style.display = "block";
+        document.body.style.overflow = "hidden";
+      }
+
+      overlay.addEventListener("click", (e)=>{
+        if(e.target === overlay) closePicker();
       });
-      list.appendChild(div);
-    });
+      closeBtn.addEventListener("click", closePicker);
 
-    overlay.style.display = "block";
-    document.body.style.overflow = "hidden";
-  }
+      let lastTouchOpenAt = 0;
 
-  // 点击遮罩关闭
-  overlay.addEventListener("click", (e)=>{
-    if(e.target === overlay) closePicker();
-  });
-  closeBtn.addEventListener("click", closePicker);
+      selects.forEach(sel=>{
+        let sx = 0, sy = 0;
+        let moved = false;
 
-  // 拦截原生打开（用 pointerdown/touchstart 比 click 更可靠）
-// ✅ 只在“轻点”打开：滑动不触发
-let lastTouchOpenAt = 0;
+        sel.addEventListener("touchstart", (e)=>{
+          if(e.touches.length !== 1) return;
+          const t = e.touches[0];
+          sx = t.clientX;
+          sy = t.clientY;
+          moved = false;
+        }, { passive:true });
 
-selects.forEach(sel=>{
-  let sx = 0, sy = 0;
-  let moved = false;
+        sel.addEventListener("touchmove", (e)=>{
+          if(e.touches.length !== 1) return;
+          const t = e.touches[0];
+          const dx = Math.abs(t.clientX - sx);
+          const dy = Math.abs(t.clientY - sy);
+          if(dx > 10 || dy > 10) moved = true;
+        }, { passive:true });
 
-  // 记录起点（不 preventDefault，允许正常滚动）
-  sel.addEventListener("touchstart", (e)=>{
-    if(e.touches.length !== 1) return;
-    const t = e.touches[0];
-    sx = t.clientX; sy = t.clientY;
-    moved = false;
-  }, { passive:true });
+        sel.addEventListener("touchend", (e)=>{
+          if(moved) return;
+          lastTouchOpenAt = Date.now();
+          e.preventDefault();
+          e.stopPropagation();
+          openPicker(sel);
+        }, { passive:false });
 
-  // 判定是否在滑动
-  sel.addEventListener("touchmove", (e)=>{
-    if(e.touches.length !== 1) return;
-    const t = e.touches[0];
-    const dx = Math.abs(t.clientX - sx);
-    const dy = Math.abs(t.clientY - sy);
-    if(dx > 10 || dy > 10) moved = true;   // ✅ 阈值可调：8~14
-  }, { passive:true });
-
-  // 结束时：如果没移动，才打开 picker，并阻止系统原生 select
-  sel.addEventListener("touchend", (e)=>{
-    if(moved) return;                      // ✅ 滑动：不弹
-    lastTouchOpenAt = Date.now();
-    e.preventDefault();
-    e.stopPropagation();
-    openPicker(sel);
-  }, { passive:false });
-
-  // 桌面/鼠标：用 click 打开
-  sel.addEventListener("click", (e)=>{
-    // 防止 touchend 后又触发 click（某些浏览器会）
-    if(Date.now() - lastTouchOpenAt < 500) return;
-    e.preventDefault();
-    e.stopPropagation();
-    openPicker(sel);
-  }, true);
-});
-})();
+        sel.addEventListener("click", (e)=>{
+          if(Date.now() - lastTouchOpenAt < 500) return;
+          e.preventDefault();
+          e.stopPropagation();
+          openPicker(sel);
+        }, true);
+      });
+    })();
   </script>
-
 </body>
 </html>
