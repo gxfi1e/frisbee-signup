@@ -411,134 +411,136 @@
         <div class="gameLine2" id="gameInfoLine2"></div>
       </div>
 
-      <form id="form">
-        <div class="row">
-          <div>
-            <label for="name">Full Name *</label>
-            <input
-              id="name"
-              required
-              placeholder="e.g., Maojin Gong"
-              autocomplete="name"
-            />
+      <div id="signupArea">
+        <form id="form">
+          <div class="row">
+            <div>
+              <label for="name">Full Name *</label>
+              <input
+                id="name"
+                required
+                placeholder="e.g., Maojin Gong"
+                autocomplete="name"
+              />
+            </div>
+
+            <div>
+              <label for="gender">Gender *</label>
+              <select id="gender" required>
+                <option value="" selected disabled>Select</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
           </div>
 
-          <div>
-            <label for="gender">Gender *</label>
-            <select id="gender" required>
-              <option value="" selected disabled>Select</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
+          <p class="hint">
+            Please rate yourself at pick-up game intensity (not training). If you are unsure between two levels, choose the lower one.
+          </p>
+
+          <div class="row">
+            <div>
+              <label for="throwing">Throwing *</label>
+              <select id="throwing" required>
+                <option value="" selected disabled>Select</option>
+                <option value="1">1 — Even short open throws are often inaccurate; frequent turnovers</option>
+                <option value="2">2 — Short backhand OK; forehand or pressure causes many mistakes</option>
+                <option value="3">3 — Backhand + forehand usable in games (short–mid); long throws inconsistent</option>
+                <option value="4">4 — Game-stable passer: low turnovers under mark pressure; can reliably complete open hucks or break throws when needed</option>
+                <option value="5">5 — Offensive driver: consistently breaks the mark and delivers accurate hucks at game speed (even under pressure) with controlled risk</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="catch">Catch *</label>
+              <select id="catch" required>
+                <option value="" selected disabled>Select</option>
+                <option value="1">1 — Drops many easy, uncontested catches</option>
+                <option value="2">2 — Catches when wide open; struggles on the run or with imperfect throws</option>
+                <option value="3">3 — Usually catches cleanly in games (open or light pressure)</option>
+                <option value="4">4 — Reliable under pressure: catches on the run with a defender close; rarely drops important discs</option>
+                <option value="5">5 — Playmaker in the air: strong in contested catches, confident on sky or layout plays, wins many 50–50 discs (not just occasionally)</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="fitness">Fitness *</label>
+              <select id="fitness" required>
+                <option value="" selected disabled>Select</option>
+                <option value="1">1 — Struggles to finish a point; needs long rest</option>
+                <option value="2">2 — Can play, but performance drops fast; frequent breaks needed</option>
+                <option value="3">3 — Can play most points with normal rest; steady pace</option>
+                <option value="4">4 — Repeated sprints + quick recovery; can take multiple hard points in a row</option>
+                <option value="5">5 — High speed + stamina all session; still sharp late in games</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="experience">Experience *</label>
+              <select id="experience" required>
+                <option value="" selected disabled>Select</option>
+                <option value="1">1 — New: still learning rules and basic positioning</option>
+                <option value="2">2 — Played a few times; knows basic rules and simple cuts</option>
+                <option value="3">3 — Regular pickup: understands basic offense/defense and marking</option>
+                <option value="4">4 — Organized games: understands team systems (stack, force, help defense) and makes good decisions</option>
+                <option value="5">5 — Competitive level: reads the field well, adapts under pressure, and leads play on offense/defense</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="pref">Preference *</label>
+              <select id="pref" required>
+                <option value="" selected disabled>Select</option>
+                <option value="Handler">Handler</option>
+                <option value="Cutter">Cutter</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="pd">Practice duration *</label>
+              <select id="pd" required>
+                <option value="" selected disabled>Select</option>
+                <option value="< 3 months">&lt; 3 months</option>
+                <option value="3–12 months">3–12 months</option>
+                <option value="1–3 years">1–3 years</option>
+                <option value="3–5 years">3–5 years</option>
+                <option value="> 5 years">&gt; 5 years</option>
+              </select>
+            </div>
           </div>
-        </div>
 
-        <p class="hint">
-          Please rate yourself at pick-up game intensity (not training). If you are unsure between two levels, choose the lower one.
-        </p>
-
-        <div class="row">
-          <div>
-            <label for="throwing">Throwing *</label>
-            <select id="throwing" required>
-              <option value="" selected disabled>Select</option>
-              <option value="1">1 — Even short open throws are often inaccurate; frequent turnovers</option>
-              <option value="2">2 — Short backhand OK; forehand or pressure causes many mistakes</option>
-              <option value="3">3 — Backhand + forehand usable in games (short–mid); long throws inconsistent</option>
-              <option value="4">4 — Game-stable passer: low turnovers under mark pressure; can reliably complete open hucks or break throws when needed</option>
-              <option value="5">5 — Offensive driver: consistently breaks the mark and delivers accurate hucks at game speed (even under pressure) with controlled risk</option>
-            </select>
+          <button id="btn" type="submit">Submit</button>
+          <div class="footer">
+            After you submit, a <code>RegID</code> will be generated and saved on this device.
+            Keep it for cancellation. Please use your full name to avoid duplicate signups.
           </div>
+          <div id="status" class="status"></div>
 
-          <div>
-            <label for="catch">Catch *</label>
-            <select id="catch" required>
-              <option value="" selected disabled>Select</option>
-              <option value="1">1 — Drops many easy, uncontested catches</option>
-              <option value="2">2 — Catches when wide open; struggles on the run or with imperfect throws</option>
-              <option value="3">3 — Usually catches cleanly in games (open or light pressure)</option>
-              <option value="4">4 — Reliable under pressure: catches on the run with a defender close; rarely drops important discs</option>
-              <option value="5">5 — Playmaker in the air: strong in contested catches, confident on sky or layout plays, wins many 50–50 discs (not just occasionally)</option>
-            </select>
+          <div id="regTools" class="inline" style="display:none; margin-top:10px;">
+            <button id="copyRegBtn" class="smallbtn secondary" type="button">Copy RegID</button>
+            <span id="regSavedNote" class="hint" style="margin:0;"></span>
           </div>
+        </form>
 
-          <div>
-            <label for="fitness">Fitness *</label>
-            <select id="fitness" required>
-              <option value="" selected disabled>Select</option>
-              <option value="1">1 — Struggles to finish a point; needs long rest</option>
-              <option value="2">2 — Can play, but performance drops fast; frequent breaks needed</option>
-              <option value="3">3 — Can play most points with normal rest; steady pace</option>
-              <option value="4">4 — Repeated sprints + quick recovery; can take multiple hard points in a row</option>
-              <option value="5">5 — High speed + stamina all session; still sharp late in games</option>
-            </select>
+        <div class="hr"></div>
+
+        <details>
+          <summary><b>Cancel registration</b> (cost: buy Maojin a coffee ☕)</summary>
+          <div style="margin-top:10px;">
+            <label for="cancelName">Name / Nickname *</label>
+            <input id="cancelName" placeholder="must match your signup name" />
+            <label for="cancelId">RegID *</label>
+            <input id="cancelId" placeholder="e.g., FRI-20260212-ABCDEF12" />
+            <button id="cancelBtn" type="button">Cancel my registration</button>
+            <div id="cancelStatus" class="status"></div>
+            <div class="hint">Tip: your last RegID is saved on this device.</div>
           </div>
+        </details>
 
-          <div>
-            <label for="experience">Experience *</label>
-            <select id="experience" required>
-              <option value="" selected disabled>Select</option>
-              <option value="1">1 — New: still learning rules and basic positioning</option>
-              <option value="2">2 — Played a few times; knows basic rules and simple cuts</option>
-              <option value="3">3 — Regular pickup: understands basic offense/defense and marking</option>
-              <option value="4">4 — Organized games: understands team systems (stack, force, help defense) and makes good decisions</option>
-              <option value="5">5 — Competitive level: reads the field well, adapts under pressure, and leads play on offense/defense</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="pref">Preference *</label>
-            <select id="pref" required>
-              <option value="" selected disabled>Select</option>
-              <option value="Handler">Handler</option>
-              <option value="Cutter">Cutter</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="pd">Practice duration *</label>
-            <select id="pd" required>
-              <option value="" selected disabled>Select</option>
-              <option value="< 3 months">&lt; 3 months</option>
-              <option value="3–12 months">3–12 months</option>
-              <option value="1–3 years">1–3 years</option>
-              <option value="3–5 years">3–5 years</option>
-              <option value="> 5 years">&gt; 5 years</option>
-            </select>
-          </div>
-        </div>
-
-        <button id="btn" type="submit">Submit</button>
-        <div class="footer">
-          After you submit, a <code>RegID</code> will be generated and saved on this device.
-          Keep it for cancellation. Please use your full name to avoid duplicate signups.
-        </div>
-        <div id="status" class="status"></div>
-
-        <div id="regTools" class="inline" style="display:none; margin-top:10px;">
-          <button id="copyRegBtn" class="smallbtn secondary" type="button">Copy RegID</button>
-          <span id="regSavedNote" class="hint" style="margin:0;"></span>
-        </div>
-      </form>
+        <div class="hr"></div>
+      </div>
 
       <div id="belowSections"></div>
-
-      <div class="hr"></div>
-
-      <details>
-        <summary><b>Cancel registration</b> (cost: buy Maojin a coffee ☕)</summary>
-        <div style="margin-top:10px;">
-          <label for="cancelName">Name / Nickname *</label>
-          <input id="cancelName" placeholder="must match your signup name" />
-          <label for="cancelId">RegID *</label>
-          <input id="cancelId" placeholder="e.g., FRI-20260212-ABCDEF12" />
-          <button id="cancelBtn" type="button">Cancel my registration</button>
-          <div id="cancelStatus" class="status"></div>
-          <div class="hint">Tip: your last RegID is saved on this device.</div>
-        </div>
-      </details>
-
-      <div class="hr"></div>
 
       <div class="box" id="playersSection">
         <div class="headRow">
@@ -629,7 +631,7 @@
 
   <div id="scrollHint" role="button" aria-label="Scroll to sections below">
     <div class="hintText">
-      <span class="desktopOnly">↓ More below: Cancel · Registered players · Teams · Analytics</span>
+      <span class="desktopOnly">↓ More below: Registered players · Teams · Analytics</span>
       <span class="mobileOnly">More below</span>
     </div>
     <button type="button" id="scrollHintBtn">Go</button>
@@ -638,8 +640,6 @@
   <script>
     const CFG = window.SIGNUP_CONFIG;
     const ENDPOINT = CFG.endpoint;
-
-    // Score stays internal/admin-only. Frontend does not display player score.
 
     const overlay = document.getElementById("overlay");
     const overlayMsg = document.getElementById("overlayMsg");
@@ -675,6 +675,7 @@
     const timeLeftPill = document.getElementById("timeLeftPill");
     const tzLine = document.getElementById("tzLine");
 
+    const signupArea = document.getElementById("signupArea");
     const form = document.getElementById("form");
     const btn = document.getElementById("btn");
     const statusEl = document.getElementById("status");
@@ -848,6 +849,25 @@
       };
     }
 
+    function isAfterCutoffFromIso(cutoffIso){
+      if (!cutoffIso) return false;
+      const t = new Date(cutoffIso).getTime();
+      if (Number.isNaN(t)) return false;
+      return Date.now() >= t;
+    }
+
+    function togglePostCutoffLayout(data){
+      if (!signupArea) return;
+
+      const afterCutoff = isAfterCutoffFromIso(data?.cutoffIso);
+      signupArea.style.display = afterCutoff ? "none" : "";
+
+      const sh = document.getElementById("scrollHint");
+      if (afterCutoff && sh) {
+        sh.style.display = "none";
+      }
+    }
+
     function timeLeftText(cutoffIso){
       if (!cutoffIso) return "Time left: —";
 
@@ -904,7 +924,10 @@
       try {
         const data = await getStatus();
         if (!data.ok) throw new Error("status not ok");
+
         setPills(data);
+        togglePostCutoffLayout(data);
+
         return data;
       } catch {
         countPill.textContent = "Status unavailable";
@@ -1058,9 +1081,6 @@
         hideOverlay();
         await refreshVisibleSections();
         if (!btn.disabled) btn.textContent = "Submit";
-        if (!submitConfirmed) {
-          // keep current form values when submission is not confirmed
-        }
       }
     });
 
@@ -1565,6 +1585,11 @@
     function updateScrollHint(){
       if(!scrollHint) return;
 
+      if (signupArea && signupArea.style.display === "none") {
+        scrollHint.style.display = "none";
+        return;
+      }
+
       if(hintSuppressed){
         scrollHint.style.display = "none";
         return;
@@ -1623,17 +1648,14 @@
 
       const list = overlay.querySelector("#pickList");
       const closeBtn = overlay.querySelector("#pickClose");
-      let activeSelect = null;
 
       function closePicker(){
         overlay.style.display = "none";
         document.body.style.overflow = "";
         list.innerHTML = "";
-        activeSelect = null;
       }
 
       function openPicker(sel){
-        activeSelect = sel;
         list.innerHTML = "";
 
         const opts = Array.from(sel.options);
