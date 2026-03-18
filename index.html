@@ -247,9 +247,9 @@
       padding:10px 12px;
     }
     .aqiTopLine{
-      display:flex;
+      display:grid;
+      grid-template-columns:minmax(0, 1fr) auto auto;
       align-items:center;
-      justify-content:space-between;
       gap:8px;
       margin-bottom:4px;
     }
@@ -258,19 +258,22 @@
       font-weight:800;
       line-height:1.2;
       margin:0;
+      min-width:0;
     }
     .aqiSummaryInline{
       margin-top:4px;
       font-size:12px;
       color:#555;
       line-height:1.35;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
     #aqiDetails{
       margin-top:8px;
     }
-    #aqiDetails summary{
-      list-style:none;
+    .aqiToggleBtn{
       cursor:pointer;
       user-select:none;
       display:inline-flex;
@@ -283,9 +286,9 @@
       font-size:12px;
       font-weight:700;
       color:#333;
+      white-space:nowrap;
     }
-    #aqiDetails summary::-webkit-details-marker{display:none}
-    #aqiDetails[open] summary{margin-bottom:8px}
+    .aqiToggleBtn:hover{background:#fafafa}
 
     .aqiRow{
       display:flex;
@@ -435,6 +438,14 @@
       .aqiTitle{font-size:13px}
       .aqiSummaryInline{font-size:11.5px}
       .badge{font-size:12px;padding:5px 9px}
+      .aqiTopLine{
+        grid-template-columns:minmax(0, 1fr) auto auto;
+        gap:6px;
+      }
+      .aqiToggleBtn{
+        padding:5px 8px;
+        font-size:11.5px;
+      }
 
       .desktopOnly{display:none}
       .mobileOnly{display:block}
@@ -503,6 +514,7 @@
         <div class="aqiTopLine">
           <div class="aqiTitle">Thuwal Air Quality</div>
           <div class="badge" id="aqiModeBadge">Loading…</div>
+          <button type="button" class="aqiToggleBtn" id="aqiToggleSummary">Show AQI details</button>
         </div>
 
         <div id="aqiSummaryInline" class="aqiSummaryInline">
@@ -510,7 +522,6 @@
         </div>
 
         <details id="aqiDetails">
-          <summary id="aqiToggleSummary">Show AQI details</summary>
           <div id="aqiDetail" class="aqiRow"></div>
           <canvas id="aqiTrendChart" style="display:none; width:100% !important;"></canvas>
         </details>
@@ -835,6 +846,10 @@
     let aqiChart = null;
     let aqiGeo = null;
 
+    aqiToggleSummary.addEventListener("click", () => {
+      aqiDetails.open = !aqiDetails.open;
+    });
+
     function escapeHtml(s){
       return (s||"").toString()
         .replaceAll("&","&amp;")
@@ -934,7 +949,7 @@
       const avg = Math.round(points.reduce((s, p) => s + p.aqi, 0) / points.length);
       const band = aqiBand(avg);
 
-      aqiModeBadge.textContent = "Fri 6–10 PM";
+      aqiModeBadge.textContent = "Fri 7–10 PM";
       aqiSummaryInline.innerHTML =
         `${prettyDay(targetDateStr)} evening · Avg AQI <b>${avg}</b> · ${escapeHtml(band.label)}`;
       aqiToggleSummary.textContent = "Show hourly AQI";
@@ -1050,7 +1065,7 @@
 
         const fridayWindow = rows.filter(x =>
           x.date === fridayDateStr &&
-          x.hour >= 18 &&
+          x.hour >= 19 &&
           x.hour <= 22
         );
 
