@@ -241,12 +241,56 @@
     #c_levels{height:260px !important}
     #c_gender{height:200px !important}
     #c_trend1, #c_trend2{height:240px !important}
-    #aqiTrendChart{height:220px !important}
+    #aqiTrendChart{height:210px !important}
+
+    .aqiCompact{
+      padding:10px 12px;
+    }
+    .aqiTopLine{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-bottom:4px;
+    }
+    .aqiTitle{
+      font-size:14px;
+      font-weight:800;
+      line-height:1.2;
+      margin:0;
+    }
+    .aqiSummaryInline{
+      margin-top:4px;
+      font-size:12px;
+      color:#555;
+      line-height:1.35;
+    }
+
+    #aqiDetails{
+      margin-top:8px;
+    }
+    #aqiDetails summary{
+      list-style:none;
+      cursor:pointer;
+      user-select:none;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border:1px solid #eee;
+      border-radius:999px;
+      background:#fff;
+      font-size:12px;
+      font-weight:700;
+      color:#333;
+    }
+    #aqiDetails summary::-webkit-details-marker{display:none}
+    #aqiDetails[open] summary{margin-bottom:8px}
 
     .aqiRow{
       display:flex;
       gap:8px;
-      margin-top:10px;
+      margin-top:8px;
       overflow-x:auto;
       -webkit-overflow-scrolling:touch;
     }
@@ -388,6 +432,10 @@
       .row{gap:10px}
       .hint{margin:6px 0 6px;padding:6px 10px;font-size:12px}
 
+      .aqiTitle{font-size:13px}
+      .aqiSummaryInline{font-size:11.5px}
+      .badge{font-size:12px;padding:5px 9px}
+
       .desktopOnly{display:none}
       .mobileOnly{display:block}
 
@@ -451,18 +499,21 @@
         <span id="timeLeftPill" class="pill">Loading...</span>
       </div>
 
-      <div id="aqiBox" class="box" style="margin-top:10px;">
-        <div class="headRow">
-          <div class="teamtitle" style="margin:0;">Thuwal Air Quality</div>
+      <div id="aqiBox" class="box aqiCompact">
+        <div class="aqiTopLine">
+          <div class="aqiTitle">Thuwal Air Quality</div>
           <div class="badge" id="aqiModeBadge">Loading…</div>
         </div>
 
-        <div id="aqiSummary" class="hint" style="margin-top:6px;">
+        <div id="aqiSummaryInline" class="aqiSummaryInline">
           Loading air quality forecast…
         </div>
 
-        <div id="aqiDetail" class="aqiRow"></div>
-        <canvas id="aqiTrendChart" style="display:none; width:100% !important;"></canvas>
+        <details id="aqiDetails">
+          <summary id="aqiToggleSummary">Show AQI details</summary>
+          <div id="aqiDetail" class="aqiRow"></div>
+          <canvas id="aqiTrendChart" style="display:none; width:100% !important;"></canvas>
+        </details>
       </div>
 
       <div id="tzLine" class="metaRight"></div>
@@ -737,7 +788,9 @@
     const tzLine = document.getElementById("tzLine");
 
     const aqiModeBadge = document.getElementById("aqiModeBadge");
-    const aqiSummary = document.getElementById("aqiSummary");
+    const aqiSummaryInline = document.getElementById("aqiSummaryInline");
+    const aqiDetails = document.getElementById("aqiDetails");
+    const aqiToggleSummary = document.getElementById("aqiToggleSummary");
     const aqiDetail = document.getElementById("aqiDetail");
     const aqiTrendChartCanvas = document.getElementById("aqiTrendChart");
 
@@ -797,7 +850,7 @@
 
     function prettyDay(dateStr){
       const d = new Date(dateStr + "T12:00:00");
-      return d.toLocaleDateString(undefined, {
+      return d.toLocaleDateString("en-US", {
         weekday: "short",
         month: "short",
         day: "numeric"
@@ -838,7 +891,7 @@
 
     function nextRelevantFridayRiyadh(){
       const d = nowInRiyadh();
-      const day = d.getDay();   // Sun=0 ... Fri=5
+      const day = d.getDay();
       const hour = d.getHours();
 
       let add = (5 - day + 7) % 7;
@@ -874,15 +927,17 @@
 
     function renderAqiFridayWindow(targetDateStr, points){
       destroyAqiChart();
-      aqiTrendChartCanvas.style.display = "none";
+      aqiDetails.open = false;
       aqiDetail.style.display = "flex";
+      aqiTrendChartCanvas.style.display = "none";
 
       const avg = Math.round(points.reduce((s, p) => s + p.aqi, 0) / points.length);
       const band = aqiBand(avg);
 
-      aqiModeBadge.textContent = "Fri 18:00–22:00";
-      aqiSummary.innerHTML =
-        `Forecast for <b>${prettyDay(targetDateStr)}</b> evening: avg AQI <b>${avg}</b> (${band.label}).`;
+      aqiModeBadge.textContent = "Fri 6–10 PM";
+      aqiSummaryInline.innerHTML =
+        `${prettyDay(targetDateStr)} evening · Avg AQI <b>${avg}</b> · ${escapeHtml(band.label)}`;
+      aqiToggleSummary.textContent = "Show hourly AQI";
 
       aqiDetail.innerHTML = points.map(p => {
         const b = aqiBand(p.aqi);
@@ -898,14 +953,19 @@
 
     function renderAqiTrend(targetDateStr, daily){
       destroyAqiChart();
+      aqiDetails.open = false;
       aqiDetail.innerHTML = "";
       aqiDetail.style.display = "none";
       aqiTrendChartCanvas.style.display = "block";
 
-      aqiModeBadge.textContent = "Next 6 days";
-      aqiSummary.innerHTML =
-        `Friday evening forecast is not available yet in the returned window, so showing the next 6 forecast days (daily mean AQI).` +
-        (daily.some(x => x.date === targetDateStr) ? ` Friday is included.` : "");
+      const fridayIncluded = daily.some(x => x.date === targetDateStr);
+
+      aqiModeBadge.textContent = "6-day trend";
+      aqiSummaryInline.innerHTML =
+        `Friday evening hourly forecast is not available yet. Showing daily AQI trend for the next 6 days` +
+        (fridayIncluded ? `, including ${prettyDay(targetDateStr)}.` : `.`);
+
+      aqiToggleSummary.textContent = "Show AQI trend";
 
       const labels = daily.map(x => {
         const label = prettyDay(x.date);
@@ -949,7 +1009,9 @@
     async function loadAqi(){
       try{
         aqiModeBadge.textContent = "Loading…";
-        aqiSummary.textContent = "Loading Thuwal air quality forecast…";
+        aqiSummaryInline.textContent = "Loading air quality forecast…";
+        aqiToggleSummary.textContent = "Show AQI details";
+        aqiDetails.open = false;
         aqiDetail.innerHTML = "";
         destroyAqiChart();
         aqiTrendChartCanvas.style.display = "none";
@@ -1019,9 +1081,11 @@
 
       } catch (e) {
         destroyAqiChart();
+        aqiDetails.open = false;
         aqiTrendChartCanvas.style.display = "none";
         aqiModeBadge.textContent = "Unavailable";
-        aqiSummary.textContent = "AQI forecast is temporarily unavailable.";
+        aqiSummaryInline.textContent = "AQI forecast is temporarily unavailable.";
+        aqiToggleSummary.textContent = "Show AQI details";
         aqiDetail.innerHTML = "";
       }
     }
