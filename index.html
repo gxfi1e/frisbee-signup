@@ -40,11 +40,11 @@
 
     .bar{
       display:flex;
-      gap:6px;
+      gap:8px;
       align-items:center;
       justify-content:center;
       width:fit-content;
-      margin:6px auto;
+      margin:8px auto 10px;
       overflow-x:auto;
       flex-wrap:nowrap;
       -webkit-overflow-scrolling: touch;
@@ -54,14 +54,21 @@
     .pill{
       display:inline-flex;
       align-items:center;
-      padding:4px 8px;
+      justify-content:center;
+      min-height:34px;
+      padding:6px 12px;
+      border:1px solid #e7e9ef;
       border-radius:999px;
       font-size:12px;
-      background:#eee;
+      font-weight:700;
+      background:#f5f7fb;
+      color:#1d2433;
       white-space:nowrap;
       flex:0 0 auto;
+      box-sizing:border-box;
     }
     .pill.ok{background:#e7f7ec}
+    .pill.warn{background:#fff5dd;color:#8a5a00}
     .pill.bad{background:#fdecec}
 
     .metaRight{
@@ -190,11 +197,19 @@
       margin-bottom:6px;
     }
     .badge{
-      background:#eee;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:34px;
+      padding:6px 12px;
+      border:1px solid #e7e9ef;
       border-radius:999px;
-      padding:6px 10px;
-      font-size:13px;
+      background:#f5f7fb;
+      font-size:12px;
+      font-weight:700;
+      color:#1d2433;
       white-space:nowrap;
+      box-sizing:border-box;
     }
     .statsRow{
       color:#666;
@@ -244,24 +259,26 @@
     #aqiTrendChart{height:210px !important}
 
     .aqiCompact{
-      padding:10px 12px;
+      padding:14px;
+      background:linear-gradient(180deg, #fbfcff 0%, #f8fafc 100%);
     }
     .aqiTopLine{
       display:grid;
       grid-template-columns:minmax(0, 1fr) auto auto;
       align-items:center;
-      gap:8px;
-      margin-bottom:4px;
+      gap:10px;
+      margin-bottom:6px;
     }
     .aqiTitle{
-      font-size:14px;
+      font-size:16px;
       font-weight:800;
-      line-height:1.2;
+      line-height:1.1;
       margin:0;
       min-width:0;
+      white-space:nowrap;
     }
     .aqiSummaryInline{
-      margin-top:4px;
+      margin-top:2px;
       font-size:12px;
       color:#555;
       line-height:1.35;
@@ -270,30 +287,32 @@
       text-overflow:ellipsis;
     }
 
-    #aqiDetails{
+    .aqiDetailPanel{
       margin-top:8px;
     }
+    .aqiDetailPanel[hidden]{display:none !important}
     .aqiToggleBtn{
       cursor:pointer;
       user-select:none;
       display:inline-flex;
       align-items:center;
-      gap:8px;
-      padding:6px 10px;
-      border:1px solid #eee;
+      justify-content:center;
+      min-height:34px;
+      padding:6px 12px;
+      border:1px solid #e7e9ef;
       border-radius:999px;
-      background:#fff;
+      background:#f5f7fb;
       font-size:12px;
       font-weight:700;
-      color:#333;
+      color:#1d2433;
       white-space:nowrap;
+      box-sizing:border-box;
     }
-    .aqiToggleBtn:hover{background:#fafafa}
+    .aqiToggleBtn:hover{background:#eef2f8}
 
     .aqiRow{
       display:flex;
       gap:8px;
-      margin-top:8px;
       overflow-x:auto;
       -webkit-overflow-scrolling:touch;
     }
@@ -307,10 +326,11 @@
       min-width:92px;
       flex:0 0 auto;
       background:#fff;
-      border:1px solid #eee;
+      border:1px solid #edf0f5;
       border-radius:12px;
       padding:10px 12px;
       text-align:center;
+      box-shadow:0 8px 18px rgba(15, 23, 42, .04);
     }
 
     .aqiTime{
@@ -328,6 +348,12 @@
       font-size:12px;
       color:#555;
     }
+    .aqiMetric{
+      margin-top:6px;
+      font-size:11px;
+      color:#667085;
+      white-space:nowrap;
+    }
 
     .aqiChip.good{background:#f5fbf7}
     .aqiChip.moderate{background:#fffaf0}
@@ -335,6 +361,27 @@
     .aqiChip.unhealthy{background:#fff0f0}
     .aqiChip.very-unhealthy{background:#f7f1ff}
     .aqiChip.hazardous{background:#f3f3f3}
+
+    .gameNotice{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid #e7e9ef;
+      background:#f7f9fc;
+      font-size:12px;
+      line-height:1.45;
+      color:#324054;
+    }
+    .gameNotice.warn{
+      background:#fff8e8;
+      border-color:#f2dfac;
+      color:#8a5a00;
+    }
+    .gameNotice.bad{
+      background:#fff1f1;
+      border-color:#f3cccc;
+      color:#a12626;
+    }
 
     .desktopOnly{display:block}
     .mobileOnly{display:none}
@@ -435,15 +482,19 @@
       .row{gap:10px}
       .hint{margin:6px 0 6px;padding:6px 10px;font-size:12px}
 
-      .aqiTitle{font-size:13px}
+      .aqiTitle{
+        grid-column:1 / -1;
+        font-size:15px;
+      }
       .aqiSummaryInline{font-size:11.5px}
-      .badge{font-size:12px;padding:5px 9px}
+      .badge{font-size:11.5px;padding:5px 10px}
       .aqiTopLine{
-        grid-template-columns:minmax(0, 1fr) auto auto;
-        gap:6px;
+        grid-template-columns:1fr auto;
+        gap:8px;
       }
       .aqiToggleBtn{
-        padding:5px 8px;
+        justify-self:end;
+        padding:5px 10px;
         font-size:11.5px;
       }
 
@@ -514,17 +565,17 @@
         <div class="aqiTopLine">
           <div class="aqiTitle">Thuwal Air Quality</div>
           <div class="badge" id="aqiModeBadge">Loading…</div>
-          <button type="button" class="aqiToggleBtn" id="aqiToggleSummary">Show AQI details</button>
+          <button type="button" class="aqiToggleBtn" id="aqiToggleSummary">Show hourly forecast</button>
         </div>
 
         <div id="aqiSummaryInline" class="aqiSummaryInline">
           Loading air quality forecast…
         </div>
 
-        <details id="aqiDetails">
+        <div id="aqiDetailsPanel" class="aqiDetailPanel" hidden>
           <div id="aqiDetail" class="aqiRow"></div>
           <canvas id="aqiTrendChart" style="display:none; width:100% !important;"></canvas>
-        </details>
+        </div>
       </div>
 
       <div id="tzLine" class="metaRight"></div>
@@ -532,6 +583,7 @@
       <div class="box">
         <div class="gameLine1" id="gameInfoLine1">Loading game info…</div>
         <div class="gameLine2" id="gameInfoLine2"></div>
+        <div id="gameNotice" class="gameNotice" hidden></div>
       </div>
 
       <div id="signupArea">
@@ -800,7 +852,7 @@
 
     const aqiModeBadge = document.getElementById("aqiModeBadge");
     const aqiSummaryInline = document.getElementById("aqiSummaryInline");
-    const aqiDetails = document.getElementById("aqiDetails");
+    const aqiDetailsPanel = document.getElementById("aqiDetailsPanel");
     const aqiToggleSummary = document.getElementById("aqiToggleSummary");
     const aqiDetail = document.getElementById("aqiDetail");
     const aqiTrendChartCanvas = document.getElementById("aqiTrendChart");
@@ -821,6 +873,7 @@
 
     const gameInfoLine1 = document.getElementById("gameInfoLine1");
     const gameInfoLine2 = document.getElementById("gameInfoLine2");
+    const gameNotice = document.getElementById("gameNotice");
     const fourTeamMin = document.getElementById("fourTeamMin");
 
     const refreshTeamsBtn = document.getElementById("refreshTeamsBtn");
@@ -845,10 +898,19 @@
 
     let aqiChart = null;
     let aqiGeo = null;
+    let aqiPanelOpen = false;
+    let latestStatusData = null;
+    let airQualityPolicy = defaultAirPolicy();
 
     aqiToggleSummary.addEventListener("click", () => {
-      aqiDetails.open = !aqiDetails.open;
+      setAqiPanelOpen(!aqiPanelOpen);
     });
+
+    function setAqiPanelOpen(open){
+      aqiPanelOpen = !!open;
+      aqiDetailsPanel.hidden = !aqiPanelOpen;
+      aqiToggleSummary.setAttribute("aria-expanded", String(aqiPanelOpen));
+    }
 
     function escapeHtml(s){
       return (s||"").toString()
@@ -873,7 +935,13 @@
     }
 
     function prettyHour(isoLocal){
-      return isoLocal.split("T")[1]?.slice(0, 5) || "";
+      const part = isoLocal.split("T")[1];
+      if (!part) return "";
+      const hour = Number(part.slice(0, 2));
+      if (!Number.isFinite(hour)) return part.slice(0, 5);
+      const suffix = hour >= 12 ? "PM" : "AM";
+      const hour12 = hour % 12 || 12;
+      return `${hour12} ${suffix}`;
     }
 
     function nowInRiyadh(){
@@ -902,6 +970,103 @@
         aqiChart.destroy();
         aqiChart = null;
       }
+    }
+
+    function formatPm10(v){
+      const n = Number(v);
+      return Number.isFinite(n) ? `${Math.round(n)} ug/m3` : "n/a";
+    }
+
+    function defaultAirPolicy(){
+      return {
+        mode: "normal",
+        blocksRegistration: false,
+        noticeTone: "",
+        noticeText: "",
+        gameLine1: "",
+        gameLine2: ""
+      };
+    }
+
+    function evaluateAirQualityPolicy(points){
+      if (!Array.isArray(points) || !points.length) return defaultAirPolicy();
+
+      const aqiValues = points.map(p => Number(p.aqi)).filter(Number.isFinite);
+      const pm10Values = points.map(p => Number(p.pm10)).filter(Number.isFinite);
+      const maxAqi = aqiValues.length ? Math.max(...aqiValues) : NaN;
+      const maxPm10 = pm10Values.length ? Math.max(...pm10Values) : NaN;
+      const sevenPm = points.find(p => p.hour === 19);
+      const laterPoints = points
+        .filter(p => p.hour >= 20)
+        .sort((a, b) => a.hour - b.hour);
+
+      const improvingAfter8 =
+        !!sevenPm &&
+        laterPoints.length > 0 &&
+        laterPoints.every((p, idx) => {
+          const prev = idx === 0 ? sevenPm.aqi : laterPoints[idx - 1].aqi;
+          return p.aqi < sevenPm.aqi && p.aqi <= prev;
+        });
+
+      if (maxAqi > 150 || maxPm10 > 250) {
+        return {
+          mode: "cancelled",
+          blocksRegistration: true,
+          noticeTone: "bad",
+          noticeText: `Outdoor play is cancelled due to poor forecast air quality. Peak AQI is ${Math.round(maxAqi)} and peak PM10 is ${Math.round(maxPm10)} ug/m3, so we have to cancel the Friday game.`,
+          gameLine1: "Friday game cancelled",
+          gameLine2: "Outdoor session cancelled due to forecast air quality."
+        };
+      }
+
+      if (maxAqi <= 100 && maxPm10 < 100) {
+        return defaultAirPolicy();
+      }
+
+      if (maxAqi > 100 && maxAqi <= 150 && improvingAfter8) {
+        return {
+          mode: "modified",
+          blocksRegistration: false,
+          noticeTone: "warn",
+          noticeText: "Forecast AQI is between 100 and 150, but conditions improve after 8:00 PM. We will run a 30-minute throwing session and limit the game to 50 minutes with an 8:00 PM start.",
+          gameLine1: "Friday modified session",
+          gameLine2: "Throwing practice for 30 minutes, then a 50-minute game starting at 8:00 PM."
+        };
+      }
+
+      return {
+        mode: "cancelled",
+        blocksRegistration: true,
+        noticeTone: "bad",
+        noticeText: "Forecast air quality does not meet the safe play rules for a normal or modified outdoor session, so registration is closed for this Friday.",
+        gameLine1: "Friday game cancelled",
+        gameLine2: "Outdoor session cancelled because forecast conditions do not improve enough after 8:00 PM."
+      };
+    }
+
+    function renderGameNotice(){
+      if (!gameNotice) return;
+
+      if (!airQualityPolicy.noticeText) {
+        gameNotice.hidden = true;
+        gameNotice.textContent = "";
+        gameNotice.className = "gameNotice";
+        return;
+      }
+
+      gameNotice.hidden = false;
+      gameNotice.textContent = airQualityPolicy.noticeText;
+      gameNotice.className = `gameNotice ${airQualityPolicy.noticeTone}`.trim();
+    }
+
+    function applyAirQualityPolicy(){
+      renderGameInfo();
+      renderGameNotice();
+      if (latestStatusData) {
+        setPills(latestStatusData);
+      }
+      applySignupVisibility(latestStatusData);
+      updateScrollHint();
     }
 
     function nextRelevantFridayRiyadh(){
@@ -942,17 +1107,26 @@
 
     function renderAqiFridayWindow(targetDateStr, points){
       destroyAqiChart();
-      aqiDetails.open = false;
+      setAqiPanelOpen(false);
       aqiDetail.style.display = "flex";
       aqiTrendChartCanvas.style.display = "none";
 
       const avg = Math.round(points.reduce((s, p) => s + p.aqi, 0) / points.length);
+      const pm10Values = points.map(p => Number(p.pm10)).filter(Number.isFinite);
+      const peakPm10 = pm10Values.length ? Math.max(...pm10Values) : NaN;
       const band = aqiBand(avg);
 
       aqiModeBadge.textContent = "Fri 7–10 PM";
       aqiSummaryInline.innerHTML =
         `${prettyDay(targetDateStr)} evening · Avg AQI <b>${avg}</b> · ${escapeHtml(band.label)}`;
-      aqiToggleSummary.textContent = "Show hourly AQI";
+      aqiToggleSummary.textContent = "Show hourly forecast";
+      aqiModeBadge.textContent = "Fri 7-10 PM";
+      aqiSummaryInline.innerHTML =
+        `${prettyDay(targetDateStr)} evening | Avg AQI <b>${avg}</b> | Peak PM10 <b>${Number.isFinite(peakPm10) ? Math.round(peakPm10) : "-"}</b> ug/m3 | ${escapeHtml(band.label)}`;
+      aqiSummaryInline.innerHTML =
+        `${prettyDay(targetDateStr)} evening · Avg AQI <b>${avg}</b> · Peak PM10 <b>${Number.isFinite(peakPm10) ? Math.round(peakPm10) : "-"}</b> ug/m3 · ${escapeHtml(band.label)}`;
+      aqiSummaryInline.innerHTML =
+        `${prettyDay(targetDateStr)} evening · Avg AQI <b>${avg}</b> · Peak PM10 <b>${Number.isFinite(peakPm10) ? Math.round(peakPm10) : "-"}</b> ug/m3 · ${escapeHtml(band.label)}`;
 
       aqiDetail.innerHTML = points.map(p => {
         const b = aqiBand(p.aqi);
@@ -961,6 +1135,7 @@
             <div class="aqiTime">${escapeHtml(prettyHour(p.time))}</div>
             <div class="aqiNum">${Math.round(p.aqi)}</div>
             <div class="aqiTag">${escapeHtml(b.label)}</div>
+            <div class="aqiMetric">PM10 ${escapeHtml(formatPm10(p.pm10))}</div>
           </div>
         `;
       }).join("");
@@ -968,7 +1143,7 @@
 
     function renderAqiTrend(targetDateStr, daily){
       destroyAqiChart();
-      aqiDetails.open = false;
+      setAqiPanelOpen(false);
       aqiDetail.innerHTML = "";
       aqiDetail.style.display = "none";
       aqiTrendChartCanvas.style.display = "block";
@@ -1025,11 +1200,12 @@
       try{
         aqiModeBadge.textContent = "Loading…";
         aqiSummaryInline.textContent = "Loading air quality forecast…";
-        aqiToggleSummary.textContent = "Show AQI details";
-        aqiDetails.open = false;
+        aqiToggleSummary.textContent = "Show hourly forecast";
+        setAqiPanelOpen(false);
         aqiDetail.innerHTML = "";
         destroyAqiChart();
         aqiTrendChartCanvas.style.display = "none";
+        airQualityPolicy = defaultAirPolicy();
 
         const geo = await getThuwalGeo();
 
@@ -1037,7 +1213,7 @@
           `https://air-quality-api.open-meteo.com/v1/air-quality` +
           `?latitude=${encodeURIComponent(geo.latitude)}` +
           `&longitude=${encodeURIComponent(geo.longitude)}` +
-          `&hourly=us_aqi` +
+          `&hourly=us_aqi,pm10` +
           `&timezone=auto` +
           `&forecast_days=7`;
 
@@ -1045,6 +1221,7 @@
 
         const times = data?.hourly?.time || [];
         const aqi = data?.hourly?.us_aqi || [];
+        const pm10 = data?.hourly?.pm10 || [];
 
         if (!times.length || !aqi.length) {
           throw new Error("No AQI data");
@@ -1054,7 +1231,8 @@
           time: t,
           date: t.slice(0, 10),
           hour: Number((t.split("T")[1] || "").slice(0, 2)),
-          aqi: Number(aqi[i])
+          aqi: Number(aqi[i]),
+          pm10: Number(pm10[i])
         })).filter(x => Number.isFinite(x.aqi));
 
         if (!rows.length) {
@@ -1069,8 +1247,10 @@
           x.hour <= 22
         );
 
-        if (fridayWindow.length >= 2) {
+        if (fridayWindow.length >= 4) {
+          airQualityPolicy = evaluateAirQualityPolicy(fridayWindow);
           renderAqiFridayWindow(fridayDateStr, fridayWindow);
+          applyAirQualityPolicy();
           return;
         }
 
@@ -1093,15 +1273,19 @@
         }
 
         renderAqiTrend(fridayDateStr, daily);
+        airQualityPolicy = defaultAirPolicy();
+        applyAirQualityPolicy();
 
       } catch (e) {
         destroyAqiChart();
-        aqiDetails.open = false;
+        setAqiPanelOpen(false);
         aqiTrendChartCanvas.style.display = "none";
         aqiModeBadge.textContent = "Unavailable";
         aqiSummaryInline.textContent = "AQI forecast is temporarily unavailable.";
-        aqiToggleSummary.textContent = "Show AQI details";
+        aqiToggleSummary.textContent = "Show hourly forecast";
         aqiDetail.innerHTML = "";
+        airQualityPolicy = defaultAirPolicy();
+        applyAirQualityPolicy();
       }
     }
 
@@ -1239,14 +1423,15 @@
       return Date.now() >= t;
     }
 
-    function togglePostCutoffLayout(data){
+    function applySignupVisibility(data){
       if (!signupArea) return;
 
       const afterCutoff = isAfterCutoffFromIso(data?.cutoffIso);
-      signupArea.style.display = afterCutoff ? "none" : "";
+      const shouldHide = afterCutoff || airQualityPolicy.blocksRegistration;
+      signupArea.style.display = shouldHide ? "none" : "";
 
       const sh = document.getElementById("scrollHint");
-      if (afterCutoff && sh) {
+      if (shouldHide && sh) {
         sh.style.display = "none";
       }
     }
@@ -1278,7 +1463,13 @@
     function setPills(data) {
       countPill.textContent = `${data.count} / ${data.max} registered`;
 
-      if (data.isFull) {
+      if (airQualityPolicy.mode === "cancelled") {
+        statusPill.textContent = "CANCELLED";
+        statusPill.className = "pill bad";
+      } else if (airQualityPolicy.mode === "modified" && data.open && !data.isFull) {
+        statusPill.textContent = "MODIFIED";
+        statusPill.className = "pill warn";
+      } else if (data.isFull) {
         statusPill.textContent = "FULL";
         statusPill.className = "pill bad";
       } else if (data.open) {
@@ -1291,7 +1482,10 @@
 
       timeLeftPill.textContent = timeLeftText(data.cutoffIso);
 
-      if (data.isFull) {
+      if (airQualityPolicy.blocksRegistration) {
+        btn.disabled = true;
+        btn.textContent = "Registration unavailable";
+      } else if (data.isFull) {
         btn.disabled = true;
         btn.textContent = "Full";
       } else if (!data.open) {
@@ -1299,7 +1493,7 @@
         btn.textContent = "Registration closed";
       } else {
         btn.disabled = false;
-        btn.textContent = "Submit";
+        btn.textContent = airQualityPolicy.mode === "modified" ? "Register for modified session" : "Submit";
       }
     }
 
@@ -1308,15 +1502,18 @@
         const data = await getStatus();
         if (!data.ok) throw new Error("status not ok");
 
+        latestStatusData = data;
         setPills(data);
-        togglePostCutoffLayout(data);
+        applySignupVisibility(data);
 
         return data;
       } catch {
+        latestStatusData = null;
         countPill.textContent = "Status unavailable";
         statusPill.textContent = "UNKNOWN";
         statusPill.className = "pill";
         timeLeftPill.textContent = "";
+        applySignupVisibility(null);
         return null;
       }
     }
@@ -1367,6 +1564,27 @@
         <span>Bring: 💧 👟 🥏 🔥</span>
         <span>Format: 5v5 / 7v7 (with subs)</span>
       `;
+      if (airQualityPolicy.mode === "cancelled") {
+        gameInfoLine1.innerHTML = `${airQualityPolicy.gameLine1} · ${loc}`;
+        gameInfoLine2.innerHTML = `
+          <span>Forecast rule: AQI > 150 or PM10 > 250 ug/m3</span>
+          <span>Registration hidden automatically</span>
+        `;
+      } else if (airQualityPolicy.mode === "modified") {
+        gameInfoLine1.innerHTML = `${airQualityPolicy.gameLine1} · ${loc}`;
+        gameInfoLine2.innerHTML = `
+          <span>Throwing practice: 30 min</span>
+          <span>Game: 50 min, starts at 8:00 PM</span>
+          <span>Bring: water, cleats, disc</span>
+        `;
+      } else {
+        gameInfoLine1.innerHTML = `${CFG.gameTimeText} · ${loc}`;
+        gameInfoLine2.innerHTML = `
+          <span>Bring: water, cleats, disc, energy</span>
+          <span>Format: 5v5 / 7v7 (with subs)</span>
+        `;
+      }
+
       tzLine.textContent = `Registration closes: Fri 3:00 PM | Jeddah local time`;
       fourTeamMin.textContent = CFG.teamsMinForFour;
     }
