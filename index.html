@@ -2013,6 +2013,31 @@
 
     function pct(x){ return (x*100).toFixed(1) + "%"; }
 
+    function hasCompletedWeekStats(st){
+      if (!st || typeof st !== "object") return false;
+
+      const n = Number(st.n);
+      if (Number.isFinite(n) && n > 0) return true;
+
+      const bins = Object.values(st.bins || {}).some(v => Number(v) > 0);
+      const levels = Object.values(st.levels || {}).some(v => Number(v) > 0);
+      return bins || levels;
+    }
+
+    function hasTrendWeekData(row){
+      if (!row || !row.week) return false;
+
+      const avg = Number(row.avg);
+      const std = Number(row.std);
+      const elite = Number(row.eliteFrac);
+
+      return (
+        (Number.isFinite(avg) && avg > 0) ||
+        (Number.isFinite(std) && std > 0) ||
+        (Number.isFinite(elite) && elite > 0)
+      );
+    }
+
     async function loadAnalytics(){
       if(analyticsLoading) return;
       analyticsLoading = true;
@@ -2022,20 +2047,43 @@
         const data = await safeGetJson(ENDPOINT + "?action=analytics");
         if(!data || !data.ok) throw new Error((data && data.error) || "analytics failed");
 
-        const wk = data.latestWeek;
-        const st = data.latest;
-        const trend = data.trend || [];
+        const rawTrend = Array.isArray(data.trend) ? data.trend : [];
+        const filteredTrend = rawTrend.filter(hasTrendWeekData);
+        const latestHasData = hasCompletedWeekStats(data.latest);
+        const st = latestHasData ? data.latest : null;
+        const fallbackWeek = filteredTrend.length
+          ? filteredTrend[filteredTrend.length - 1].week
+          : data.latestWeek;
+        const wk = fallbackWeek || data.latestWeek || "—";
+
+        if (!st) {
+          anaWeekBadge.textContent = wk;
+          latestSummary.textContent = "No completed game week is available yet.";
+          anaStatus.textContent = "Updated - weeks without games were skipped.";
+          analyticsLoadedOnce = true;
+          return;
+        }
+
+        const trend = filteredTrend.length
+          ? filteredTrend
+          : [{
+              week: wk,
+              avg: Number(st.avg) || 0,
+              std: Number(st.std) || 0,
+              eliteFrac: Number(st.eliteFrac) || 0
+            }];
 
         anaWeekBadge.textContent = wk;
         latestSummary.textContent =
           `Players: ${st.n} · Avg: ${st.avg} · Std: ${st.std} · Elite: ${pct(st.eliteFrac)}`;
 
         destroyChart("hist");
+        const bins = st.bins || {};
         CH.hist = new Chart(document.getElementById("c_hist"), {
           type: "bar",
           data: {
-            labels: Object.keys(st.bins),
-            datasets: [{ label: "Count", data: Object.values(st.bins) }]
+            labels: Object.keys(bins),
+            datasets: [{ label: "Count", data: Object.values(bins) }]
           },
           options:{
             responsive:true,
@@ -2047,11 +2095,12 @@
 
         destroyChart("levels");
         const lvlLabels = ["Beginner","Intermediate","Advanced","Elite"];
+        const levels = st.levels || {};
         CH.levels = new Chart(document.getElementById("c_levels"), {
           type: "pie",
           data: {
             labels: lvlLabels,
-            datasets: [{ data: lvlLabels.map(k => st.levels[k] || 0) }]
+            datasets: [{ data: lvlLabels.map(k => levels[k] || 0) }]
           },
           options: {
             responsive:true,
@@ -2180,6 +2229,9 @@
         });
 
         anaStatus.textContent = "Updated ✅";
+        if (filteredTrend.length !== rawTrend.length) {
+          anaStatus.textContent = "Updated - weeks without games were skipped.";
+        }
         analyticsLoadedOnce = true;
 
       }catch(e){
