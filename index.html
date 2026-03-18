@@ -260,6 +260,7 @@
       display:flex;
       align-items:center;
       justify-content:space-between;
+      flex-wrap:nowrap;
       gap:10px;
       margin-bottom:6px;
     }
@@ -276,7 +277,7 @@
       display:flex;
       align-items:center;
       justify-content:flex-end;
-      gap:8px;
+      gap:6px;
       flex:0 0 auto;
     }
     .aqiSummaryInline{
@@ -500,28 +501,28 @@
       .hint{margin:6px 0 6px;padding:6px 10px;font-size:12px}
 
       .aqiTitle{
-        font-size:14px;
-        line-height:1.15;
-        white-space:normal;
+        font-size:13px;
+        line-height:1.1;
+        white-space:nowrap;
       }
       .aqiSummaryInline{
-        margin-top:8px;
-        font-size:11.5px;
+        margin-top:6px;
+        font-size:11px;
         white-space:normal;
         overflow:visible;
         text-overflow:clip;
       }
-      .badge{font-size:12px;padding:6px 10px}
+      .badge{font-size:11.5px;padding:6px 10px}
       .aqiTopLine{
         align-items:center;
-        gap:8px;
+        gap:6px;
       }
-      .aqiActions{gap:6px}
+      .aqiActions{gap:4px}
       #aqiModeBadge,
       .aqiToggleBtn{
-        height:34px;
-        padding:0 10px;
-        font-size:11.5px;
+        height:32px;
+        padding:0 9px;
+        font-size:11px;
       }
 
       .desktopOnly{display:none}
@@ -589,10 +590,10 @@
 
       <div id="aqiBox" class="box aqiCompact">
         <div class="aqiTopLine">
-          <div class="aqiTitle">Thuwal Air Quality</div>
+          <div class="aqiTitle">Thuwal AQI</div>
           <div class="aqiActions">
           <div class="badge" id="aqiModeBadge">Loading…</div>
-          <button type="button" class="aqiToggleBtn" id="aqiToggleSummary">Show hourly forecast</button>
+          <button type="button" class="aqiToggleBtn" id="aqiToggleSummary">Hourly AQI</button>
           </div>
         </div>
 
@@ -1156,10 +1157,10 @@
       aqiSummaryInline.innerHTML =
         `${prettyDay(targetDateStr)} evening · Avg AQI <b>${avg}</b> · Peak PM10 <b>${Number.isFinite(peakPm10) ? Math.round(peakPm10) : "-"}</b> ug/m3 · ${escapeHtml(band.label)}`;
 
-      aqiModeBadge.textContent = "Fri 7-10 PM";
-      aqiToggleSummary.textContent = "Show hourly forecast";
+      aqiModeBadge.textContent = "Fri 7-10";
+      aqiToggleSummary.textContent = "Hourly AQI";
       aqiSummaryInline.innerHTML =
-        `${prettyDay(targetDateStr)} evening | AQI <b>${avg}</b> | PM10 <b>${Number.isFinite(peakPm10) ? Math.round(peakPm10) : "-"}</b> ug/m3 | ${escapeHtml(band.label)}`;
+        `Fri eve | AQI <b>${avg}</b> | PM10 <b>${Number.isFinite(peakPm10) ? Math.round(peakPm10) : "-"}</b> | ${escapeHtml(band.label)}`;
 
       aqiDetail.innerHTML = points.map(p => {
         const b = aqiBand(p.aqi);
@@ -1188,7 +1189,7 @@
         `Friday evening hourly forecast is not available yet. Showing daily AQI trend for the next 6 days` +
         (fridayIncluded ? `, including ${prettyDay(targetDateStr)}.` : `.`);
 
-      aqiToggleSummary.textContent = "Show AQI trend";
+      aqiToggleSummary.textContent = "AQI trend";
 
       const labels = daily.map(x => {
         const label = prettyDay(x.date);
@@ -1233,7 +1234,7 @@
       try{
         aqiModeBadge.textContent = "Loading…";
         aqiSummaryInline.textContent = "Loading air quality forecast…";
-        aqiToggleSummary.textContent = "Show hourly forecast";
+        aqiToggleSummary.textContent = "Hourly AQI";
         setAqiPanelOpen(false);
         aqiDetail.innerHTML = "";
         destroyAqiChart();
@@ -1315,7 +1316,7 @@
         aqiTrendChartCanvas.style.display = "none";
         aqiModeBadge.textContent = "Unavailable";
         aqiSummaryInline.textContent = "AQI forecast is temporarily unavailable.";
-        aqiToggleSummary.textContent = "Show hourly forecast";
+        aqiToggleSummary.textContent = "Hourly AQI";
         aqiDetail.innerHTML = "";
         airQualityPolicy = defaultAirPolicy();
         applyAirQualityPolicy();
@@ -1614,6 +1615,34 @@
         gameInfoLine1.innerHTML = `${CFG.gameTimeText} · ${loc}`;
         gameInfoLine2.innerHTML = `
           <span>Bring: water, cleats, disc, energy</span>
+          <span>Format: 5v5 / 7v7 (with subs)</span>
+        `;
+      }
+
+      tzLine.textContent = `Registration closes: Fri 3:00 PM | Jeddah local time`;
+      fourTeamMin.textContent = CFG.teamsMinForFour;
+    }
+
+    function renderGameInfo() {
+      const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
+
+      if (airQualityPolicy.mode === "cancelled") {
+        gameInfoLine1.innerHTML = `${airQualityPolicy.gameLine1} · ${loc}`;
+        gameInfoLine2.innerHTML = `
+          <span>Forecast rule: AQI > 150 or PM10 > 250 ug/m3</span>
+          <span>Registration hidden automatically</span>
+        `;
+      } else if (airQualityPolicy.mode === "modified") {
+        gameInfoLine1.innerHTML = `${airQualityPolicy.gameLine1} · ${loc}`;
+        gameInfoLine2.innerHTML = `
+          <span>Throwing practice: 30 min</span>
+          <span>Game: 50 min, starts at 8:00 PM</span>
+          <span>Bring: 💧 👟 🥏 🔥</span>
+        `;
+      } else {
+        gameInfoLine1.innerHTML = `${CFG.gameTimeText} · ${loc}`;
+        gameInfoLine2.innerHTML = `
+          <span>Bring: 💧 👟 🥏 🔥</span>
           <span>Format: 5v5 / 7v7 (with subs)</span>
         `;
       }
