@@ -241,6 +241,53 @@
     #c_levels{height:260px !important}
     #c_gender{height:200px !important}
     #c_trend1, #c_trend2{height:240px !important}
+    #aqiTrendChart{height:220px !important}
+
+    .aqiRow{
+      display:flex;
+      gap:8px;
+      margin-top:10px;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    .aqiRow::-webkit-scrollbar{height:6px}
+    .aqiRow::-webkit-scrollbar-thumb{
+      background:#ddd;
+      border-radius:999px;
+    }
+
+    .aqiChip{
+      min-width:92px;
+      flex:0 0 auto;
+      background:#fff;
+      border:1px solid #eee;
+      border-radius:12px;
+      padding:10px 12px;
+      text-align:center;
+    }
+
+    .aqiTime{
+      font-size:12px;
+      color:#666;
+      margin-bottom:4px;
+    }
+    .aqiNum{
+      font-size:22px;
+      font-weight:900;
+      line-height:1;
+    }
+    .aqiTag{
+      margin-top:6px;
+      font-size:12px;
+      color:#555;
+    }
+
+    .aqiChip.good{background:#f5fbf7}
+    .aqiChip.moderate{background:#fffaf0}
+    .aqiChip.usg{background:#fff6f2}
+    .aqiChip.unhealthy{background:#fff0f0}
+    .aqiChip.very-unhealthy{background:#f7f1ff}
+    .aqiChip.hazardous{background:#f3f3f3}
 
     .desktopOnly{display:block}
     .mobileOnly{display:none}
@@ -402,6 +449,20 @@
         <span id="countPill" class="pill">Loading...</span>
         <span id="statusPill" class="pill">Loading...</span>
         <span id="timeLeftPill" class="pill">Loading...</span>
+      </div>
+
+      <div id="aqiBox" class="box" style="margin-top:10px;">
+        <div class="headRow">
+          <div class="teamtitle" style="margin:0;">Thuwal Air Quality</div>
+          <div class="badge" id="aqiModeBadge">Loading…</div>
+        </div>
+
+        <div id="aqiSummary" class="hint" style="margin-top:6px;">
+          Loading air quality forecast…
+        </div>
+
+        <div id="aqiDetail" class="aqiRow"></div>
+        <canvas id="aqiTrendChart" style="display:none; width:100% !important;"></canvas>
       </div>
 
       <div id="tzLine" class="metaRight"></div>
@@ -675,6 +736,11 @@
     const timeLeftPill = document.getElementById("timeLeftPill");
     const tzLine = document.getElementById("tzLine");
 
+    const aqiModeBadge = document.getElementById("aqiModeBadge");
+    const aqiSummary = document.getElementById("aqiSummary");
+    const aqiDetail = document.getElementById("aqiDetail");
+    const aqiTrendChartCanvas = document.getElementById("aqiTrendChart");
+
     const signupArea = document.getElementById("signupArea");
     const form = document.getElementById("form");
     const btn = document.getElementById("btn");
@@ -713,6 +779,9 @@
     const LS_NAME = "frisbee_last_name";
     const LS_REGID = "frisbee_last_regid";
 
+    let aqiChart = null;
+    let aqiGeo = null;
+
     function escapeHtml(s){
       return (s||"").toString()
         .replaceAll("&","&amp;")
@@ -720,6 +789,241 @@
         .replaceAll(">","&gt;")
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
+    }
+
+    function pad2(n){
+      return String(n).padStart(2, "0");
+    }
+
+    function prettyDay(dateStr){
+      const d = new Date(dateStr + "T12:00:00");
+      return d.toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric"
+      });
+    }
+
+    function prettyHour(isoLocal){
+      return isoLocal.split("T")[1]?.slice(0, 5) || "";
+    }
+
+    function nowInRiyadh(){
+      return new Date(
+        new Date().toLocaleString("en-US", { timeZone: "Asia/Riyadh" })
+      );
+    }
+
+    function ymdLocalRiyadh(d){
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+    }
+
+    function aqiBand(v){
+      const n = Number(v);
+      if (!Number.isFinite(n)) return { label: "—", cls: "" };
+      if (n <= 50)  return { label: "Good", cls: "good" };
+      if (n <= 100) return { label: "Moderate", cls: "moderate" };
+      if (n <= 150) return { label: "USG", cls: "usg" };
+      if (n <= 200) return { label: "Unhealthy", cls: "unhealthy" };
+      if (n <= 300) return { label: "Very unhealthy", cls: "very-unhealthy" };
+      return { label: "Hazardous", cls: "hazardous" };
+    }
+
+    function destroyAqiChart(){
+      if (aqiChart) {
+        aqiChart.destroy();
+        aqiChart = null;
+      }
+    }
+
+    function nextRelevantFridayRiyadh(){
+      const d = nowInRiyadh();
+      const day = d.getDay();   // Sun=0 ... Fri=5
+      const hour = d.getHours();
+
+      let add = (5 - day + 7) % 7;
+
+      if (day === 5 && hour <= 22) {
+        add = 0;
+      } else if (add === 0) {
+        add = 7;
+      }
+
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + add);
+      return d;
+    }
+
+    async function getThuwalGeo(){
+      if (aqiGeo) return aqiGeo;
+
+      const geo = await safeGetJson(
+        "https://geocoding-api.open-meteo.com/v1/search?name=Thuwal&country_code=SA&count=1&language=en&format=json"
+      );
+
+      const r = geo?.results?.[0];
+      if (!r) throw new Error("Thuwal geocoding failed");
+
+      aqiGeo = {
+        latitude: r.latitude,
+        longitude: r.longitude,
+        name: r.name || "Thuwal"
+      };
+      return aqiGeo;
+    }
+
+    function renderAqiFridayWindow(targetDateStr, points){
+      destroyAqiChart();
+      aqiTrendChartCanvas.style.display = "none";
+      aqiDetail.style.display = "flex";
+
+      const avg = Math.round(points.reduce((s, p) => s + p.aqi, 0) / points.length);
+      const band = aqiBand(avg);
+
+      aqiModeBadge.textContent = "Fri 18:00–22:00";
+      aqiSummary.innerHTML =
+        `Forecast for <b>${prettyDay(targetDateStr)}</b> evening: avg AQI <b>${avg}</b> (${band.label}).`;
+
+      aqiDetail.innerHTML = points.map(p => {
+        const b = aqiBand(p.aqi);
+        return `
+          <div class="aqiChip ${b.cls}">
+            <div class="aqiTime">${escapeHtml(prettyHour(p.time))}</div>
+            <div class="aqiNum">${Math.round(p.aqi)}</div>
+            <div class="aqiTag">${escapeHtml(b.label)}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderAqiTrend(targetDateStr, daily){
+      destroyAqiChart();
+      aqiDetail.innerHTML = "";
+      aqiDetail.style.display = "none";
+      aqiTrendChartCanvas.style.display = "block";
+
+      aqiModeBadge.textContent = "Next 6 days";
+      aqiSummary.innerHTML =
+        `Friday evening forecast is not available yet in the returned window, so showing the next 6 forecast days (daily mean AQI).` +
+        (daily.some(x => x.date === targetDateStr) ? ` Friday is included.` : "");
+
+      const labels = daily.map(x => {
+        const label = prettyDay(x.date);
+        return x.date === targetDateStr ? `${label} (Fri)` : label;
+      });
+
+      const values = daily.map(x => Math.round(x.avg));
+
+      aqiChart = new Chart(aqiTrendChartCanvas, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{
+            label: "Daily mean AQI",
+            data: values,
+            tension: 0.25,
+            pointRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "top",
+              align: "start",
+              labels: {
+                usePointStyle: true,
+                boxWidth: 10,
+                padding: 12
+              }
+            }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    async function loadAqi(){
+      try{
+        aqiModeBadge.textContent = "Loading…";
+        aqiSummary.textContent = "Loading Thuwal air quality forecast…";
+        aqiDetail.innerHTML = "";
+        destroyAqiChart();
+        aqiTrendChartCanvas.style.display = "none";
+
+        const geo = await getThuwalGeo();
+
+        const url =
+          `https://air-quality-api.open-meteo.com/v1/air-quality` +
+          `?latitude=${encodeURIComponent(geo.latitude)}` +
+          `&longitude=${encodeURIComponent(geo.longitude)}` +
+          `&hourly=us_aqi` +
+          `&timezone=auto` +
+          `&forecast_days=7`;
+
+        const data = await safeGetJson(url);
+
+        const times = data?.hourly?.time || [];
+        const aqi = data?.hourly?.us_aqi || [];
+
+        if (!times.length || !aqi.length) {
+          throw new Error("No AQI data");
+        }
+
+        const rows = times.map((t, i) => ({
+          time: t,
+          date: t.slice(0, 10),
+          hour: Number((t.split("T")[1] || "").slice(0, 2)),
+          aqi: Number(aqi[i])
+        })).filter(x => Number.isFinite(x.aqi));
+
+        if (!rows.length) {
+          throw new Error("AQI rows empty");
+        }
+
+        const fridayDateStr = ymdLocalRiyadh(nextRelevantFridayRiyadh());
+
+        const fridayWindow = rows.filter(x =>
+          x.date === fridayDateStr &&
+          x.hour >= 18 &&
+          x.hour <= 22
+        );
+
+        if (fridayWindow.length >= 2) {
+          renderAqiFridayWindow(fridayDateStr, fridayWindow);
+          return;
+        }
+
+        const byDate = new Map();
+        rows.forEach(x => {
+          if (!byDate.has(x.date)) byDate.set(x.date, []);
+          byDate.get(x.date).push(x.aqi);
+        });
+
+        const daily = Array.from(byDate.entries())
+          .map(([date, arr]) => ({
+            date,
+            avg: arr.reduce((s, v) => s + v, 0) / arr.length
+          }))
+          .sort((a, b) => a.date.localeCompare(b.date))
+          .slice(0, 6);
+
+        if (!daily.length) {
+          throw new Error("Daily AQI fallback empty");
+        }
+
+        renderAqiTrend(fridayDateStr, daily);
+
+      } catch (e) {
+        destroyAqiChart();
+        aqiTrendChartCanvas.style.display = "none";
+        aqiModeBadge.textContent = "Unavailable";
+        aqiSummary.textContent = "AQI forecast is temporarily unavailable.";
+        aqiDetail.innerHTML = "";
+      }
     }
 
     function setStatusMessage(el, text, type){
@@ -1325,6 +1629,9 @@
     }
 
     renderGameInfo();
+    loadAqi();
+    setInterval(loadAqi, 30 * 60 * 1000);
+
     autoTeamsByCutoff();
     setInterval(autoTeamsByCutoff, 45000);
 
