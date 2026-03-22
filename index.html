@@ -1134,6 +1134,60 @@
       return aqiGeo;
     }
 
+    function isUsableAqiValue(v){
+      const n = Number(v);
+      return Number.isFinite(n) && n > 0;
+    }
+
+    function isMissingAqiValue(v){
+      const n = Number(v);
+      return !Number.isFinite(n) || n <= 0;
+    }
+
+    function computeDailyAqiSeries(rows, fridayDateStr){
+      const byDate = new Map();
+
+      rows.forEach(x => {
+        if (!byDate.has(x.date)) byDate.set(x.date, []);
+        byDate.get(x.date).push(x);
+      });
+
+      const availableDates = Array.from(byDate.keys()).sort();
+      if (!availableDates.length) return [];
+
+      let selectedDates = availableDates.filter(d => d <= fridayDateStr);
+
+      if (!selectedDates.length) {
+        selectedDates = availableDates.slice(0, 6);
+      } else {
+        selectedDates = selectedDates.slice(-6);
+      }
+
+      if (!selectedDates.includes(fridayDateStr)) {
+        selectedDates.push(fridayDateStr);
+      }
+
+      selectedDates = selectedDates
+        .filter((d, idx, arr) => arr.indexOf(d) === idx)
+        .sort((a, b) => a.localeCompare(b))
+        .slice(-6);
+
+      return selectedDates.map(date => {
+        const dayRows = byDate.get(date) || [];
+        const validAqi = dayRows
+          .map(r => Number(r.aqi))
+          .filter(isUsableAqiValue);
+
+        return {
+          date,
+          avg: validAqi.length
+            ? validAqi.reduce((s, v) => s + v, 0) / validAqi.length
+            : null,
+          hasData: validAqi.length > 0
+        };
+      });
+    }
+
     function renderAqiFridayWindow(targetDateStr, points){
       destroyAqiChart();
       setAqiPanelOpen(false);
@@ -1144,18 +1198,6 @@
       const pm10Values = points.map(p => Number(p.pm10)).filter(Number.isFinite);
       const peakPm10 = pm10Values.length ? Math.max(...pm10Values) : NaN;
       const band = aqiBand(avg);
-
-      aqiModeBadge.textContent = "Fri 7–10 PM";
-      aqiSummaryInline.innerHTML =
-        `${prettyDay(targetDateStr)} evening · Avg AQI <b>${avg}</b> · ${escapeHtml(band.label)}`;
-      aqiToggleSummary.textContent = "Show hourly forecast";
-      aqiModeBadge.textContent = "Fri 7-10 PM";
-      aqiSummaryInline.innerHTML =
-        `${prettyDay(targetDateStr)} evening | Avg AQI <b>${avg}</b> | Peak PM10 <b>${Number.isFinite(peakPm10) ? Math.round(peakPm10) : "-"}</b> ug/m3 | ${escapeHtml(band.label)}`;
-      aqiSummaryInline.innerHTML =
-        `${prettyDay(targetDateStr)} evening · Avg AQI <b>${avg}</b> · Peak PM10 <b>${Number.isFinite(peakPm10) ? Math.round(peakPm10) : "-"}</b> ug/m3 · ${escapeHtml(band.label)}`;
-      aqiSummaryInline.innerHTML =
-        `${prettyDay(targetDateStr)} evening · Avg AQI <b>${avg}</b> · Peak PM10 <b>${Number.isFinite(peakPm10) ? Math.round(peakPm10) : "-"}</b> ug/m3 · ${escapeHtml(band.label)}`;
 
       aqiModeBadge.textContent = "Fri 7-10";
       aqiToggleSummary.textContent = "Hourly AQI";
@@ -1184,10 +1226,10 @@
 
       const fridayIncluded = daily.some(x => x.date === targetDateStr);
 
-      aqiModeBadge.textContent = "6-day trend";
+      aqiModeBadge.textContent = "Daily trend";
       aqiSummaryInline.innerHTML =
-        `Friday evening hourly forecast is not available yet. Showing daily AQI trend for the next 6 days` +
-        (fridayIncluded ? `, including ${prettyDay(targetDateStr)}.` : `.`);
+        `Hourly AQI is unavailable, so showing daily AQI trend before Friday` +
+        (fridayIncluded ? ` and including ${prettyDay(targetDateStr)}.` : `.`);
 
       aqiToggleSummary.textContent = "AQI trend";
 
@@ -1196,7 +1238,7 @@
         return x.date === targetDateStr ? `${label} (Fri)` : label;
       });
 
-      const values = daily.map(x => Math.round(x.avg));
+      const values = daily.map(x => x.hasData ? Math.round(x.avg) : null);
 
       aqiChart = new Chart(aqiTrendChartCanvas, {
         type: "line",
@@ -1206,7 +1248,8 @@
             label: "Daily mean AQI",
             data: values,
             tension: 0.25,
-            pointRadius: 4
+            pointRadius: 4,
+            spanGaps: false
           }]
         },
         options: {
@@ -1267,7 +1310,7 @@
           hour: Number((t.split("T")[1] || "").slice(0, 2)),
           aqi: Number(aqi[i]),
           pm10: Number(pm10[i])
-        })).filter(x => Number.isFinite(x.aqi));
+        })).filter(x => x.time && x.date);
 
         if (!rows.length) {
           throw new Error("AQI rows empty");
@@ -1275,32 +1318,26 @@
 
         const fridayDateStr = ymdLocalRiyadh(nextRelevantFridayRiyadh());
 
-        const fridayWindow = rows.filter(x =>
+        const fridayWindowRaw = rows.filter(x =>
           x.date === fridayDateStr &&
           x.hour >= 19 &&
           x.hour <= 22
         );
 
-        if (fridayWindow.length >= 4) {
-          airQualityPolicy = evaluateAirQualityPolicy(fridayWindow);
-          renderAqiFridayWindow(fridayDateStr, fridayWindow);
+        const hasUnavailableHourlyAqi =
+          fridayWindowRaw.length < 4 ||
+          fridayWindowRaw.some(x => isMissingAqiValue(x.aqi));
+
+        const fridayWindowValid = fridayWindowRaw.filter(x => isUsableAqiValue(x.aqi));
+
+        if (!hasUnavailableHourlyAqi && fridayWindowValid.length >= 4) {
+          airQualityPolicy = evaluateAirQualityPolicy(fridayWindowValid);
+          renderAqiFridayWindow(fridayDateStr, fridayWindowValid);
           applyAirQualityPolicy();
           return;
         }
 
-        const byDate = new Map();
-        rows.forEach(x => {
-          if (!byDate.has(x.date)) byDate.set(x.date, []);
-          byDate.get(x.date).push(x.aqi);
-        });
-
-        const daily = Array.from(byDate.entries())
-          .map(([date, arr]) => ({
-            date,
-            avg: arr.reduce((s, v) => s + v, 0) / arr.length
-          }))
-          .sort((a, b) => a.date.localeCompare(b.date))
-          .slice(0, 6);
+        const daily = computeDailyAqiSeries(rows, fridayDateStr);
 
         if (!daily.length) {
           throw new Error("Daily AQI fallback empty");
