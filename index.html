@@ -1052,25 +1052,23 @@
         return defaultAirPolicy();
       }
 
-      if (maxAqi > 100 && maxAqi <= 150 && improvingAfter8) {
+      if (
+        (maxAqi > 100 && maxAqi <= 150) ||
+        (maxPm10 >= 100 && maxPm10 <= 250)
+      ) {
         return {
           mode: "modified",
           blocksRegistration: false,
           noticeTone: "warn",
-          noticeText: "Forecast AQI is between 100 and 150, but conditions improve after 8:00 PM. We will run a 30-minute throwing session and limit the game to 50 minutes with an 8:00 PM start.",
+          noticeText: improvingAfter8
+            ? "Forecast air quality is elevated but still below the cancel threshold, and conditions improve after 8:00 PM. Registration stays open with the modified Friday plan: 30 minutes of throwing practice and a 50-minute game with an 8:00 PM start."
+            : "Forecast air quality is elevated but still below the cancel threshold. Registration stays open with the modified Friday plan: 30 minutes of throwing practice and a 50-minute limited game.",
           gameLine1: "Friday modified session",
           gameLine2: "Throwing practice for 30 minutes, then a 50-minute game starting at 8:00 PM."
         };
       }
 
-      return {
-        mode: "cancelled",
-        blocksRegistration: true,
-        noticeTone: "bad",
-        noticeText: "Forecast air quality does not meet the safe play rules for a normal or modified outdoor session, so registration is closed for this Friday.",
-        gameLine1: "Friday game cancelled",
-        gameLine2: "Outdoor session cancelled because forecast conditions do not improve enough after 8:00 PM."
-      };
+      return defaultAirPolicy();
     }
 
     function renderGameNotice(){
