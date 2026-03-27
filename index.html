@@ -1033,6 +1033,7 @@
 
     function firstFinite(...values){
       for (const value of values) {
+        if (value === null || value === undefined || value === "") continue;
         const n = Number(value);
         if (Number.isFinite(n)) return n;
       }
@@ -1359,7 +1360,7 @@
           return {
             policy: localPolicy,
             decisionBasis: "local",
-            decisionLabel: `${localReading.sourceLabel} live final check`,
+            decisionLabel: `${localReading.provider} final check`,
             localPolicy
           };
         }
@@ -1378,7 +1379,7 @@
         return {
           policy: localPolicy,
           decisionBasis: "local",
-          decisionLabel: `${localReading.sourceLabel} live fallback`,
+          decisionLabel: `${localReading.provider} fallback`,
           localPolicy
         };
       }
@@ -1953,11 +1954,7 @@
       const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
       const rulePrefix = airQualityPolicy.sourceKind === "current" ? "Live rule" : "Forecast rule";
       const sourceLabel = airQualityPolicy.sourceLabel || "Open-Meteo forecast";
-      gameInfoLine1.innerHTML = `${CFG.gameTimeText} · ${loc}`;
-      gameInfoLine2.innerHTML = `
-        <span>Bring: 💧 👟 🥏 🔥</span>
-        <span>Format: 5v5 / 7v7 (with subs)</span>
-      `;
+
       if (airQualityPolicy.mode === "cancelled") {
         gameInfoLine1.innerHTML = `${airQualityPolicy.gameLine1} · ${loc}`;
         gameInfoLine2.innerHTML = `
@@ -1970,72 +1967,13 @@
         gameInfoLine2.innerHTML = `
           <span>Throwing practice: 30 min</span>
           <span>Game: 50 min, starts at 8:00 PM</span>
-          <span>Bring: water, cleats, disc</span>
-        `;
-      } else {
-        gameInfoLine1.innerHTML = `${CFG.gameTimeText} · ${loc}`;
-        gameInfoLine2.innerHTML = `
-          <span>Bring: water, cleats, disc, energy</span>
-          <span>Format: 5v5 / 7v7 (with subs)</span>
-        `;
-      }
-
-      tzLine.textContent = `Registration closes: Fri 3:00 PM | Jeddah local time`;
-      fourTeamMin.textContent = CFG.teamsMinForFour;
-    }
-
-    function renderGameInfo() {
-      const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
-
-      if (airQualityPolicy.mode === "cancelled") {
-        gameInfoLine1.innerHTML = `${airQualityPolicy.gameLine1} · ${loc}`;
-        gameInfoLine2.innerHTML = `
-          <span>Forecast rule: AQI > 150 or PM10 > 250 ug/m3</span>
-          <span>Registration hidden automatically</span>
-        `;
-      } else if (airQualityPolicy.mode === "modified") {
-        gameInfoLine1.innerHTML = `${airQualityPolicy.gameLine1} · ${loc}`;
-        gameInfoLine2.innerHTML = `
-          <span>Throwing practice: 30 min</span>
-          <span>Game: 50 min, starts at 8:00 PM</span>
+          <span>Decision source: ${escapeHtml(sourceLabel)}</span>
           <span>Bring: 💧 👟 🥏 🔥</span>
         `;
       } else {
         gameInfoLine1.innerHTML = `${CFG.gameTimeText} · ${loc}`;
         gameInfoLine2.innerHTML = `
           <span>Bring: 💧 👟 🥏 🔥</span>
-          <span>Format: 5v5 / 7v7 (with subs)</span>
-        `;
-      }
-
-      tzLine.textContent = `Registration closes: Fri 3:00 PM | Jeddah local time`;
-      fourTeamMin.textContent = CFG.teamsMinForFour;
-    }
-
-    function renderGameInfo() {
-      const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
-      const rulePrefix = airQualityPolicy.sourceKind === "current" ? "Live rule" : "Forecast rule";
-      const sourceLabel = airQualityPolicy.sourceLabel || "Open-Meteo forecast";
-
-      if (airQualityPolicy.mode === "cancelled") {
-        gameInfoLine1.innerHTML = `${airQualityPolicy.gameLine1} 路 ${loc}`;
-        gameInfoLine2.innerHTML = `
-          <span>${escapeHtml(rulePrefix)}: AQI > 150 or PM10 > 250 ug/m3</span>
-          <span>Decision source: ${escapeHtml(sourceLabel)}</span>
-          <span>Registration hidden automatically</span>
-        `;
-      } else if (airQualityPolicy.mode === "modified") {
-        gameInfoLine1.innerHTML = `${airQualityPolicy.gameLine1} 路 ${loc}`;
-        gameInfoLine2.innerHTML = `
-          <span>Throwing practice: 30 min</span>
-          <span>Game: 50 min, starts at 8:00 PM</span>
-          <span>Decision source: ${escapeHtml(sourceLabel)}</span>
-          <span>Bring: 馃挧 馃憻 馃 馃敟</span>
-        `;
-      } else {
-        gameInfoLine1.innerHTML = `${CFG.gameTimeText} 路 ${loc}`;
-        gameInfoLine2.innerHTML = `
-          <span>Bring: 馃挧 馃憻 馃 馃敟</span>
           <span>Format: 5v5 / 7v7 (with subs)</span>
         `;
       }
