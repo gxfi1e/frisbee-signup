@@ -289,6 +289,13 @@
       overflow:hidden;
       text-overflow:ellipsis;
     }
+    .aqiSourceLine{
+      margin-top:4px;
+      font-size:11px;
+      color:#6b7280;
+      line-height:1.35;
+      white-space:normal;
+    }
 
     .aqiDetailPanel{
       margin-top:8px;
@@ -512,6 +519,9 @@
         overflow:visible;
         text-overflow:clip;
       }
+      .aqiSourceLine{
+        font-size:10.5px;
+      }
       .badge{font-size:11.5px;padding:6px 10px}
       .aqiTopLine{
         align-items:center;
@@ -599,6 +609,9 @@
 
         <div id="aqiSummaryInline" class="aqiSummaryInline">
           Loading air quality forecast…
+        </div>
+        <div id="aqiSourceLine" class="aqiSourceLine">
+          Decision source: loading...
         </div>
 
         <div id="aqiDetailsPanel" class="aqiDetailPanel" hidden>
@@ -881,6 +894,7 @@
 
     const aqiModeBadge = document.getElementById("aqiModeBadge");
     const aqiSummaryInline = document.getElementById("aqiSummaryInline");
+    const aqiSourceLine = document.getElementById("aqiSourceLine");
     const aqiDetailsPanel = document.getElementById("aqiDetailsPanel");
     const aqiToggleSummary = document.getElementById("aqiToggleSummary");
     const aqiDetail = document.getElementById("aqiDetail");
@@ -1006,6 +1020,33 @@
       return Number.isFinite(n) ? `${Math.round(n)} ug/m3` : "n/a";
     }
 
+    function formatAqiValue(v){
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.round(n) : "-";
+    }
+
+    function compactObservedTime(value){
+      const text = String(value || "");
+      const match = text.match(/(\d{2}:\d{2})/);
+      return match ? match[1] : "";
+    }
+
+    function firstFinite(...values){
+      for (const value of values) {
+        const n = Number(value);
+        if (Number.isFinite(n)) return n;
+      }
+      return NaN;
+    }
+
+    function firstText(...values){
+      for (const value of values) {
+        const text = String(value || "").trim();
+        if (text) return text;
+      }
+      return "";
+    }
+
     function defaultAirPolicy(){
       return {
         mode: "normal",
@@ -1013,13 +1054,20 @@
         noticeTone: "",
         noticeText: "",
         gameLine1: "",
-        gameLine2: ""
+        gameLine2: "",
+        sourceKind: "",
+        sourceLabel: "",
+        maxAqi: NaN,
+        maxPm10: NaN
       };
     }
 
-    function evaluateAirQualityPolicy(points){
+    function evaluateAirQualityPolicy(points, options = {}){
       if (!Array.isArray(points) || !points.length) return defaultAirPolicy();
 
+      const sourceKind = options.sourceKind || "forecast";
+      const sourceLabel = options.sourceLabel ||
+        (sourceKind === "current" ? "local live monitor" : "Open-Meteo forecast");
       const aqiValues = points.map(p => Number(p.aqi)).filter(Number.isFinite);
       const pm10Values = points.map(p => Number(p.pm10)).filter(Number.isFinite);
       const maxAqi = aqiValues.length ? Math.max(...aqiValues) : NaN;
@@ -1037,38 +1085,74 @@
           return p.aqi < sevenPm.aqi && p.aqi <= prev;
         });
 
-      if (maxAqi > 150 || maxPm10 > 250) {
+      const cancelled =
+        (Number.isFinite(maxAqi) && maxAqi > 150) ||
+        (Number.isFinite(maxPm10) && maxPm10 > 250);
+      const normal =
+        Number.isFinite(maxAqi) &&
+        maxAqi <= 100 &&
+        (!Number.isFinite(maxPm10) || maxPm10 < 100);
+      const modified =
+        (Number.isFinite(maxAqi) && maxAqi > 100 && maxAqi <= 150) ||
+        (Number.isFinite(maxPm10) && maxPm10 >= 100 && maxPm10 <= 250);
+
+      if (cancelled) {
         return {
           mode: "cancelled",
           blocksRegistration: true,
           noticeTone: "bad",
-          noticeText: `Outdoor play is cancelled due to poor forecast air quality. Peak AQI is ${Math.round(maxAqi)} and peak PM10 is ${Math.round(maxPm10)} ug/m3, so we have to cancel the Friday game.`,
+          noticeText:
+            sourceKind === "current"
+              ? `Outdoor play is cancelled due to poor current local air quality from ${sourceLabel}. Current AQI is ${formatAqiValue(maxAqi)} and PM10 is ${formatAqiValue(maxPm10)} ug/m3, so we have to cancel the Friday game.`
+              : `Outdoor play is cancelled due to poor forecast air quality from ${sourceLabel}. Peak AQI is ${formatAqiValue(maxAqi)} and peak PM10 is ${formatAqiValue(maxPm10)} ug/m3, so we have to cancel the Friday game.`,
           gameLine1: "Friday game cancelled",
-          gameLine2: "Outdoor session cancelled due to forecast air quality."
+          gameLine2:
+            sourceKind === "current"
+              ? "Outdoor session cancelled due to current local air quality."
+              : "Outdoor session cancelled due to forecast air quality.",
+          sourceKind,
+          sourceLabel,
+          maxAqi,
+          maxPm10
         };
       }
 
-      if (maxAqi <= 100 && maxPm10 < 100) {
-        return defaultAirPolicy();
+      if (normal) {
+        return {
+          ...defaultAirPolicy(),
+          sourceKind,
+          sourceLabel,
+          maxAqi,
+          maxPm10
+        };
       }
 
-      if (
-        (maxAqi > 100 && maxAqi <= 150) ||
-        (maxPm10 >= 100 && maxPm10 <= 250)
-      ) {
+      if (modified) {
         return {
           mode: "modified",
           blocksRegistration: false,
           noticeTone: "warn",
-          noticeText: improvingAfter8
-            ? "Forecast air quality is elevated but still below the cancel threshold, and conditions improve after 8:00 PM. Registration stays open with the modified Friday plan: 30 minutes of throwing practice and a 50-minute game with an 8:00 PM start."
-            : "Forecast air quality is elevated but still below the cancel threshold. Registration stays open with the modified Friday plan: 30 minutes of throwing practice and a 50-minute limited game.",
+          noticeText: sourceKind === "current"
+            ? `Current local air quality from ${sourceLabel} is elevated but still below the cancel threshold. Friday stays on the modified plan: 30 minutes of throwing practice and a 50-minute game.`
+            : improvingAfter8
+              ? `Forecast air quality from ${sourceLabel} is elevated but still below the cancel threshold, and conditions improve after 8:00 PM. Friday moves to the modified plan: 30 minutes of throwing practice and a 50-minute game with an 8:00 PM start.`
+              : `Forecast air quality from ${sourceLabel} is elevated but still below the cancel threshold. Friday moves to the modified plan: 30 minutes of throwing practice and a 50-minute limited game.`,
           gameLine1: "Friday modified session",
-          gameLine2: "Throwing practice for 30 minutes, then a 50-minute game starting at 8:00 PM."
+          gameLine2: "Throwing practice for 30 minutes, then a 50-minute game starting at 8:00 PM.",
+          sourceKind,
+          sourceLabel,
+          maxAqi,
+          maxPm10
         };
       }
 
-      return defaultAirPolicy();
+      return {
+        ...defaultAirPolicy(),
+        sourceKind,
+        sourceLabel,
+        maxAqi,
+        maxPm10
+      };
     }
 
     function renderGameNotice(){
@@ -1130,6 +1214,222 @@
         name: r.name || "Thuwal"
       };
       return aqiGeo;
+    }
+
+    function normalizeConfiguredCurrentAir(raw, options = {}){
+      const candidates = [raw, raw?.data, raw?.current, raw?.reading].filter(Boolean);
+      let aqi = NaN;
+      let pm10 = NaN;
+      let stationName = "";
+      let observedAt = "";
+
+      for (const item of candidates) {
+        if (!Number.isFinite(aqi)) {
+          aqi = firstFinite(item?.aqi, item?.us_aqi, item?.usAqi, item?.value, item?.index);
+        }
+        if (!Number.isFinite(pm10)) {
+          pm10 = firstFinite(item?.pm10, item?.pm10_ugm3, item?.pm10UgM3, item?.pm10ugm3);
+        }
+        if (!stationName) {
+          stationName = firstText(item?.stationName, item?.station, item?.site, item?.name);
+        }
+        if (!observedAt) {
+          observedAt = firstText(item?.updatedAt, item?.timestamp, item?.observedAt, item?.date, item?.time);
+        }
+      }
+
+      if (!Number.isFinite(aqi) && !Number.isFinite(pm10)) {
+        throw new Error("Configured current air source returned no AQI or PM10");
+      }
+
+      return {
+        provider: options.provider || "Local monitor",
+        sourceLabel: options.sourceLabel || options.provider || "Local live monitor",
+        stationName,
+        observedAt,
+        sourceUrl: options.sourceUrl || "",
+        aqi,
+        pm10
+      };
+    }
+
+    function normalizeAqicnReading(raw){
+      if (!raw || raw.status !== "ok" || !raw.data) {
+        throw new Error("AQICN current feed unavailable");
+      }
+
+      const data = raw.data;
+      const aqi = firstFinite(data?.aqi);
+      const pm10 = firstFinite(data?.iaqi?.pm10?.v);
+
+      if (!Number.isFinite(aqi) && !Number.isFinite(pm10)) {
+        throw new Error("AQICN current feed returned no AQI or PM10");
+      }
+
+      return {
+        provider: "AQICN",
+        sourceLabel: "AQICN live",
+        stationName: firstText(data?.city?.name, data?.attributions?.[0]?.name, "Thuwal station"),
+        observedAt: firstText(data?.time?.s, data?.time?.iso),
+        sourceUrl: firstText(data?.city?.url, data?.attributions?.[0]?.url),
+        aqi,
+        pm10
+      };
+    }
+
+    async function fetchNcecCurrentAir(){
+      const url = firstText(CFG.ncecCurrentUrl);
+      if (!url) return null;
+
+      const raw = await safeGetJson(url);
+      return normalizeConfiguredCurrentAir(raw, {
+        provider: "NCEC",
+        sourceLabel: firstText(CFG.ncecSourceLabel, "NCEC live"),
+        sourceUrl: url
+      });
+    }
+
+    async function fetchAqicnCurrentAir(geo){
+      const token = firstText(CFG.aqicnToken, "demo");
+      const stationId = firstText(CFG.aqicnStationId, "A166453");
+      const urls = [];
+
+      if (stationId) {
+        urls.push(`https://api.waqi.info/feed/${encodeURIComponent(stationId)}/?token=${encodeURIComponent(token)}`);
+      }
+
+      urls.push(
+        `https://api.waqi.info/feed/geo:${encodeURIComponent(geo.latitude)};${encodeURIComponent(geo.longitude)}/?token=${encodeURIComponent(token)}`
+      );
+
+      let lastErr = null;
+      for (const url of urls) {
+        try {
+          const raw = await safeGetJson(url);
+          return normalizeAqicnReading(raw);
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+
+      throw lastErr || new Error("AQICN current feed unavailable");
+    }
+
+    async function fetchCurrentLocalAir(geo){
+      const loaders = [
+        async () => fetchNcecCurrentAir(),
+        async () => fetchAqicnCurrentAir(geo)
+      ];
+
+      for (const load of loaders) {
+        try {
+          const reading = await load();
+          if (reading) return reading;
+        } catch (_err) {
+        }
+      }
+
+      return null;
+    }
+
+    function isFridayLocalDecisionWindow(){
+      const now = nowInRiyadh();
+      return now.getDay() === 5 && now.getHours() >= 12;
+    }
+
+    function buildLocalPolicy(localReading){
+      if (!localReading) return null;
+
+      return evaluateAirQualityPolicy([{
+        time: localReading.observedAt || "",
+        hour: nowInRiyadh().getHours(),
+        aqi: localReading.aqi,
+        pm10: localReading.pm10
+      }], {
+        sourceKind: "current",
+        sourceLabel: localReading.sourceLabel
+      });
+    }
+
+    function chooseAirQualityDecision(forecastPolicy, localReading){
+      const localPolicy = buildLocalPolicy(localReading);
+
+      if (localPolicy) {
+        if (isFridayLocalDecisionWindow()) {
+          return {
+            policy: localPolicy,
+            decisionBasis: "local",
+            decisionLabel: `${localReading.sourceLabel} live final check`,
+            localPolicy
+          };
+        }
+      }
+
+      if (forecastPolicy) {
+        return {
+          policy: forecastPolicy,
+          decisionBasis: "forecast",
+          decisionLabel: "Open-Meteo forecast",
+          localPolicy
+        };
+      }
+
+      if (localPolicy) {
+        return {
+          policy: localPolicy,
+          decisionBasis: "local",
+          decisionLabel: `${localReading.sourceLabel} live fallback`,
+          localPolicy
+        };
+      }
+
+      return {
+        policy: defaultAirPolicy(),
+        decisionBasis: "none",
+        decisionLabel: "No air-quality source",
+        localPolicy: null
+      };
+    }
+
+    function renderAqiSourceSummary({ decisionLabel = "", localReading = null } = {}){
+      const parts = [];
+
+      parts.push(`Decision: ${escapeHtml(decisionLabel || "Open-Meteo forecast")}`);
+
+      if (localReading) {
+        const observedAt = compactObservedTime(localReading.observedAt);
+        const timeSuffix = observedAt ? ` @ ${escapeHtml(observedAt)}` : "";
+        parts.push(
+          `Local now: ${escapeHtml(localReading.provider)} AQI ${formatAqiValue(localReading.aqi)} | PM10 ${formatAqiValue(localReading.pm10)}${timeSuffix}`
+        );
+      } else {
+        parts.push("Local now: unavailable");
+      }
+
+      parts.push("Forecast: Open-Meteo");
+      aqiSourceLine.innerHTML = parts.join(" &middot; ");
+    }
+
+    function renderLocalCurrentFallback(localReading){
+      destroyAqiChart();
+      setAqiPanelOpen(false);
+      aqiDetail.style.display = "flex";
+      aqiTrendChartCanvas.style.display = "none";
+
+      const band = aqiBand(localReading?.aqi);
+      aqiModeBadge.textContent = "Local now";
+      aqiToggleSummary.textContent = "Live monitor";
+      aqiSummaryInline.innerHTML =
+        `Local now | AQI <b>${formatAqiValue(localReading?.aqi)}</b> | PM10 <b>${formatAqiValue(localReading?.pm10)}</b> | ${escapeHtml(band.label)}`;
+
+      aqiDetail.innerHTML = `
+        <div class="aqiChip ${band.cls}">
+          <div class="aqiTime">${escapeHtml(compactObservedTime(localReading?.observedAt) || "Now")}</div>
+          <div class="aqiNum">${formatAqiValue(localReading?.aqi)}</div>
+          <div class="aqiTag">${escapeHtml(band.label)}</div>
+          <div class="aqiMetric">PM10 ${escapeHtml(formatPm10(localReading?.pm10))}</div>
+        </div>
+      `;
     }
 
     function isUsableAqiValue(v){
@@ -1200,7 +1500,7 @@
       aqiModeBadge.textContent = "Fri 7-10";
       aqiToggleSummary.textContent = "Hourly AQI";
       aqiSummaryInline.innerHTML =
-        `Fri eve | AQI <b>${avg}</b> | PM10 <b>${Number.isFinite(peakPm10) ? Math.round(peakPm10) : "-"}</b> | ${escapeHtml(band.label)}`;
+        `Forecast Fri eve | AQI <b>${avg}</b> | PM10 <b>${Number.isFinite(peakPm10) ? Math.round(peakPm10) : "-"}</b> | ${escapeHtml(band.label)}`;
 
       aqiDetail.innerHTML = points.map(p => {
         const b = aqiBand(p.aqi);
@@ -1226,7 +1526,7 @@
 
       aqiModeBadge.textContent = "Daily trend";
       aqiSummaryInline.innerHTML =
-        `Hourly AQI is unavailable, so showing daily AQI trend before Friday` +
+        `Open-Meteo hourly AQI is unavailable, so showing daily AQI trend before Friday` +
         (fridayIncluded ? ` and including ${prettyDay(targetDateStr)}.` : `.`);
 
       aqiToggleSummary.textContent = "AQI trend";
@@ -1271,10 +1571,62 @@
       });
     }
 
+    async function fetchOpenMeteoAqiForecast(geo){
+      const url =
+        `https://air-quality-api.open-meteo.com/v1/air-quality` +
+        `?latitude=${encodeURIComponent(geo.latitude)}` +
+        `&longitude=${encodeURIComponent(geo.longitude)}` +
+        `&hourly=us_aqi,pm10` +
+        `&timezone=auto` +
+        `&forecast_days=7`;
+
+      const data = await safeGetJson(url);
+      const times = data?.hourly?.time || [];
+      const aqi = data?.hourly?.us_aqi || [];
+      const pm10 = data?.hourly?.pm10 || [];
+
+      if (!times.length || !aqi.length) {
+        throw new Error("No Open-Meteo AQI data");
+      }
+
+      const rows = times.map((t, i) => ({
+        time: t,
+        date: t.slice(0, 10),
+        hour: Number((t.split("T")[1] || "").slice(0, 2)),
+        aqi: Number(aqi[i]),
+        pm10: Number(pm10[i])
+      })).filter(x => x.time && x.date);
+
+      if (!rows.length) {
+        throw new Error("Open-Meteo AQI rows empty");
+      }
+
+      const fridayDateStr = ymdLocalRiyadh(nextRelevantFridayRiyadh());
+      const fridayWindowRaw = rows.filter(x =>
+        x.date === fridayDateStr &&
+        x.hour >= 19 &&
+        x.hour <= 22
+      );
+      const hasUnavailableHourlyAqi =
+        fridayWindowRaw.length < 4 ||
+        fridayWindowRaw.some(x => isMissingAqiValue(x.aqi));
+      const fridayWindowValid = fridayWindowRaw.filter(x => isUsableAqiValue(x.aqi));
+      const daily = computeDailyAqiSeries(rows, fridayDateStr);
+
+      return {
+        rows,
+        fridayDateStr,
+        fridayWindowValid,
+        hasUnavailableHourlyAqi,
+        daily
+      };
+    }
+
     async function loadAqi(){
       try{
-        aqiModeBadge.textContent = "Loading…";
-        aqiSummaryInline.textContent = "Loading air quality forecast…";
+        aqiModeBadge.textContent = "Loading...";
+        aqiSummaryInline.textContent = "Loading air quality forecast...";
+        aqiSourceLine.textContent = "Decision source: loading...";
         aqiToggleSummary.textContent = "Hourly AQI";
         setAqiPanelOpen(false);
         aqiDetail.innerHTML = "";
@@ -1283,66 +1635,36 @@
         airQualityPolicy = defaultAirPolicy();
 
         const geo = await getThuwalGeo();
+        const [forecastResult, localResult] = await Promise.allSettled([
+          fetchOpenMeteoAqiForecast(geo),
+          fetchCurrentLocalAir(geo)
+        ]);
 
-        const url =
-          `https://air-quality-api.open-meteo.com/v1/air-quality` +
-          `?latitude=${encodeURIComponent(geo.latitude)}` +
-          `&longitude=${encodeURIComponent(geo.longitude)}` +
-          `&hourly=us_aqi,pm10` +
-          `&timezone=auto` +
-          `&forecast_days=7`;
+        const forecast = forecastResult.status === "fulfilled" ? forecastResult.value : null;
+        const localReading = localResult.status === "fulfilled" ? localResult.value : null;
 
-        const data = await safeGetJson(url);
+        let forecastPolicy = null;
 
-        const times = data?.hourly?.time || [];
-        const aqi = data?.hourly?.us_aqi || [];
-        const pm10 = data?.hourly?.pm10 || [];
-
-        if (!times.length || !aqi.length) {
-          throw new Error("No AQI data");
+        if (forecast?.fridayWindowValid?.length >= 4 && !forecast?.hasUnavailableHourlyAqi) {
+          forecastPolicy = evaluateAirQualityPolicy(forecast.fridayWindowValid, {
+            sourceKind: "forecast",
+            sourceLabel: "Open-Meteo forecast"
+          });
+          renderAqiFridayWindow(forecast.fridayDateStr, forecast.fridayWindowValid);
+        } else if (forecast?.daily?.length) {
+          renderAqiTrend(forecast.fridayDateStr, forecast.daily);
+        } else if (localReading) {
+          renderLocalCurrentFallback(localReading);
+        } else {
+          throw new Error("No usable AQI source");
         }
 
-        const rows = times.map((t, i) => ({
-          time: t,
-          date: t.slice(0, 10),
-          hour: Number((t.split("T")[1] || "").slice(0, 2)),
-          aqi: Number(aqi[i]),
-          pm10: Number(pm10[i])
-        })).filter(x => x.time && x.date);
-
-        if (!rows.length) {
-          throw new Error("AQI rows empty");
-        }
-
-        const fridayDateStr = ymdLocalRiyadh(nextRelevantFridayRiyadh());
-
-        const fridayWindowRaw = rows.filter(x =>
-          x.date === fridayDateStr &&
-          x.hour >= 19 &&
-          x.hour <= 22
-        );
-
-        const hasUnavailableHourlyAqi =
-          fridayWindowRaw.length < 4 ||
-          fridayWindowRaw.some(x => isMissingAqiValue(x.aqi));
-
-        const fridayWindowValid = fridayWindowRaw.filter(x => isUsableAqiValue(x.aqi));
-
-        if (!hasUnavailableHourlyAqi && fridayWindowValid.length >= 4) {
-          airQualityPolicy = evaluateAirQualityPolicy(fridayWindowValid);
-          renderAqiFridayWindow(fridayDateStr, fridayWindowValid);
-          applyAirQualityPolicy();
-          return;
-        }
-
-        const daily = computeDailyAqiSeries(rows, fridayDateStr);
-
-        if (!daily.length) {
-          throw new Error("Daily AQI fallback empty");
-        }
-
-        renderAqiTrend(fridayDateStr, daily);
-        airQualityPolicy = defaultAirPolicy();
+        const selected = chooseAirQualityDecision(forecastPolicy, localReading);
+        airQualityPolicy = selected.policy;
+        renderAqiSourceSummary({
+          decisionLabel: selected.decisionLabel,
+          localReading
+        });
         applyAirQualityPolicy();
 
       } catch (e) {
@@ -1351,6 +1673,7 @@
         aqiTrendChartCanvas.style.display = "none";
         aqiModeBadge.textContent = "Unavailable";
         aqiSummaryInline.textContent = "AQI forecast is temporarily unavailable.";
+        aqiSourceLine.textContent = "Decision source: no live local source available.";
         aqiToggleSummary.textContent = "Hourly AQI";
         aqiDetail.innerHTML = "";
         airQualityPolicy = defaultAirPolicy();
@@ -1628,6 +1951,8 @@
 
     function renderGameInfo() {
       const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
+      const rulePrefix = airQualityPolicy.sourceKind === "current" ? "Live rule" : "Forecast rule";
+      const sourceLabel = airQualityPolicy.sourceLabel || "Open-Meteo forecast";
       gameInfoLine1.innerHTML = `${CFG.gameTimeText} · ${loc}`;
       gameInfoLine2.innerHTML = `
         <span>Bring: 💧 👟 🥏 🔥</span>
@@ -1636,7 +1961,8 @@
       if (airQualityPolicy.mode === "cancelled") {
         gameInfoLine1.innerHTML = `${airQualityPolicy.gameLine1} · ${loc}`;
         gameInfoLine2.innerHTML = `
-          <span>Forecast rule: AQI > 150 or PM10 > 250 ug/m3</span>
+          <span>${escapeHtml(rulePrefix)}: AQI > 150 or PM10 > 250 ug/m3</span>
+          <span>Decision source: ${escapeHtml(sourceLabel)}</span>
           <span>Registration hidden automatically</span>
         `;
       } else if (airQualityPolicy.mode === "modified") {
@@ -1678,6 +2004,38 @@
         gameInfoLine1.innerHTML = `${CFG.gameTimeText} · ${loc}`;
         gameInfoLine2.innerHTML = `
           <span>Bring: 💧 👟 🥏 🔥</span>
+          <span>Format: 5v5 / 7v7 (with subs)</span>
+        `;
+      }
+
+      tzLine.textContent = `Registration closes: Fri 3:00 PM | Jeddah local time`;
+      fourTeamMin.textContent = CFG.teamsMinForFour;
+    }
+
+    function renderGameInfo() {
+      const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
+      const rulePrefix = airQualityPolicy.sourceKind === "current" ? "Live rule" : "Forecast rule";
+      const sourceLabel = airQualityPolicy.sourceLabel || "Open-Meteo forecast";
+
+      if (airQualityPolicy.mode === "cancelled") {
+        gameInfoLine1.innerHTML = `${airQualityPolicy.gameLine1} 路 ${loc}`;
+        gameInfoLine2.innerHTML = `
+          <span>${escapeHtml(rulePrefix)}: AQI > 150 or PM10 > 250 ug/m3</span>
+          <span>Decision source: ${escapeHtml(sourceLabel)}</span>
+          <span>Registration hidden automatically</span>
+        `;
+      } else if (airQualityPolicy.mode === "modified") {
+        gameInfoLine1.innerHTML = `${airQualityPolicy.gameLine1} 路 ${loc}`;
+        gameInfoLine2.innerHTML = `
+          <span>Throwing practice: 30 min</span>
+          <span>Game: 50 min, starts at 8:00 PM</span>
+          <span>Decision source: ${escapeHtml(sourceLabel)}</span>
+          <span>Bring: 馃挧 馃憻 馃 馃敟</span>
+        `;
+      } else {
+        gameInfoLine1.innerHTML = `${CFG.gameTimeText} 路 ${loc}`;
+        gameInfoLine2.innerHTML = `
+          <span>Bring: 馃挧 馃憻 馃 馃敟</span>
           <span>Format: 5v5 / 7v7 (with subs)</span>
         `;
       }
