@@ -600,15 +600,15 @@
 
       <div id="aqiBox" class="box aqiCompact">
         <div class="aqiTopLine">
-          <div class="aqiTitle">Thuwal AQI</div>
+          <div class="aqiTitle">Thuwal PM</div>
           <div class="aqiActions">
           <div class="badge" id="aqiModeBadge">Loading…</div>
-          <button type="button" class="aqiToggleBtn" id="aqiToggleSummary">Hourly AQI</button>
+          <button type="button" class="aqiToggleBtn" id="aqiToggleSummary">Hourly PM</button>
           </div>
         </div>
 
         <div id="aqiSummaryInline" class="aqiSummaryInline">
-          Loading air quality forecast…
+          Loading PM forecast…
         </div>
         <div id="aqiSourceLine" class="aqiSourceLine">
           Decision source: loading...
@@ -1020,6 +1020,11 @@
       return Number.isFinite(n) ? `${Math.round(n)} ug/m3` : "n/a";
     }
 
+    function formatPm25(v){
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.round(n) : "-";
+    }
+
     function formatAqiValue(v){
       const n = Number(v);
       return Number.isFinite(n) ? Math.round(n) : "-";
@@ -1029,6 +1034,38 @@
       const text = String(value || "");
       const match = text.match(/(\d{2}:\d{2})/);
       return match ? match[1] : "";
+    }
+
+    function ymdToLocalDate(dateStr){
+      return new Date(`${dateStr}T12:00:00`);
+    }
+
+    function shortMonthName(monthIndex){
+      return new Date(2024, monthIndex, 1).toLocaleDateString("en-US", { month: "short" });
+    }
+
+    function getMonthWindow(targetDate){
+      const months = [];
+      for (let offset = -1; offset <= 1; offset += 1) {
+        const d = new Date(targetDate.getFullYear(), targetDate.getMonth() + offset, 1);
+        months.push(d.getMonth());
+      }
+      return months;
+    }
+
+    function getMonthWindowLabel(targetDate){
+      return getMonthWindow(targetDate).map(shortMonthName).join("-");
+    }
+
+    function percentileRank(values, value){
+      const n = Number(value);
+      if (!Number.isFinite(n) || !Array.isArray(values) || !values.length) return NaN;
+      const count = values.filter(v => v <= n).length;
+      return (count / values.length) * 100;
+    }
+
+    function formatPercentile(v){
+      return Number.isFinite(v) ? `${Math.round(v)}th pct` : "n/a";
     }
 
     function firstFinite(...values){
@@ -1048,6 +1085,71 @@
       return "";
     }
 
+    function defaultPmBaseline(targetDate = null){
+      return {
+        sampleCount: 0,
+        monthWindowLabel: targetDate ? getMonthWindowLabel(targetDate) : "",
+        regularPercentile: 45,
+        cancelPercentile: 80,
+        regularCaps: { pm25: 45, pm10: 200 },
+        cancelCaps: { pm25: 65, pm10: 300 },
+        pm25Samples: [],
+        pm10Samples: []
+      };
+    }
+
+    function buildPmBaseline(rows, targetDate){
+      const baseline = defaultPmBaseline(targetDate);
+      if (!Array.isArray(rows) || !rows.length || !targetDate) return baseline;
+
+      const targetDateStr = ymdLocalRiyadh(targetDate);
+      const monthWindow = new Set(getMonthWindow(targetDate));
+      const filtered = rows.filter(row => {
+        if (!row?.date || row.date >= targetDateStr) return false;
+        if (!(row.hour >= 19 && row.hour <= 22)) return false;
+
+        const day = ymdToLocalDate(row.date);
+        return day.getDay() === 5 && monthWindow.has(day.getMonth());
+      });
+
+      baseline.sampleCount = filtered.length;
+      baseline.pm25Samples = filtered
+        .map(row => Number(row.pm25))
+        .filter(Number.isFinite)
+        .sort((a, b) => a - b);
+      baseline.pm10Samples = filtered
+        .map(row => Number(row.pm10))
+        .filter(Number.isFinite)
+        .sort((a, b) => a - b);
+      return baseline;
+    }
+
+    function classifyPmPoint(pm25, pm10, baseline){
+      const base = baseline || defaultPmBaseline();
+      const pm25Value = Number(pm25);
+      const pm10Value = Number(pm10);
+      const pm25Pct = percentileRank(base.pm25Samples, pm25Value);
+      const pm10Pct = percentileRank(base.pm10Samples, pm10Value);
+      const score = Math.max(
+        ...[pm25Pct, pm10Pct].filter(Number.isFinite),
+        -Infinity
+      );
+
+      const cancelled =
+        (Number.isFinite(pm25Value) && pm25Value > base.cancelCaps.pm25) ||
+        (Number.isFinite(pm10Value) && pm10Value > base.cancelCaps.pm10) ||
+        (Number.isFinite(score) && score > base.cancelPercentile);
+      const regular =
+        !cancelled &&
+        (!Number.isFinite(pm25Value) || pm25Value <= base.regularCaps.pm25) &&
+        (!Number.isFinite(pm10Value) || pm10Value <= base.regularCaps.pm10) &&
+        (!Number.isFinite(score) || score <= base.regularPercentile);
+
+      if (cancelled) return { label: "High", cls: "unhealthy", score };
+      if (regular) return { label: "Regular", cls: "good", score };
+      return { label: "Modified", cls: "usg", score };
+    }
+
     function defaultAirPolicy(){
       return {
         mode: "normal",
@@ -1058,8 +1160,12 @@
         gameLine2: "",
         sourceKind: "",
         sourceLabel: "",
-        maxAqi: NaN,
-        maxPm10: NaN
+        maxPm25: NaN,
+        maxPm10: NaN,
+        pm25Percentile: NaN,
+        pm10Percentile: NaN,
+        scorePercentile: NaN,
+        baseline: defaultPmBaseline()
       };
     }
 
@@ -1069,33 +1175,25 @@
       const sourceKind = options.sourceKind || "forecast";
       const sourceLabel = options.sourceLabel ||
         (sourceKind === "current" ? "local live monitor" : "Open-Meteo forecast");
-      const aqiValues = points.map(p => Number(p.aqi)).filter(Number.isFinite);
+      const baseline = options.baseline || defaultPmBaseline(options.targetDate || null);
+      const pm25Values = points.map(p => Number(p.pm25)).filter(Number.isFinite);
       const pm10Values = points.map(p => Number(p.pm10)).filter(Number.isFinite);
-      const maxAqi = aqiValues.length ? Math.max(...aqiValues) : NaN;
+      const maxPm25 = pm25Values.length ? Math.max(...pm25Values) : NaN;
       const maxPm10 = pm10Values.length ? Math.max(...pm10Values) : NaN;
-      const sevenPm = points.find(p => p.hour === 19);
-      const laterPoints = points
-        .filter(p => p.hour >= 20)
-        .sort((a, b) => a.hour - b.hour);
-
-      const improvingAfter8 =
-        !!sevenPm &&
-        laterPoints.length > 0 &&
-        laterPoints.every((p, idx) => {
-          const prev = idx === 0 ? sevenPm.aqi : laterPoints[idx - 1].aqi;
-          return p.aqi < sevenPm.aqi && p.aqi <= prev;
-        });
+      const pm25Percentile = percentileRank(baseline.pm25Samples, maxPm25);
+      const pm10Percentile = percentileRank(baseline.pm10Samples, maxPm10);
+      const validPercentiles = [pm25Percentile, pm10Percentile].filter(Number.isFinite);
+      const scorePercentile = validPercentiles.length ? Math.max(...validPercentiles) : NaN;
 
       const cancelled =
-        (Number.isFinite(maxAqi) && maxAqi > 150) ||
-        (Number.isFinite(maxPm10) && maxPm10 > 250);
+        (Number.isFinite(maxPm25) && maxPm25 > baseline.cancelCaps.pm25) ||
+        (Number.isFinite(maxPm10) && maxPm10 > baseline.cancelCaps.pm10) ||
+        (Number.isFinite(scorePercentile) && scorePercentile > baseline.cancelPercentile);
       const normal =
-        Number.isFinite(maxAqi) &&
-        maxAqi <= 100 &&
-        (!Number.isFinite(maxPm10) || maxPm10 < 100);
-      const modified =
-        (Number.isFinite(maxAqi) && maxAqi > 100 && maxAqi <= 150) ||
-        (Number.isFinite(maxPm10) && maxPm10 >= 100 && maxPm10 <= 250);
+        (!Number.isFinite(maxPm25) || maxPm25 <= baseline.regularCaps.pm25) &&
+        (!Number.isFinite(maxPm10) || maxPm10 <= baseline.regularCaps.pm10) &&
+        (!Number.isFinite(scorePercentile) || scorePercentile <= baseline.regularPercentile);
+      const modified = !cancelled && !normal;
 
       if (cancelled) {
         return {
@@ -1104,17 +1202,21 @@
           noticeTone: "bad",
           noticeText:
             sourceKind === "current"
-              ? `Outdoor play is cancelled due to poor current local air quality from ${sourceLabel}. Current AQI is ${formatAqiValue(maxAqi)} and PM10 is ${formatAqiValue(maxPm10)} ug/m3, so we have to cancel the Friday game.`
-              : `Outdoor play is cancelled due to poor forecast air quality from ${sourceLabel}. Peak AQI is ${formatAqiValue(maxAqi)} and peak PM10 is ${formatAqiValue(maxPm10)} ug/m3, so we have to cancel the Friday game.`,
+              ? `Outdoor play is cancelled because current local PM levels from ${sourceLabel} are too high for this season. PM2.5 is ${formatPm25(maxPm25)} and PM10 is ${formatAqiValue(maxPm10)} ug/m3, so we have to cancel the Friday game.`
+              : `Outdoor play is cancelled because forecast PM levels from ${sourceLabel} are too high for this season. Peak PM2.5 is ${formatPm25(maxPm25)} and peak PM10 is ${formatAqiValue(maxPm10)} ug/m3, so we have to cancel the Friday game.`,
           gameLine1: "Friday game cancelled",
           gameLine2:
             sourceKind === "current"
-              ? "Outdoor session cancelled due to current local air quality."
-              : "Outdoor session cancelled due to forecast air quality.",
+              ? "Outdoor session cancelled due to current local PM conditions."
+              : "Outdoor session cancelled due to forecast PM conditions.",
           sourceKind,
           sourceLabel,
-          maxAqi,
-          maxPm10
+          maxPm25,
+          maxPm10,
+          pm25Percentile,
+          pm10Percentile,
+          scorePercentile,
+          baseline
         };
       }
 
@@ -1123,8 +1225,12 @@
           ...defaultAirPolicy(),
           sourceKind,
           sourceLabel,
-          maxAqi,
-          maxPm10
+          maxPm25,
+          maxPm10,
+          pm25Percentile,
+          pm10Percentile,
+          scorePercentile,
+          baseline
         };
       }
 
@@ -1134,16 +1240,18 @@
           blocksRegistration: false,
           noticeTone: "warn",
           noticeText: sourceKind === "current"
-            ? `Current local air quality from ${sourceLabel} is elevated but still below the cancel threshold. Friday stays on the modified plan: 30 minutes of throwing practice and a 50-minute game.`
-            : improvingAfter8
-              ? `Forecast air quality from ${sourceLabel} is elevated but still below the cancel threshold, and conditions improve after 8:00 PM. Friday moves to the modified plan: 30 minutes of throwing practice and a 50-minute game with an 8:00 PM start.`
-              : `Forecast air quality from ${sourceLabel} is elevated but still below the cancel threshold. Friday moves to the modified plan: 30 minutes of throwing practice and a 50-minute limited game.`,
+            ? `Current local PM levels from ${sourceLabel} are above the regular range for this season but below the cancel cap. Friday moves to the modified plan: throwing from 8:00 PM to 8:30 PM, then a shorter game from 8:30 PM to 10:00 PM.`
+            : `Forecast PM levels from ${sourceLabel} are above the regular range for this season but below the cancel cap. Friday moves to the modified plan: throwing from 8:00 PM to 8:30 PM, then a shorter game from 8:30 PM to 10:00 PM.`,
           gameLine1: "Friday modified session",
-          gameLine2: "Throwing practice for 30 minutes, then a 50-minute game starting at 8:00 PM.",
+          gameLine2: "Throwing practice from 8:00 PM to 8:30 PM, then a game from 8:30 PM to 10:00 PM.",
           sourceKind,
           sourceLabel,
-          maxAqi,
-          maxPm10
+          maxPm25,
+          maxPm10,
+          pm25Percentile,
+          pm10Percentile,
+          scorePercentile,
+          baseline
         };
       }
 
@@ -1151,8 +1259,12 @@
         ...defaultAirPolicy(),
         sourceKind,
         sourceLabel,
-        maxAqi,
-        maxPm10
+        maxPm25,
+        maxPm10,
+        pm25Percentile,
+        pm10Percentile,
+        scorePercentile,
+        baseline
       };
     }
 
@@ -1219,14 +1331,20 @@
 
     function normalizeConfiguredCurrentAir(raw, options = {}){
       const candidates = [raw, raw?.data, raw?.current, raw?.reading].filter(Boolean);
-      let aqi = NaN;
+      let pm25 = NaN;
       let pm10 = NaN;
       let stationName = "";
       let observedAt = "";
 
       for (const item of candidates) {
-        if (!Number.isFinite(aqi)) {
-          aqi = firstFinite(item?.aqi, item?.us_aqi, item?.usAqi, item?.value, item?.index);
+        if (!Number.isFinite(pm25)) {
+          pm25 = firstFinite(
+            item?.pm2_5,
+            item?.pm25,
+            item?.pm25_ugm3,
+            item?.pm25UgM3,
+            item?.pm25ugm3
+          );
         }
         if (!Number.isFinite(pm10)) {
           pm10 = firstFinite(item?.pm10, item?.pm10_ugm3, item?.pm10UgM3, item?.pm10ugm3);
@@ -1239,8 +1357,8 @@
         }
       }
 
-      if (!Number.isFinite(aqi) && !Number.isFinite(pm10)) {
-        throw new Error("Configured current air source returned no AQI or PM10");
+      if (!Number.isFinite(pm25) && !Number.isFinite(pm10)) {
+        throw new Error("Configured current air source returned no PM2.5 or PM10");
       }
 
       return {
@@ -1249,7 +1367,7 @@
         stationName,
         observedAt,
         sourceUrl: options.sourceUrl || "",
-        aqi,
+        pm25,
         pm10
       };
     }
@@ -1260,11 +1378,11 @@
       }
 
       const data = raw.data;
-      const aqi = firstFinite(data?.aqi);
+      const pm25 = firstFinite(data?.iaqi?.pm25?.v);
       const pm10 = firstFinite(data?.iaqi?.pm10?.v);
 
-      if (!Number.isFinite(aqi) && !Number.isFinite(pm10)) {
-        throw new Error("AQICN current feed returned no AQI or PM10");
+      if (!Number.isFinite(pm25) && !Number.isFinite(pm10)) {
+        throw new Error("AQICN current feed returned no PM2.5 or PM10");
       }
 
       return {
@@ -1273,7 +1391,7 @@
         stationName: firstText(data?.city?.name, data?.attributions?.[0]?.name, "Thuwal station"),
         observedAt: firstText(data?.time?.s, data?.time?.iso),
         sourceUrl: firstText(data?.city?.url, data?.attributions?.[0]?.url),
-        aqi,
+        pm25,
         pm10
       };
     }
@@ -1338,22 +1456,23 @@
       return now.getDay() === 5 && now.getHours() >= 12;
     }
 
-    function buildLocalPolicy(localReading){
+    function buildLocalPolicy(localReading, baseline){
       if (!localReading) return null;
 
       return evaluateAirQualityPolicy([{
         time: localReading.observedAt || "",
         hour: nowInRiyadh().getHours(),
-        aqi: localReading.aqi,
+        pm25: localReading.pm25,
         pm10: localReading.pm10
       }], {
         sourceKind: "current",
-        sourceLabel: localReading.sourceLabel
+        sourceLabel: localReading.sourceLabel,
+        baseline
       });
     }
 
-    function chooseAirQualityDecision(forecastPolicy, localReading){
-      const localPolicy = buildLocalPolicy(localReading);
+    function chooseAirQualityDecision(forecastPolicy, localReading, baseline){
+      const localPolicy = buildLocalPolicy(localReading, baseline);
 
       if (localPolicy) {
         if (isFridayLocalDecisionWindow()) {
@@ -1392,58 +1511,59 @@
       };
     }
 
-    function renderAqiSourceSummary({ decisionLabel = "", localReading = null } = {}){
+    function renderAqiSourceSummary({ decisionLabel = "", localReading = null, baseline = null } = {}){
       const parts = [];
 
       parts.push(`Decision: ${escapeHtml(decisionLabel || "Open-Meteo forecast")}`);
+      if (baseline?.sampleCount) {
+        parts.push(
+          `Baseline: last 2y Fri eve ${escapeHtml(baseline.monthWindowLabel)} (n=${escapeHtml(baseline.sampleCount)})`
+        );
+      } else {
+        parts.push("Baseline: fixed PM caps only");
+      }
 
       if (localReading) {
         const observedAt = compactObservedTime(localReading.observedAt);
         const timeSuffix = observedAt ? ` @ ${escapeHtml(observedAt)}` : "";
         parts.push(
-          `Local now: ${escapeHtml(localReading.provider)} AQI ${formatAqiValue(localReading.aqi)} | PM10 ${formatAqiValue(localReading.pm10)}${timeSuffix}`
+          `Local now: ${escapeHtml(localReading.provider)} PM2.5 ${formatPm25(localReading.pm25)} | PM10 ${formatAqiValue(localReading.pm10)}${timeSuffix}`
         );
       } else {
         parts.push("Local now: unavailable");
       }
 
-      parts.push("Forecast: Open-Meteo");
+      parts.push("Forecast: Open-Meteo PM");
       aqiSourceLine.innerHTML = parts.join(" &middot; ");
     }
 
-    function renderLocalCurrentFallback(localReading){
+    function renderLocalCurrentFallback(localReading, baseline){
       destroyAqiChart();
       setAqiPanelOpen(false);
       aqiDetail.style.display = "flex";
       aqiTrendChartCanvas.style.display = "none";
 
-      const band = aqiBand(localReading?.aqi);
+      const band = classifyPmPoint(localReading?.pm25, localReading?.pm10, baseline);
       aqiModeBadge.textContent = "Local now";
       aqiToggleSummary.textContent = "Live monitor";
       aqiSummaryInline.innerHTML =
-        `Local now | AQI <b>${formatAqiValue(localReading?.aqi)}</b> | PM10 <b>${formatAqiValue(localReading?.pm10)}</b> | ${escapeHtml(band.label)}`;
+        `Local now | PM2.5 <b>${formatPm25(localReading?.pm25)}</b> | PM10 <b>${formatAqiValue(localReading?.pm10)}</b> | ${escapeHtml(band.label)}`;
 
       aqiDetail.innerHTML = `
         <div class="aqiChip ${band.cls}">
           <div class="aqiTime">${escapeHtml(compactObservedTime(localReading?.observedAt) || "Now")}</div>
-          <div class="aqiNum">${formatAqiValue(localReading?.aqi)}</div>
-          <div class="aqiTag">${escapeHtml(band.label)}</div>
-          <div class="aqiMetric">PM10 ${escapeHtml(formatPm10(localReading?.pm10))}</div>
+          <div class="aqiNum">${formatPm25(localReading?.pm25)}</div>
+          <div class="aqiTag">PM2.5</div>
+          <div class="aqiMetric">PM10 ${escapeHtml(formatPm10(localReading?.pm10))} · ${escapeHtml(band.label)}</div>
         </div>
       `;
     }
 
-    function isUsableAqiValue(v){
-      const n = Number(v);
-      return Number.isFinite(n) && n > 0;
+    function hasUsablePmPoint(row){
+      return Number.isFinite(Number(row?.pm25)) || Number.isFinite(Number(row?.pm10));
     }
 
-    function isMissingAqiValue(v){
-      const n = Number(v);
-      return !Number.isFinite(n) || n <= 0;
-    }
-
-    function computeDailyAqiSeries(rows, fridayDateStr){
+    function computeDailyPmSeries(rows, fridayDateStr){
       const byDate = new Map();
 
       rows.forEach(x => {
@@ -1473,44 +1593,45 @@
 
       return selectedDates.map(date => {
         const dayRows = byDate.get(date) || [];
-        const validAqi = dayRows
-          .map(r => Number(r.aqi))
-          .filter(isUsableAqiValue);
+        const validPm25 = dayRows
+          .map(r => Number(r.pm25))
+          .filter(Number.isFinite);
 
         return {
           date,
-          avg: validAqi.length
-            ? validAqi.reduce((s, v) => s + v, 0) / validAqi.length
+          avg: validPm25.length
+            ? validPm25.reduce((s, v) => s + v, 0) / validPm25.length
             : null,
-          hasData: validAqi.length > 0
+          hasData: validPm25.length > 0
         };
       });
     }
 
-    function renderAqiFridayWindow(targetDateStr, points){
+    function renderAqiFridayWindow(targetDateStr, points, baseline){
       destroyAqiChart();
       setAqiPanelOpen(false);
       aqiDetail.style.display = "flex";
       aqiTrendChartCanvas.style.display = "none";
 
-      const avg = Math.round(points.reduce((s, p) => s + p.aqi, 0) / points.length);
+      const pm25Values = points.map(p => Number(p.pm25)).filter(Number.isFinite);
       const pm10Values = points.map(p => Number(p.pm10)).filter(Number.isFinite);
+      const peakPm25 = pm25Values.length ? Math.max(...pm25Values) : NaN;
       const peakPm10 = pm10Values.length ? Math.max(...pm10Values) : NaN;
-      const band = aqiBand(avg);
+      const band = classifyPmPoint(peakPm25, peakPm10, baseline);
 
       aqiModeBadge.textContent = "Fri 7-10";
-      aqiToggleSummary.textContent = "Hourly AQI";
+      aqiToggleSummary.textContent = "Hourly PM";
       aqiSummaryInline.innerHTML =
-        `Forecast Fri eve | AQI <b>${avg}</b> | PM10 <b>${Number.isFinite(peakPm10) ? Math.round(peakPm10) : "-"}</b> | ${escapeHtml(band.label)}`;
+        `Forecast Fri eve | PM2.5 <b>${formatPm25(peakPm25)}</b> | PM10 <b>${Number.isFinite(peakPm10) ? Math.round(peakPm10) : "-"}</b> | ${escapeHtml(band.label)}`;
 
       aqiDetail.innerHTML = points.map(p => {
-        const b = aqiBand(p.aqi);
+        const b = classifyPmPoint(p.pm25, p.pm10, baseline);
         return `
           <div class="aqiChip ${b.cls}">
             <div class="aqiTime">${escapeHtml(prettyHour(p.time))}</div>
-            <div class="aqiNum">${Math.round(p.aqi)}</div>
-            <div class="aqiTag">${escapeHtml(b.label)}</div>
-            <div class="aqiMetric">PM10 ${escapeHtml(formatPm10(p.pm10))}</div>
+            <div class="aqiNum">${formatPm25(p.pm25)}</div>
+            <div class="aqiTag">PM2.5</div>
+            <div class="aqiMetric">PM10 ${escapeHtml(formatPm10(p.pm10))} · ${escapeHtml(b.label)}</div>
           </div>
         `;
       }).join("");
@@ -1527,10 +1648,10 @@
 
       aqiModeBadge.textContent = "Daily trend";
       aqiSummaryInline.innerHTML =
-        `Open-Meteo hourly AQI is unavailable, so showing daily AQI trend before Friday` +
+        `Open-Meteo hourly PM is unavailable, so showing daily PM2.5 trend before Friday` +
         (fridayIncluded ? ` and including ${prettyDay(targetDateStr)}.` : `.`);
 
-      aqiToggleSummary.textContent = "AQI trend";
+      aqiToggleSummary.textContent = "PM trend";
 
       const labels = daily.map(x => {
         const label = prettyDay(x.date);
@@ -1544,7 +1665,7 @@
         data: {
           labels,
           datasets: [{
-            label: "Daily mean AQI",
+            label: "Daily mean PM2.5",
             data: values,
             tension: 0.25,
             pointRadius: 4,
@@ -1572,34 +1693,34 @@
       });
     }
 
-    async function fetchOpenMeteoAqiForecast(geo){
+    async function fetchOpenMeteoPmForecast(geo){
       const url =
         `https://air-quality-api.open-meteo.com/v1/air-quality` +
         `?latitude=${encodeURIComponent(geo.latitude)}` +
         `&longitude=${encodeURIComponent(geo.longitude)}` +
-        `&hourly=us_aqi,pm10` +
+        `&hourly=pm2_5,pm10` +
         `&timezone=auto` +
         `&forecast_days=7`;
 
       const data = await safeGetJson(url);
       const times = data?.hourly?.time || [];
-      const aqi = data?.hourly?.us_aqi || [];
+      const pm25 = data?.hourly?.pm2_5 || [];
       const pm10 = data?.hourly?.pm10 || [];
 
-      if (!times.length || !aqi.length) {
-        throw new Error("No Open-Meteo AQI data");
+      if (!times.length || (!pm25.length && !pm10.length)) {
+        throw new Error("No Open-Meteo PM data");
       }
 
       const rows = times.map((t, i) => ({
         time: t,
         date: t.slice(0, 10),
         hour: Number((t.split("T")[1] || "").slice(0, 2)),
-        aqi: Number(aqi[i]),
+        pm25: Number(pm25[i]),
         pm10: Number(pm10[i])
       })).filter(x => x.time && x.date);
 
       if (!rows.length) {
-        throw new Error("Open-Meteo AQI rows empty");
+        throw new Error("Open-Meteo PM rows empty");
       }
 
       const fridayDateStr = ymdLocalRiyadh(nextRelevantFridayRiyadh());
@@ -1608,27 +1729,57 @@
         x.hour >= 19 &&
         x.hour <= 22
       );
-      const hasUnavailableHourlyAqi =
+      const hasUnavailableHourlyPm =
         fridayWindowRaw.length < 4 ||
-        fridayWindowRaw.some(x => isMissingAqiValue(x.aqi));
-      const fridayWindowValid = fridayWindowRaw.filter(x => isUsableAqiValue(x.aqi));
-      const daily = computeDailyAqiSeries(rows, fridayDateStr);
+        fridayWindowRaw.some(x => !hasUsablePmPoint(x));
+      const fridayWindowValid = fridayWindowRaw.filter(hasUsablePmPoint);
+      const daily = computeDailyPmSeries(rows, fridayDateStr);
 
       return {
         rows,
         fridayDateStr,
         fridayWindowValid,
-        hasUnavailableHourlyAqi,
+        hasUnavailableHourlyPm,
         daily
       };
+    }
+
+    async function fetchHistoricalPmRows(geo, targetDate){
+      const startDate = ymdLocalRiyadh(new Date(targetDate.getFullYear() - 2, targetDate.getMonth() - 1, 1));
+      const endDate = ymdLocalRiyadh(nowInRiyadh());
+      const url =
+        `https://air-quality-api.open-meteo.com/v1/air-quality` +
+        `?latitude=${encodeURIComponent(geo.latitude)}` +
+        `&longitude=${encodeURIComponent(geo.longitude)}` +
+        `&hourly=pm2_5,pm10` +
+        `&timezone=auto` +
+        `&start_date=${encodeURIComponent(startDate)}` +
+        `&end_date=${encodeURIComponent(endDate)}`;
+
+      const data = await safeGetJson(url);
+      const times = data?.hourly?.time || [];
+      const pm25 = data?.hourly?.pm2_5 || [];
+      const pm10 = data?.hourly?.pm10 || [];
+
+      if (!times.length || (!pm25.length && !pm10.length)) {
+        throw new Error("No Open-Meteo PM history");
+      }
+
+      return times.map((t, i) => ({
+        time: t,
+        date: t.slice(0, 10),
+        hour: Number((t.split("T")[1] || "").slice(0, 2)),
+        pm25: Number(pm25[i]),
+        pm10: Number(pm10[i])
+      })).filter(x => x.time && x.date);
     }
 
     async function loadAqi(){
       try{
         aqiModeBadge.textContent = "Loading...";
-        aqiSummaryInline.textContent = "Loading air quality forecast...";
+        aqiSummaryInline.textContent = "Loading PM forecast...";
         aqiSourceLine.textContent = "Decision source: loading...";
-        aqiToggleSummary.textContent = "Hourly AQI";
+        aqiToggleSummary.textContent = "Hourly PM";
         setAqiPanelOpen(false);
         aqiDetail.innerHTML = "";
         destroyAqiChart();
@@ -1636,35 +1787,43 @@
         airQualityPolicy = defaultAirPolicy();
 
         const geo = await getThuwalGeo();
-        const [forecastResult, localResult] = await Promise.allSettled([
-          fetchOpenMeteoAqiForecast(geo),
+        const targetFriday = nextRelevantFridayRiyadh();
+        const [forecastResult, historyResult, localResult] = await Promise.allSettled([
+          fetchOpenMeteoPmForecast(geo),
+          fetchHistoricalPmRows(geo, targetFriday),
           fetchCurrentLocalAir(geo)
         ]);
 
         const forecast = forecastResult.status === "fulfilled" ? forecastResult.value : null;
+        const baseline = historyResult.status === "fulfilled"
+          ? buildPmBaseline(historyResult.value, targetFriday)
+          : defaultPmBaseline(targetFriday);
         const localReading = localResult.status === "fulfilled" ? localResult.value : null;
 
         let forecastPolicy = null;
 
-        if (forecast?.fridayWindowValid?.length >= 4 && !forecast?.hasUnavailableHourlyAqi) {
+        if (forecast?.fridayWindowValid?.length >= 4 && !forecast?.hasUnavailableHourlyPm) {
           forecastPolicy = evaluateAirQualityPolicy(forecast.fridayWindowValid, {
             sourceKind: "forecast",
-            sourceLabel: "Open-Meteo forecast"
+            sourceLabel: "Open-Meteo forecast",
+            baseline,
+            targetDate: targetFriday
           });
-          renderAqiFridayWindow(forecast.fridayDateStr, forecast.fridayWindowValid);
+          renderAqiFridayWindow(forecast.fridayDateStr, forecast.fridayWindowValid, baseline);
         } else if (forecast?.daily?.length) {
           renderAqiTrend(forecast.fridayDateStr, forecast.daily);
         } else if (localReading) {
-          renderLocalCurrentFallback(localReading);
+          renderLocalCurrentFallback(localReading, baseline);
         } else {
-          throw new Error("No usable AQI source");
+          throw new Error("No usable PM source");
         }
 
-        const selected = chooseAirQualityDecision(forecastPolicy, localReading);
+        const selected = chooseAirQualityDecision(forecastPolicy, localReading, baseline);
         airQualityPolicy = selected.policy;
         renderAqiSourceSummary({
           decisionLabel: selected.decisionLabel,
-          localReading
+          localReading,
+          baseline
         });
         applyAirQualityPolicy();
 
@@ -1673,9 +1832,9 @@
         setAqiPanelOpen(false);
         aqiTrendChartCanvas.style.display = "none";
         aqiModeBadge.textContent = "Unavailable";
-        aqiSummaryInline.textContent = "AQI forecast is temporarily unavailable.";
+        aqiSummaryInline.textContent = "PM forecast is temporarily unavailable.";
         aqiSourceLine.textContent = "Decision source: no live local source available.";
-        aqiToggleSummary.textContent = "Hourly AQI";
+        aqiToggleSummary.textContent = "Hourly PM";
         aqiDetail.innerHTML = "";
         airQualityPolicy = defaultAirPolicy();
         applyAirQualityPolicy();
@@ -1958,15 +2117,15 @@
       if (airQualityPolicy.mode === "cancelled") {
         gameInfoLine1.innerHTML = `${airQualityPolicy.gameLine1} · ${loc}`;
         gameInfoLine2.innerHTML = `
-          <span>${escapeHtml(rulePrefix)}: AQI > 150 or PM10 > 250 ug/m3</span>
+          <span>${escapeHtml(rulePrefix)}: monthly PM rank > 80th pct or PM2.5 > 65 / PM10 > 300 ug/m3</span>
           <span>Decision source: ${escapeHtml(sourceLabel)}</span>
           <span>Registration hidden automatically</span>
         `;
       } else if (airQualityPolicy.mode === "modified") {
         gameInfoLine1.innerHTML = `${airQualityPolicy.gameLine1} · ${loc}`;
         gameInfoLine2.innerHTML = `
-          <span>Throwing practice: 30 min</span>
-          <span>Game: 50 min, starts at 8:00 PM</span>
+          <span>Throwing: 8:00-8:30 PM</span>
+          <span>Game: 8:30-10:00 PM</span>
           <span>Decision source: ${escapeHtml(sourceLabel)}</span>
           <span>Bring: 💧 👟 🥏 🔥</span>
         `;
