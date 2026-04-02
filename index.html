@@ -1150,6 +1150,20 @@
       return { label: "Modified", cls: "usg", score };
     }
 
+    function pmNotHigher(currentValue, previousValue){
+      const current = Number(currentValue);
+      const previous = Number(previousValue);
+      if (!Number.isFinite(current) || !Number.isFinite(previous)) return true;
+      return current <= previous;
+    }
+
+    function pmImprovedEnough(currentValue, previousValue, ratio){
+      const current = Number(currentValue);
+      const previous = Number(previousValue);
+      if (!Number.isFinite(current) || !Number.isFinite(previous) || previous <= 0) return false;
+      return current <= previous * ratio;
+    }
+
     function defaultAirPolicy(){
       return {
         mode: "normal",
@@ -1184,6 +1198,10 @@
       const pm10Percentile = percentileRank(baseline.pm10Samples, maxPm10);
       const validPercentiles = [pm25Percentile, pm10Percentile].filter(Number.isFinite);
       const scorePercentile = validPercentiles.length ? Math.max(...validPercentiles) : NaN;
+      const sortedPoints = [...points].sort((a, b) => Number(a.hour) - Number(b.hour));
+      const sevenPm = sortedPoints.find(p => Number(p.hour) === 19);
+      const eightPm = sortedPoints.find(p => Number(p.hour) === 20);
+      const delayedPoints = sortedPoints.filter(p => Number(p.hour) >= 20 && Number(p.hour) <= 22);
 
       const cancelled =
         (Number.isFinite(maxPm25) && maxPm25 > baseline.cancelCaps.pm25) ||
@@ -1194,6 +1212,55 @@
         (!Number.isFinite(maxPm10) || maxPm10 <= baseline.regularCaps.pm10) &&
         (!Number.isFinite(scorePercentile) || scorePercentile <= baseline.regularPercentile);
       const modified = !cancelled && !normal;
+
+      const canUseDelayedRescue =
+        !options.disableDelayedRescue &&
+        sourceKind === "forecast" &&
+        !!sevenPm &&
+        !!eightPm &&
+        delayedPoints.length >= 3;
+
+      if (cancelled && canUseDelayedRescue) {
+        const delayedPolicy = evaluateAirQualityPolicy(delayedPoints, {
+          ...options,
+          disableDelayedRescue: true
+        });
+        const strongDropAt8 =
+          pmNotHigher(eightPm.pm25, sevenPm.pm25) &&
+          pmNotHigher(eightPm.pm10, sevenPm.pm10) &&
+          (
+            pmImprovedEnough(eightPm.pm25, sevenPm.pm25, 0.85) ||
+            pmImprovedEnough(eightPm.pm10, sevenPm.pm10, 0.80)
+          );
+        const staysImprovingAfter8 = delayedPoints.slice(1).every((point, idx) => {
+          const prev = delayedPoints[idx];
+          return (
+            pmNotHigher(point.pm25, prev.pm25) &&
+            pmNotHigher(point.pm10, prev.pm10)
+          );
+        });
+
+        if (strongDropAt8 && staysImprovingAfter8 && delayedPolicy.mode !== "cancelled") {
+          return {
+            mode: "modified",
+            blocksRegistration: false,
+            noticeTone: "warn",
+            noticeText:
+              `Forecast PM levels from ${sourceLabel} are too dusty at 7:00 PM, but the 8:00 PM to 10:00 PM window improves enough for a delayed modified session. Friday moves to the modified plan: throwing from 8:00 PM to 8:30 PM, then a game from 8:30 PM to 10:00 PM.`,
+            gameLine1: "Friday modified session",
+            gameLine2: "Throwing practice from 8:00 PM to 8:30 PM, then a game from 8:30 PM to 10:00 PM.",
+            sourceKind,
+            sourceLabel,
+            maxPm25,
+            maxPm10,
+            pm25Percentile,
+            pm10Percentile,
+            scorePercentile,
+            baseline,
+            rescueWindow: true
+          };
+        }
+      }
 
       if (cancelled) {
         return {
@@ -1607,7 +1674,7 @@
       });
     }
 
-    function renderAqiFridayWindow(targetDateStr, points, baseline){
+    function renderAqiFridayWindow(targetDateStr, points, baseline, policy = null){
       destroyAqiChart();
       setAqiPanelOpen(false);
       aqiDetail.style.display = "flex";
@@ -1618,11 +1685,18 @@
       const peakPm25 = pm25Values.length ? Math.max(...pm25Values) : NaN;
       const peakPm10 = pm10Values.length ? Math.max(...pm10Values) : NaN;
       const band = classifyPmPoint(peakPm25, peakPm10, baseline);
+      const summaryLabel = policy?.rescueWindow
+        ? "Delayed modified"
+        : policy?.mode === "normal"
+          ? "Regular"
+          : policy?.mode === "modified"
+            ? "Modified"
+            : escapeHtml(band.label);
 
       aqiModeBadge.textContent = "Fri 7-10";
       aqiToggleSummary.textContent = "Hourly PM";
       aqiSummaryInline.innerHTML =
-        `Forecast Fri eve | PM2.5 <b>${formatPm25(peakPm25)}</b> | PM10 <b>${Number.isFinite(peakPm10) ? Math.round(peakPm10) : "-"}</b> | ${escapeHtml(band.label)}`;
+        `Forecast Fri eve | PM2.5 <b>${formatPm25(peakPm25)}</b> | PM10 <b>${Number.isFinite(peakPm10) ? Math.round(peakPm10) : "-"}</b> | ${summaryLabel}`;
 
       aqiDetail.innerHTML = points.map(p => {
         const b = classifyPmPoint(p.pm25, p.pm10, baseline);
@@ -1801,15 +1875,22 @@
         const localReading = localResult.status === "fulfilled" ? localResult.value : null;
 
         let forecastPolicy = null;
+        let hasForecastHourlyWindow = false;
 
         if (forecast?.fridayWindowValid?.length >= 4 && !forecast?.hasUnavailableHourlyPm) {
+          hasForecastHourlyWindow = true;
           forecastPolicy = evaluateAirQualityPolicy(forecast.fridayWindowValid, {
             sourceKind: "forecast",
             sourceLabel: "Open-Meteo forecast",
             baseline,
             targetDate: targetFriday
           });
-          renderAqiFridayWindow(forecast.fridayDateStr, forecast.fridayWindowValid, baseline);
+        }
+
+        const selected = chooseAirQualityDecision(forecastPolicy, localReading, baseline);
+        airQualityPolicy = selected.policy;
+        if (hasForecastHourlyWindow) {
+          renderAqiFridayWindow(forecast.fridayDateStr, forecast.fridayWindowValid, baseline, selected.policy);
         } else if (forecast?.daily?.length) {
           renderAqiTrend(forecast.fridayDateStr, forecast.daily);
         } else if (localReading) {
@@ -1817,9 +1898,6 @@
         } else {
           throw new Error("No usable PM source");
         }
-
-        const selected = chooseAirQualityDecision(forecastPolicy, localReading, baseline);
-        airQualityPolicy = selected.policy;
         renderAqiSourceSummary({
           decisionLabel: selected.decisionLabel,
           localReading,
