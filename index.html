@@ -2068,30 +2068,6 @@
       }
     }
 
-    async function lookupLastReg(name){
-      const q = encodeURIComponent((name || "").trim());
-      if(!q) return null;
-      try{
-        return await safeGetJson(ENDPOINT + "?action=lastReg&name=" + q);
-      }catch(_){
-        return null;
-      }
-    }
-
-    async function confirmCancelByLookup(name, oldRegId){
-      const back = await lookupLastReg(name);
-
-      if(!back || back.ok === false){
-        return { confirmed:true, reason:"not_found" };
-      }
-
-      if(back.regId && back.regId !== oldRegId){
-        return { confirmed:true, reason:"different_active_regid" };
-      }
-
-      return { confirmed:false, reason:"same_active_regid" };
-    }
-
     function normalizeStatus(data){
       const count = Number(data?.count) || 0;
       const max = Number(data?.max) || 0;
@@ -2366,14 +2342,9 @@
         } else if (result.data && result.data.ok === false) {
           setStatusMessage(statusEl, result.data.error || "Registration failed.", "bad");
         } else {
-          const maybeBack = await lookupLastReg(payload.name);
-          const extra = (maybeBack && maybeBack.ok && maybeBack.regId)
-            ? ` Active RegID currently found for this name: ${maybeBack.regId}.`
-            : "";
-
           setStatusMessage(
             statusEl,
-            "Request was sent, but registration could not be verified from the browser. Please refresh and check before submitting again." + extra,
+            "Request was sent, but registration could not be verified from the browser. Please refresh and check before submitting again.",
             "warn"
           );
         }
@@ -2407,19 +2378,10 @@
       cancelBtn.textContent = "Cancelling…";
       showOverlay("Cancelling registration…");
 
-      let cancelConfirmed = false;
-
       try {
         const result = await postJsonStrict(ENDPOINT, { action:"cancel", name, regId }, 12000);
 
         if (result.confirmed && result.data?.ok) {
-          cancelConfirmed = true;
-        } else if (!(result.data && result.data.ok === false)) {
-          const checked = await confirmCancelByLookup(name, regId);
-          cancelConfirmed = checked.confirmed;
-        }
-
-        if (cancelConfirmed) {
           clearLocalReg();
           setStatusMessage(cancelStatus, "✅ Cancelled.", "ok");
         } else if (result.data && result.data.ok === false) {
@@ -2432,17 +2394,11 @@
           );
         }
       } catch (e) {
-        const checked = await confirmCancelByLookup(name, regId);
-        if (checked.confirmed) {
-          clearLocalReg();
-          setStatusMessage(cancelStatus, "✅ Cancelled.", "ok");
-        } else {
-          setStatusMessage(
-            cancelStatus,
-            "Cancellation could not be confirmed. Your saved RegID was kept.",
-            "warn"
-          );
-        }
+        setStatusMessage(
+          cancelStatus,
+          "Cancellation could not be confirmed. Your saved RegID was kept.",
+          "warn"
+        );
       } finally {
         hideOverlay();
         await refreshVisibleSections();
