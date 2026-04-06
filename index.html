@@ -874,8 +874,16 @@
   </div>
 
   <script>
-    const CFG = window.SIGNUP_CONFIG;
-    const ENDPOINT = CFG.endpoint;
+    const CFG = {
+      endpoint: "",
+      timezoneLabel: "Asia/Riyadh",
+      gameTimeText: "Friday 7-10PM",
+      locationText: "KAUST Stadium",
+      googleMapsLink: "#",
+      teamsMinForFour: 24,
+      ...(window.SIGNUP_CONFIG || {})
+    };
+    const ENDPOINT = CFG.endpoint || "";
 
     const overlay = document.getElementById("overlay");
     const overlayMsg = document.getElementById("overlayMsg");
@@ -957,6 +965,32 @@
 
     const LS_NAME = "frisbee_last_name";
     const LS_REGID = "frisbee_last_regid";
+
+    function storageGet(key){
+      try{
+        return window.localStorage ? (localStorage.getItem(key) || "") : "";
+      }catch(_){
+        return "";
+      }
+    }
+
+    function storageSet(key, value){
+      try{
+        if (window.localStorage) localStorage.setItem(key, value);
+        return true;
+      }catch(_){
+        return false;
+      }
+    }
+
+    function storageRemove(key){
+      try{
+        if (window.localStorage) localStorage.removeItem(key);
+        return true;
+      }catch(_){
+        return false;
+      }
+    }
 
     let aqiChart = null;
     let aqiGeo = null;
@@ -1108,17 +1142,10 @@
       return {
         sampleCount: 0,
         monthWindowLabel: targetDate ? getMonthWindowLabel(targetDate) : "",
-<<<<<<< HEAD
         regularPercentile: 45,
         cancelPercentile: 85,
         regularCaps: { pm25: 45, pm10: 200 },
         cancelCaps: { pm25: 65, pm10: 330 },
-=======
-        regularPercentile: 50,
-        cancelPercentile: 90,
-        regularCaps: { pm25: 55, pm10: 220 },
-        cancelCaps: { pm25: 75, pm10: 320 },
->>>>>>> f74c0fd65f03c777d26880f002566fda79daeb41
         pm25Samples: [],
         pm10Samples: []
       };
@@ -2183,18 +2210,18 @@
     }
 
     function saveLastReg(name, regId) {
-      localStorage.setItem(LS_NAME, name);
-      localStorage.setItem(LS_REGID, regId);
+      const savedName = storageSet(LS_NAME, name);
+      const savedReg = storageSet(LS_REGID, regId);
       cancelName.value = name;
       cancelId.value = regId;
-      regSavedNote.textContent = "Saved on this device.";
+      regSavedNote.textContent = (savedName && savedReg)
+        ? "Saved on this device."
+        : "Submitted, but local save is unavailable in this browser.";
     }
 
     function clearLocalReg(){
-      try{
-        localStorage.removeItem(LS_NAME);
-        localStorage.removeItem(LS_REGID);
-      }catch(_){}
+      storageRemove(LS_NAME);
+      storageRemove(LS_REGID);
       cancelName.value = "";
       cancelId.value = "";
       regTools.style.display = "none";
@@ -2252,14 +2279,14 @@
     }
 
     (function initSaved(){
-      const n = localStorage.getItem(LS_NAME) || "";
-      const r = localStorage.getItem(LS_REGID) || "";
+      const n = storageGet(LS_NAME);
+      const r = storageGet(LS_REGID);
       if (n) cancelName.value = n;
       if (r) cancelId.value = r;
     })();
 
     copyRegBtn.addEventListener("click", async () => {
-      const regId = localStorage.getItem(LS_REGID) || "";
+      const regId = storageGet(LS_REGID);
       if (!regId) {
         regSavedNote.textContent = "No RegID saved yet.";
         return;
