@@ -507,20 +507,24 @@
       .row{gap:10px}
       .hint{margin:6px 0 6px;padding:6px 10px;font-size:12px}
 
+      .aqiCompact{
+        padding:12px;
+      }
       .aqiTitle{
-        font-size:13px;
+        font-size:14px;
         line-height:1.1;
         white-space:nowrap;
       }
       .aqiSummaryInline{
-        margin-top:6px;
+        margin-top:4px;
         font-size:11px;
         white-space:normal;
         overflow:visible;
         text-overflow:clip;
       }
       .aqiSourceLine{
-        font-size:10.5px;
+        font-size:10px;
+        line-height:1.45;
       }
       .badge{font-size:11.5px;padding:6px 10px}
       .aqiTopLine{
@@ -533,6 +537,21 @@
         height:32px;
         padding:0 9px;
         font-size:11px;
+      }
+      .aqiRow{
+        display:grid;
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+        gap:8px;
+        overflow:visible;
+      }
+      .aqiChip{
+        min-width:0;
+        padding:10px 8px;
+      }
+      .aqiNum{font-size:18px}
+      .aqiMetric{
+        white-space:normal;
+        line-height:1.35;
       }
 
       .desktopOnly{display:none}
@@ -1090,9 +1109,9 @@
         sampleCount: 0,
         monthWindowLabel: targetDate ? getMonthWindowLabel(targetDate) : "",
         regularPercentile: 45,
-        cancelPercentile: 80,
+        cancelPercentile: 85,
         regularCaps: { pm25: 45, pm10: 200 },
-        cancelCaps: { pm25: 65, pm10: 300 },
+        cancelCaps: { pm25: 65, pm10: 330 },
         pm25Samples: [],
         pm10Samples: []
       };
@@ -1221,16 +1240,19 @@
         delayedPoints.length >= 3;
 
       if (cancelled && canUseDelayedRescue) {
-        const delayedPolicy = evaluateAirQualityPolicy(delayedPoints, {
-          ...options,
-          disableDelayedRescue: true
-        });
+        const delayedPm25Values = delayedPoints.map(p => Number(p.pm25)).filter(Number.isFinite);
+        const delayedPm10Values = delayedPoints.map(p => Number(p.pm10)).filter(Number.isFinite);
+        const delayedMaxPm25 = delayedPm25Values.length ? Math.max(...delayedPm25Values) : NaN;
+        const delayedMaxPm10 = delayedPm10Values.length ? Math.max(...delayedPm10Values) : NaN;
+        const delayedUnderCancelCaps =
+          (!Number.isFinite(delayedMaxPm25) || delayedMaxPm25 <= baseline.cancelCaps.pm25) &&
+          (!Number.isFinite(delayedMaxPm10) || delayedMaxPm10 <= baseline.cancelCaps.pm10);
         const strongDropAt8 =
           pmNotHigher(eightPm.pm25, sevenPm.pm25) &&
           pmNotHigher(eightPm.pm10, sevenPm.pm10) &&
           (
-            pmImprovedEnough(eightPm.pm25, sevenPm.pm25, 0.85) ||
-            pmImprovedEnough(eightPm.pm10, sevenPm.pm10, 0.80)
+            pmImprovedEnough(eightPm.pm25, sevenPm.pm25, 0.90) ||
+            pmImprovedEnough(eightPm.pm10, sevenPm.pm10, 0.90)
           );
         const staysImprovingAfter8 = delayedPoints.slice(1).every((point, idx) => {
           const prev = delayedPoints[idx];
@@ -1240,7 +1262,7 @@
           );
         });
 
-        if (strongDropAt8 && staysImprovingAfter8 && delayedPolicy.mode !== "cancelled") {
+        if (strongDropAt8 && staysImprovingAfter8 && delayedUnderCancelCaps) {
           return {
             mode: "modified",
             blocksRegistration: false,
@@ -1520,7 +1542,7 @@
 
     function isFridayLocalDecisionWindow(){
       const now = nowInRiyadh();
-      return now.getDay() === 5 && now.getHours() >= 12;
+      return now.getDay() === 5 && now.getHours() >= 17;
     }
 
     function buildLocalPolicy(localReading, baseline){
@@ -1546,7 +1568,7 @@
           return {
             policy: localPolicy,
             decisionBasis: "local",
-            decisionLabel: `${localReading.provider} final check`,
+            decisionLabel: `${localReading.provider} final`,
             localPolicy
           };
         }
@@ -1556,7 +1578,7 @@
         return {
           policy: forecastPolicy,
           decisionBasis: "forecast",
-          decisionLabel: "Open-Meteo forecast",
+          decisionLabel: "Forecast",
           localPolicy
         };
       }
@@ -1581,26 +1603,26 @@
     function renderAqiSourceSummary({ decisionLabel = "", localReading = null, baseline = null } = {}){
       const parts = [];
 
-      parts.push(`Decision: ${escapeHtml(decisionLabel || "Open-Meteo forecast")}`);
+      parts.push(`Decision: ${escapeHtml(decisionLabel || "Forecast")}`);
       if (baseline?.sampleCount) {
         parts.push(
-          `Baseline: last 2y Fri eve ${escapeHtml(baseline.monthWindowLabel)} (n=${escapeHtml(baseline.sampleCount)})`
+          `Base: 2y Fri eve ${escapeHtml(baseline.monthWindowLabel)} (${escapeHtml(baseline.sampleCount)})`
         );
       } else {
-        parts.push("Baseline: fixed PM caps only");
+        parts.push("Base: fixed caps");
       }
 
       if (localReading) {
         const observedAt = compactObservedTime(localReading.observedAt);
         const timeSuffix = observedAt ? ` @ ${escapeHtml(observedAt)}` : "";
         parts.push(
-          `Local now: ${escapeHtml(localReading.provider)} PM2.5 ${formatPm25(localReading.pm25)} | PM10 ${formatAqiValue(localReading.pm10)}${timeSuffix}`
+          `Local: ${escapeHtml(localReading.provider)} ${formatPm25(localReading.pm25)}/${formatAqiValue(localReading.pm10)}${timeSuffix}`
         );
       } else {
-        parts.push("Local now: unavailable");
+        parts.push("Local: unavailable");
       }
 
-      parts.push("Forecast: Open-Meteo PM");
+      parts.push("Forecast: Open-Meteo");
       aqiSourceLine.innerHTML = parts.join(" &middot; ");
     }
 
@@ -1696,7 +1718,7 @@
       aqiModeBadge.textContent = "Fri 7-10";
       aqiToggleSummary.textContent = "Hourly PM";
       aqiSummaryInline.innerHTML =
-        `Forecast Fri eve | PM2.5 <b>${formatPm25(peakPm25)}</b> | PM10 <b>${Number.isFinite(peakPm10) ? Math.round(peakPm10) : "-"}</b> | ${summaryLabel}`;
+        `Fri eve | PM2.5 <b>${formatPm25(peakPm25)}</b> | PM10 <b>${Number.isFinite(peakPm10) ? Math.round(peakPm10) : "-"}</b> | ${summaryLabel}`;
 
       aqiDetail.innerHTML = points.map(p => {
         const b = classifyPmPoint(p.pm25, p.pm10, baseline);
@@ -2158,7 +2180,7 @@
       localStorage.setItem(LS_REGID, regId);
       cancelName.value = name;
       cancelId.value = regId;
-      regSavedNote.textContent = "Saved on this device ✅";
+      regSavedNote.textContent = "Saved on this device.";
     }
 
     function clearLocalReg(){
@@ -2169,7 +2191,7 @@
       cancelName.value = "";
       cancelId.value = "";
       regTools.style.display = "none";
-      regSavedNote.textContent = "Cleared saved RegID ✅";
+      regSavedNote.textContent = "Cleared saved RegID.";
     }
 
     async function copyText(text) {
@@ -2191,11 +2213,14 @@
       const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
       const rulePrefix = airQualityPolicy.sourceKind === "current" ? "Live rule" : "Forecast rule";
       const sourceLabel = airQualityPolicy.sourceLabel || "Open-Meteo forecast";
+      const baseline = airQualityPolicy.baseline || defaultPmBaseline();
+      const cancelRuleText =
+        `monthly PM rank > ${baseline.cancelPercentile}th pct or PM2.5 > ${baseline.cancelCaps.pm25} / PM10 > ${baseline.cancelCaps.pm10} ug/m3`;
 
       if (airQualityPolicy.mode === "cancelled") {
         gameInfoLine1.innerHTML = `${airQualityPolicy.gameLine1} · ${loc}`;
         gameInfoLine2.innerHTML = `
-          <span>${escapeHtml(rulePrefix)}: monthly PM rank > 80th pct or PM2.5 > 65 / PM10 > 300 ug/m3</span>
+          <span>${escapeHtml(rulePrefix)}: ${escapeHtml(cancelRuleText)}</span>
           <span>Decision source: ${escapeHtml(sourceLabel)}</span>
           <span>Registration hidden automatically</span>
         `;
