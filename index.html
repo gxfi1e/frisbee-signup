@@ -2092,9 +2092,21 @@
       const count = Number(data?.count) || 0;
       const max = Number(data?.max) || 0;
       const isFull = max > 0 && count >= max;
-      const open = !!data?.open && !isFull;
+      const hasCount = data && Object.prototype.hasOwnProperty.call(data, "count");
+      const hasMax = data && Object.prototype.hasOwnProperty.call(data, "max");
+      const hasOpen = data && Object.prototype.hasOwnProperty.call(data, "open");
+      const hasCutoff = !!data?.cutoffIso;
+      const openRaw = data?.open;
+      const parsedOpen =
+        typeof openRaw === "string"
+          ? /^(true|1|open)$/i.test(openRaw.trim())
+          : !!openRaw;
+      const inferredOpen = parsedOpen || (!hasOpen && hasCutoff && !isAfterCutoffFromIso(data.cutoffIso));
+      const usable = !!data && (hasCount || hasMax || hasOpen || hasCutoff);
+      const open = inferredOpen && !isFull;
       return {
         ...data,
+        ok: data?.ok === false ? false : usable,
         count,
         max,
         isFull,
@@ -2186,7 +2198,7 @@
     async function refresh() {
       try {
         const data = await getStatus();
-        if (!data.ok) throw new Error("status not ok");
+        if (data.ok === false) throw new Error("status not ok");
 
         latestStatusData = data;
         setPills(data);
