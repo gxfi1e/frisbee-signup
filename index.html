@@ -539,18 +539,22 @@
         font-size:11px;
       }
       .aqiRow{
-        display:grid;
-        grid-template-columns:repeat(2, minmax(0, 1fr));
+        display:flex;
         gap:8px;
-        overflow:visible;
+        overflow-x:auto;
+        overflow-y:hidden;
+        -webkit-overflow-scrolling:touch;
+        scrollbar-width:thin;
+        padding-bottom:3px;
       }
       .aqiChip{
-        min-width:0;
+        min-width:112px;
+        flex:0 0 auto;
         padding:10px 8px;
       }
       .aqiNum{font-size:18px}
       .aqiMetric{
-        white-space:normal;
+        white-space:nowrap;
         line-height:1.35;
       }
 
