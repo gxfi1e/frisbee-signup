@@ -969,6 +969,8 @@
 
     const LS_NAME = "frisbee_last_name";
     const LS_REGID = "frisbee_last_regid";
+    const LS_STATUS_CACHE = "frisbee_status_cache_v1";
+    const STATUS_CACHE_MAX_AGE_MS = 20 * 60 * 1000;
 
     function storageGet(key){
       try{
@@ -993,6 +995,34 @@
         return true;
       }catch(_){
         return false;
+      }
+    }
+
+    function appendCacheBust(url){
+      const sep = url.includes("?") ? "&" : "?";
+      return `${url}${sep}_=${Date.now()}`;
+    }
+
+    function readCachedStatus(){
+      try{
+        const raw = storageGet(LS_STATUS_CACHE);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        const savedAt = Number(parsed?.savedAt) || 0;
+        if (!savedAt || (Date.now() - savedAt) > STATUS_CACHE_MAX_AGE_MS) return null;
+        return normalizeStatus(parsed?.data || null);
+      }catch(_){
+        return null;
+      }
+    }
+
+    function writeCachedStatus(data){
+      try{
+        storageSet(LS_STATUS_CACHE, JSON.stringify({
+          savedAt: Date.now(),
+          data
+        }));
+      }catch(_){
       }
     }
 
@@ -1998,13 +2028,23 @@
       }
     }
 
-    async function safeGetJson(url){
-      const attempts = [6000, 9000];
+    async function safeGetJson(url, options = {}){
+      const attempts = Array.isArray(options.attempts) && options.attempts.length
+        ? options.attempts
+        : [6000, 9000];
       let lastErr = null;
+      const fetchUrl = options.cacheBust ? appendCacheBust(url) : url;
+      const fetchOptions = {
+        method:"GET",
+        cache:"no-store",
+        credentials:"omit",
+        ...(options.fetchOptions || {})
+      };
 
       for(const ms of attempts){
         try{
-          const res = await fetchWithTimeout(url, ms, { method:"GET" });
+          const res = await fetchWithTimeout(fetchUrl, ms, fetchOptions);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return await res.json();
         }catch(e){
           lastErr = e;
@@ -2134,7 +2174,10 @@
     }
 
     async function getStatus() {
-      const raw = await safeGetJson(ENDPOINT + "?action=status");
+      const raw = await safeGetJson(ENDPOINT + "?action=status", {
+        attempts:[2500, 5000, 9000],
+        cacheBust:true
+      });
       return normalizeStatus(raw);
     }
 
@@ -2181,11 +2224,20 @@
         if (data.ok === false) throw new Error("status not ok");
 
         latestStatusData = data;
+        writeCachedStatus(data);
         setPills(data);
         applySignupVisibility(data);
 
         return data;
       } catch {
+        const fallback = latestStatusData || readCachedStatus();
+        if (fallback) {
+          latestStatusData = fallback;
+          setPills(fallback);
+          applySignupVisibility(fallback);
+          return fallback;
+        }
+
         latestStatusData = null;
         countPill.textContent = "Status unavailable";
         statusPill.textContent = "UNKNOWN";
@@ -2567,7 +2619,7 @@
 
       setTeamsBtnBeforeCutoff();
 
-      const st = await refresh();
+      const st = latestStatusData || await refresh();
       await refreshPlayers(true);
 
       if (!st || !st.ok) {
@@ -2586,7 +2638,16 @@
       if (loaded) hideTeamsBtn();
     }
 
+    const bootStatus = readCachedStatus();
+    if (bootStatus) {
+      latestStatusData = bootStatus;
+      setPills(bootStatus);
+      applySignupVisibility(bootStatus);
+    }
+
     renderGameInfo();
+    refresh();
+    setInterval(refresh, 60 * 1000);
     loadAqi();
     setInterval(loadAqi, 30 * 60 * 1000);
 
