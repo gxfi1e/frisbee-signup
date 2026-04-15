@@ -96,6 +96,11 @@
       align-items:center;
     }
     .gameLine2 span{white-space:nowrap}
+    .gameLine2 .gameRuleText{
+      flex:1 1 100%;
+      white-space:normal;
+      overflow-wrap:anywhere;
+    }
 
     label{
       display:block;
@@ -506,6 +511,14 @@
       input,select{padding:11px;font-size:15px}
       .row{gap:10px}
       .hint{margin:6px 0 6px;padding:6px 10px;font-size:12px}
+      .gameLine2{
+        gap:5px 8px;
+        align-items:flex-start;
+      }
+      .gameLine2 .gameRuleText{
+        font-size:11px;
+        line-height:1.35;
+      }
 
       .aqiCompact{
         padding:12px;
@@ -2293,12 +2306,12 @@
       const sourceLabel = airQualityPolicy.sourceLabel || "Open-Meteo forecast";
       const baseline = airQualityPolicy.baseline || defaultPmBaseline();
       const cancelRuleText =
-        `monthly PM rank > ${baseline.cancelPercentile}th pct or PM2.5 > ${baseline.cancelCaps.pm25} / PM10 > ${baseline.cancelCaps.pm10} ug/m3`;
+        `PM rank >${baseline.cancelPercentile}th pct; PM2.5 >${baseline.cancelCaps.pm25}; PM10 >${baseline.cancelCaps.pm10} ug/m3`;
 
       if (airQualityPolicy.mode === "cancelled") {
         gameInfoLine1.innerHTML = `${airQualityPolicy.gameLine1} · ${loc}`;
         gameInfoLine2.innerHTML = `
-          <span>${escapeHtml(rulePrefix)}: ${escapeHtml(cancelRuleText)}</span>
+          <span class="gameRuleText">${escapeHtml(rulePrefix)}: ${escapeHtml(cancelRuleText)}</span>
           <span>Decision source: ${escapeHtml(sourceLabel)}</span>
           <span>Registration hidden automatically</span>
         `;
