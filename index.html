@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>KAUST Happy Frisbee hat registration</title>
   <script src="./config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -95,11 +98,52 @@
       gap:10px;
       align-items:center;
     }
-    .gameLine2 span{white-space:nowrap}
+    .gameLine2 span{
+      min-width:0;
+      white-space:normal;
+    }
     .gameLine2 .gameRuleText{
       flex:1 1 100%;
       white-space:normal;
       overflow-wrap:anywhere;
+    }
+    .gameRuleBlock{
+      display:flex;
+      flex:1 1 100%;
+      min-width:0;
+      gap:6px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .gameRuleLabel{
+      font-weight:700;
+      color:#444;
+      white-space:nowrap;
+    }
+    .gameRuleChips{
+      display:flex;
+      flex:1 1 150px;
+      min-width:0;
+      gap:5px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .gameRuleChip{
+      display:inline-flex;
+      align-items:center;
+      min-height:22px;
+      padding:2px 7px;
+      border:1px solid #eee;
+      border-radius:999px;
+      background:#fafafa;
+      color:#555;
+      font-size:11px;
+      line-height:1.2;
+      white-space:nowrap;
+    }
+    .gameLine2 .gameRuleLabel,
+    .gameLine2 .gameRuleChip{
+      white-space:nowrap;
     }
 
     label{
@@ -2305,13 +2349,21 @@
       const rulePrefix = airQualityPolicy.sourceKind === "current" ? "Live rule" : "Forecast rule";
       const sourceLabel = airQualityPolicy.sourceLabel || "Open-Meteo forecast";
       const baseline = airQualityPolicy.baseline || defaultPmBaseline();
-      const cancelRuleText =
-        `PM rank >${baseline.cancelPercentile}th pct; PM2.5 >${baseline.cancelCaps.pm25}; PM10 >${baseline.cancelCaps.pm10} ug/m3`;
+      const cancelRuleItems = [
+        `Rank > ${baseline.cancelPercentile}th pct`,
+        `PM2.5 > ${baseline.cancelCaps.pm25}`,
+        `PM10 > ${baseline.cancelCaps.pm10} ug/m3`
+      ];
 
       if (airQualityPolicy.mode === "cancelled") {
         gameInfoLine1.innerHTML = `${airQualityPolicy.gameLine1} · ${loc}`;
         gameInfoLine2.innerHTML = `
-          <span class="gameRuleText">${escapeHtml(rulePrefix)}: ${escapeHtml(cancelRuleText)}</span>
+          <div class="gameRuleBlock" aria-label="${escapeHtml(rulePrefix)}">
+            <span class="gameRuleLabel">${escapeHtml(rulePrefix)}:</span>
+            <span class="gameRuleChips">
+              ${cancelRuleItems.map(item => `<span class="gameRuleChip">${escapeHtml(item)}</span>`).join("")}
+            </span>
+          </div>
           <span>Decision source: ${escapeHtml(sourceLabel)}</span>
           <span>Registration hidden automatically</span>
         `;
