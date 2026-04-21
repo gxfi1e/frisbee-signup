@@ -23,10 +23,9 @@ const MONTE_CARLO_ROUNDS = 1200;
 const MAIN_INPUT_COLS = 11;  // A:K
 const MAIN_TOTAL_COLS = 12;  // A:L
 const PROFILE_SHEET_NAME = "Profiles";
-const VERIFY_CODES_SHEET_NAME = "VerifyCodes";
-const PROFILE_DEVICES_SHEET_NAME = "ProfileDevices";
-const PROFILE_CODE_TTL_MIN = 10;
-const PROFILE_DEVICE_TTL_DAYS = 180;
+const PROFILE_TOTAL_COLS = 15;
+const GOOGLE_WEB_CLIENT_ID = "1069850564998-vkodia6uabn5p3sv863sk59732vo4qc7.apps.googleusercontent.com";
+const GOOGLE_TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo?id_token=";
 
 const PROFILE_COL = {
   email: 0,
@@ -40,25 +39,10 @@ const PROFILE_COL = {
   preference: 8,
   updatedAt: 9,
   lastVerifiedAt: 10,
-  status: 11
-};
-
-const VERIFY_COL = {
-  email: 0,
-  code: 1,
-  createdAt: 2,
-  expiresAt: 3,
-  usedAt: 4,
-  deviceLabel: 5
-};
-
-const DEVICE_COL = {
-  email: 0,
-  token: 1,
-  createdAt: 2,
-  expiresAt: 3,
-  lastUsedAt: 4,
-  revokedAt: 5
+  status: 11,
+  googleSub: 12,
+  googleEmail: 13,
+  lastGoogleLoginAt: 14
 };
 
 const SCORE_FORMULA = `=ARRAYFORMULA(
@@ -135,43 +119,10 @@ function profilesSheet_(){
     "Preference",
     "UpdatedAt",
     "LastVerifiedAt",
-    "Status"
-  ]);
-  return sh;
-}
-
-function verifyCodesSheet_(){
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  let sh = ss.getSheetByName(VERIFY_CODES_SHEET_NAME);
-  if (!sh) {
-    sh = ss.insertSheet(VERIFY_CODES_SHEET_NAME);
-  }
-
-  ensureHeaderRow_(sh, [
-    "Email",
-    "Code",
-    "CreatedAt",
-    "ExpiresAt",
-    "UsedAt",
-    "DeviceLabel"
-  ]);
-  return sh;
-}
-
-function profileDevicesSheet_(){
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  let sh = ss.getSheetByName(PROFILE_DEVICES_SHEET_NAME);
-  if (!sh) {
-    sh = ss.insertSheet(PROFILE_DEVICES_SHEET_NAME);
-  }
-
-  ensureHeaderRow_(sh, [
-    "Email",
-    "DeviceToken",
-    "CreatedAt",
-    "ExpiresAt",
-    "LastUsedAt",
-    "RevokedAt"
+    "Status",
+    "GoogleSub",
+    "GoogleEmail",
+    "LastGoogleLoginAt"
   ]);
   return sh;
 }
@@ -329,14 +280,6 @@ function getRegistrationStatus_(){
 }
 
 // ================= PROFILE CLOUD LAYER =================
-function generateVerificationCode_(){
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-function generateDeviceToken_(){
-  return Utilities.getUuid().replace(/-/g, "") + Utilities.getUuid().replace(/-/g, "");
-}
-
 function findProfileRowIndexByEmail_(email){
   const sh = profilesSheet_();
   const rows = getSheetDataRows_(sh);
@@ -344,6 +287,21 @@ function findProfileRowIndexByEmail_(email){
 
   for (let i = rows.length - 1; i >= 0; i--) {
     if (normalizeEmail_(rows[i][PROFILE_COL.email]) === normalized) {
+      return i + 2;
+    }
+  }
+  return 0;
+}
+
+function findProfileRowIndexByGoogleSub_(googleSub){
+  const sh = profilesSheet_();
+  const rows = getSheetDataRows_(sh);
+  const normalizedSub = String(googleSub || "").trim();
+
+  if (!normalizedSub) return 0;
+
+  for (let i = rows.length - 1; i >= 0; i--) {
+    if (String(rows[i][PROFILE_COL.googleSub] || "").trim() === normalizedSub) {
       return i + 2;
     }
   }
@@ -364,7 +322,10 @@ function profileRecordFromRow_(row){
     preference: String(row[PROFILE_COL.preference] || "").trim(),
     updatedAt: row[PROFILE_COL.updatedAt] || "",
     lastVerifiedAt: row[PROFILE_COL.lastVerifiedAt] || "",
-    status: String(row[PROFILE_COL.status] || "").trim()
+    status: String(row[PROFILE_COL.status] || "").trim(),
+    googleSub: String(row[PROFILE_COL.googleSub] || "").trim(),
+    googleEmail: normalizeEmail_(row[PROFILE_COL.googleEmail]),
+    lastGoogleLoginAt: row[PROFILE_COL.lastGoogleLoginAt] || ""
   };
 }
 
@@ -373,111 +334,75 @@ function readProfileByEmail_(email){
   const rowIndex = findProfileRowIndexByEmail_(email);
   if (!rowIndex) return null;
 
-  const row = sh.getRange(rowIndex, 1, 1, 12).getValues()[0];
+  const row = sh.getRange(rowIndex, 1, 1, PROFILE_TOTAL_COLS).getValues()[0];
   const profile = profileRecordFromRow_(row);
   profile.rowIndex = rowIndex;
   return profile;
 }
 
-function upsertProfile_(profile, verifiedAt){
+function readProfileByGoogleSub_(googleSub){
   const sh = profilesSheet_();
-  const email = normalizeEmail_(profile.email);
-  const rowValues = [[
-    email,
-    String(profile.name || "").trim(),
-    String(profile.gender || "").trim(),
-    String(profile.throwing || "").trim(),
-    String(profile.catch || "").trim(),
-    String(profile.fitness || "").trim(),
-    String(profile.experience || "").trim(),
-    String(profile.practice || "").trim(),
-    String(profile.preference || "").trim(),
+  const rowIndex = findProfileRowIndexByGoogleSub_(googleSub);
+  if (!rowIndex) return null;
+
+  const row = sh.getRange(rowIndex, 1, 1, PROFILE_TOTAL_COLS).getValues()[0];
+  const profile = profileRecordFromRow_(row);
+  profile.rowIndex = rowIndex;
+  return profile;
+}
+
+function findProfileRowIndexByIdentity_(identity, emailFallback){
+  const idxBySub = findProfileRowIndexByGoogleSub_(identity && identity.sub);
+  if (idxBySub) return idxBySub;
+
+  const candidates = [
+    normalizeEmail_(emailFallback),
+    normalizeEmail_(identity && identity.email)
+  ].filter(Boolean);
+
+  for (let i = 0; i < candidates.length; i++) {
+    const idxByEmail = findProfileRowIndexByEmail_(candidates[i]);
+    if (idxByEmail) return idxByEmail;
+  }
+
+  return 0;
+}
+
+function buildProfileRowValues_(profile, existingRow, identity){
+  return [[
+    normalizeEmail_(profile.email) || normalizeEmail_(existingRow && existingRow[PROFILE_COL.email]) || normalizeEmail_(identity && identity.email),
+    String(profile.name || (existingRow && existingRow[PROFILE_COL.name]) || "").trim(),
+    String(profile.gender || (existingRow && existingRow[PROFILE_COL.gender]) || "").trim(),
+    String(profile.throwing || (existingRow && existingRow[PROFILE_COL.throwing]) || "").trim(),
+    String(profile.catch || (existingRow && existingRow[PROFILE_COL.catch]) || "").trim(),
+    String(profile.fitness || (existingRow && existingRow[PROFILE_COL.fitness]) || "").trim(),
+    String(profile.experience || (existingRow && existingRow[PROFILE_COL.experience]) || "").trim(),
+    String(profile.practice || (existingRow && existingRow[PROFILE_COL.practice]) || "").trim(),
+    String(profile.preference || (existingRow && existingRow[PROFILE_COL.preference]) || "").trim(),
     new Date(),
-    verifiedAt || "",
-    "Active"
+    existingRow ? existingRow[PROFILE_COL.lastVerifiedAt] || "" : "",
+    "Active",
+    String(identity && identity.sub || "").trim(),
+    normalizeEmail_(identity && identity.email),
+    new Date()
   ]];
+}
 
-  const rowIndex = findProfileRowIndexByEmail_(email);
+function upsertProfileByGoogleIdentity_(profile, identity){
+  const sh = profilesSheet_();
+  const rowIndex = findProfileRowIndexByIdentity_(identity, profile.email);
+  const existingRow = rowIndex
+    ? sh.getRange(rowIndex, 1, 1, PROFILE_TOTAL_COLS).getValues()[0]
+    : null;
+  const rowValues = buildProfileRowValues_(profile, existingRow, identity);
+
   if (rowIndex) {
-    const existingVerifiedAt = sh.getRange(rowIndex, PROFILE_COL.lastVerifiedAt + 1).getValue();
-    rowValues[0][PROFILE_COL.lastVerifiedAt] = verifiedAt || existingVerifiedAt || "";
-    sh.getRange(rowIndex, 1, 1, rowValues[0].length).setValues(rowValues);
-    return readProfileByEmail_(email);
+    sh.getRange(rowIndex, 1, 1, PROFILE_TOTAL_COLS).setValues(rowValues);
+  } else {
+    sh.appendRow(rowValues[0]);
   }
 
-  sh.appendRow(rowValues[0]);
-  return readProfileByEmail_(email);
-}
-
-function findValidVerifyCodeRow_(email, code){
-  const sh = verifyCodesSheet_();
-  const rows = getSheetDataRows_(sh);
-  const normalized = normalizeEmail_(email);
-  const cleanCode = String(code || "").trim();
-  const nowMs = Date.now();
-
-  for (let i = rows.length - 1; i >= 0; i--) {
-    const row = rows[i];
-    const rowEmail = normalizeEmail_(row[VERIFY_COL.email]);
-    const rowCode = String(row[VERIFY_COL.code] || "").trim();
-    const usedAt = row[VERIFY_COL.usedAt];
-    const expiresAt = row[VERIFY_COL.expiresAt];
-    const expiresMs = expiresAt instanceof Date ? expiresAt.getTime() : new Date(expiresAt).getTime();
-
-    if (rowEmail !== normalized || rowCode !== cleanCode) continue;
-    if (usedAt) continue;
-    if (!expiresMs || nowMs > expiresMs) continue;
-    
-    return { sh, rowIndex: i + 2 };
-
-  }
-
-  return null;
-}
-
-function createProfileDeviceToken_(email){
-  const sh = profileDevicesSheet_();
-  const token = generateDeviceToken_();
-  const createdAt = new Date();
-  const expiresAt = new Date(createdAt.getTime() + PROFILE_DEVICE_TTL_DAYS * 24 * 60 * 60 * 1000);
-
-  sh.appendRow([
-    normalizeEmail_(email),
-    token,
-    createdAt,
-    expiresAt,
-    createdAt,
-    ""
-  ]);
-
-  return token;
-}
-
-function validateProfileDeviceToken_(email, token){
-  const sh = profileDevicesSheet_();
-  const rows = getSheetDataRows_(sh);
-  const normalized = normalizeEmail_(email);
-  const targetToken = String(token || "").trim();
-  const nowMs = Date.now();
-
-  for (let i = rows.length - 1; i >= 0; i--) {
-    const row = rows[i];
-    const rowEmail = normalizeEmail_(row[DEVICE_COL.email]);
-    const rowToken = String(row[DEVICE_COL.token] || "").trim();
-    const revokedAt = row[DEVICE_COL.revokedAt];
-    const expiresAt = row[DEVICE_COL.expiresAt];
-    const expiresMs = expiresAt instanceof Date ? expiresAt.getTime() : new Date(expiresAt).getTime();
-
-    if (rowEmail !== normalized || rowToken !== targetToken) continue;
-    if (revokedAt) return false;
-    if (!expiresMs || nowMs > expiresMs) return false;
-    
-    sh.getRange(i + 2, DEVICE_COL.lastUsedAt + 1).setValue(new Date());
-    return true;
-
-  }
-
-  return false;
+  return readProfileByGoogleSub_(identity.sub) || readProfileByEmail_(profile.email || identity.email);
 }
 
 function publicProfilePayload_(profile){
@@ -491,130 +416,133 @@ function publicProfilePayload_(profile){
     fitness: profile.fitness,
     experience: profile.experience,
     practice: profile.practice,
-    preference: profile.preference
+    preference: profile.preference,
+    googleEmail: profile.googleEmail || ""
   };
 }
 
-function requestProfileCodeAction_(data){
-  const email = normalizeEmail_(data.email);
-  if (!isValidEmail_(email)) {
-    return { ok:false, error:"Valid email required" };
+function getGoogleTokenCacheKey_(idToken){
+  const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(idToken || ""));
+  return "gid:" + Utilities.base64EncodeWebSafe(digest).slice(0, 80);
+}
+
+function verifyGoogleIdToken_(idToken){
+  const token = String(idToken || "").trim();
+  if (!token) {
+    throw new Error("Google sign-in token is required.");
   }
 
-  const sh = verifyCodesSheet_();
-  const code = generateVerificationCode_();
-  const createdAt = new Date();
-  const expiresAt = new Date(createdAt.getTime() + PROFILE_CODE_TTL_MIN * 60 * 1000);
+  const cache = CacheService.getScriptCache();
+  const cacheKey = getGoogleTokenCacheKey_(token);
+  const cached = cache.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
 
-  sh.appendRow([
+  const res = UrlFetchApp.fetch(GOOGLE_TOKENINFO_URL + encodeURIComponent(token), {
+    muteHttpExceptions: true
+  });
+
+  if (res.getResponseCode() !== 200) {
+    throw new Error("Google sign-in token is invalid or expired.");
+  }
+
+  const data = JSON.parse(res.getContentText() || "{}");
+  const aud = String(data.aud || "").trim();
+  const iss = String(data.iss || "").trim();
+  const sub = String(data.sub || "").trim();
+  const email = normalizeEmail_(data.email);
+  const emailVerified = String(data.email_verified || "").toLowerCase() === "true";
+  const expMs = Number(data.exp || 0) * 1000;
+
+  if (!sub) {
+    throw new Error("Google sign-in token is missing the user id.");
+  }
+  if (aud !== GOOGLE_WEB_CLIENT_ID) {
+    throw new Error("Google sign-in token does not match this app.");
+  }
+  if (iss !== "accounts.google.com" && iss !== "https://accounts.google.com") {
+    throw new Error("Google sign-in issuer is invalid.");
+  }
+  if (!email || !emailVerified) {
+    throw new Error("Google account email must be verified.");
+  }
+  if (!expMs || Date.now() >= expMs) {
+    throw new Error("Google sign-in token has expired.");
+  }
+
+  const identity = {
+    sub,
     email,
-    code,
-    createdAt,
-    expiresAt,
-    "",
-    String(data.deviceLabel || "").trim()
-  ]);
-
-  GmailApp.sendEmail(
-    email,
-    "KAUST Frisbee profile verification code",
-    [
-      "Your KAUST Frisbee profile verification code is: " + code,
-      "",
-      "This code expires in " + PROFILE_CODE_TTL_MIN + " minutes.",
-      "",
-      "Use this code to load your saved player profile on a new device.",
-      "If you did not request this email, you can ignore it."
-    ].join("\n")
-  );
-
-  return {
-    ok:true,
-    sent:true,
-    expiresMinutes: PROFILE_CODE_TTL_MIN
+    name: String(data.name || "").trim()
   };
+
+  const ttlSec = Math.max(30, Math.min(300, Math.floor((expMs - Date.now()) / 1000)));
+  cache.put(cacheKey, JSON.stringify(identity), ttlSec);
+  return identity;
 }
 
-function verifyProfileCodeAction_(data){
-  const email = normalizeEmail_(data.email);
-  const code = String(data.code || "").trim();
+function loadGoogleProfileAction_(data){
+  let identity = null;
 
-  if (!isValidEmail_(email)) return { ok:false, error:"Valid email required" };
-  if (!code) return { ok:false, error:"Verification code required" };
-
-  const match = findValidVerifyCodeRow_(email, code);
-  if (!match) {
+  try {
+    identity = verifyGoogleIdToken_(data.idToken);
+  } catch (err) {
     return {
       ok:false,
-      error:"Invalid or expired verification code",
-      code:"invalid_code"
+      error:String(err && err.message || err),
+      code:"invalid_google_token"
     };
   }
 
-  match.sh.getRange(match.rowIndex, VERIFY_COL.usedAt + 1).setValue(new Date());
-
-  const deviceToken = createProfileDeviceToken_(email);
-  const profile = readProfileByEmail_(email);
-  if (profile) {
-    profilesSheet_().getRange(profile.rowIndex, PROFILE_COL.lastVerifiedAt + 1).setValue(new Date());
+  let profile = readProfileByGoogleSub_(identity.sub);
+  if (!profile) {
+    const fallbackRowIndex = findProfileRowIndexByEmail_(identity.email);
+    if (fallbackRowIndex) {
+      const sh = profilesSheet_();
+      sh.getRange(fallbackRowIndex, PROFILE_COL.googleSub + 1, 1, 3).setValues([[
+        identity.sub,
+        identity.email,
+        new Date()
+      ]]);
+      profile = readProfileByGoogleSub_(identity.sub);
+    }
+  } else if (profile.rowIndex) {
+    const sh = profilesSheet_();
+    sh.getRange(profile.rowIndex, PROFILE_COL.googleSub + 1, 1, 3).setValues([[
+      identity.sub,
+      identity.email,
+      new Date()
+    ]]);
+    profile = readProfileByGoogleSub_(identity.sub);
   }
 
   return {
     ok:true,
-    verified:true,
-    deviceToken,
+    google: {
+      sub: identity.sub,
+      email: identity.email,
+      name: identity.name
+    },
     profile: publicProfilePayload_(profile)
   };
 }
 
-function getProfile_(e){
-  const email = normalizeEmail_(e && e.parameter ? e.parameter.email : "");
-  const deviceToken = String(e && e.parameter ? (e.parameter.deviceToken || "") : "").trim();
+function saveGoogleProfileAction_(data){
+  let identity = null;
 
-  if (!isValidEmail_(email)) {
-    return json_({ ok:false, error:"Valid email required" });
-  }
-  if (!deviceToken) {
-    return json_({ ok:false, error:"Device token required", code:"invalid_device_token" });
-  }
-  if (!validateProfileDeviceToken_(email, deviceToken)) {
-    return json_({
-      ok:false,
-      error:"Device verification expired. Please verify this browser again.",
-      code:"invalid_device_token"
-    });
-  }
-
-  return json_({
-    ok:true,
-    profile: publicProfilePayload_(readProfileByEmail_(email))
-  });
-}
-
-function saveProfileAction_(data){
-  const email = normalizeEmail_(data.email);
-  const deviceToken = String(data.deviceToken || "").trim();
-
-  if (!isValidEmail_(email)) {
-    return { ok:false, error:"Valid email required" };
-  }
-  if (!deviceToken) {
+  try {
+    identity = verifyGoogleIdToken_(data.idToken);
+  } catch (err) {
     return {
       ok:false,
-      error:"Device verification required before cloud save",
-      code:"invalid_device_token"
-    };
-  }
-  if (!validateProfileDeviceToken_(email, deviceToken)) {
-    return {
-      ok:false,
-      error:"This browser is no longer verified. Please verify again.",
-      code:"invalid_device_token"
+      error:String(err && err.message || err),
+      code:"invalid_google_token"
     };
   }
 
   const profile = {
-    email,
+    email: normalizeEmail_(data.email) || identity.email,
     name: data.name,
     gender: data.gender,
     throwing: data.throwing,
@@ -626,6 +554,7 @@ function saveProfileAction_(data){
   };
 
   if (
+    !profile.email ||
     !profile.name ||
     !profile.gender ||
     !profile.throwing ||
@@ -638,10 +567,15 @@ function saveProfileAction_(data){
     return { ok:false, error:"Complete profile fields required for cloud save" };
   }
 
-  const saved = upsertProfile_(profile, new Date());
+  const saved = upsertProfileByGoogleIdentity_(profile, identity);
   return {
     ok:true,
     saved:true,
+    google: {
+      sub: identity.sub,
+      email: identity.email,
+      name: identity.name
+    },
     profile: publicProfilePayload_(saved)
   };
 }
@@ -650,7 +584,6 @@ function saveProfileAction_(data){
 function doGet(e){
   const action = String(e?.parameter?.action || "status");
 
-  if (action === "profile") return getProfile_(e);
   if (action === "players") return players_();
   if (action === "teams") return getTeamsWithAuto_();
   if (action === "analytics") return analytics_();
@@ -704,16 +637,12 @@ function doPost(e){
     const data = JSON.parse(e.postData.contents || "{}");
     const action = String(data.action || "register");
     
-    if (action === "requestProfileCode") {
-      return out(requestProfileCodeAction_(data));
+    if (action === "loadGoogleProfile") {
+      return out(loadGoogleProfileAction_(data));
     }
-    
-    if (action === "verifyProfileCode") {
-      return out(verifyProfileCodeAction_(data));
-    }
-    
-    if (action === "saveProfile") {
-      return out(saveProfileAction_(data));
+
+    if (action === "saveGoogleProfile") {
+      return out(saveGoogleProfileAction_(data));
     }
     
     // ============ CANCEL ============

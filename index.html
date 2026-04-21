@@ -9,6 +9,7 @@
   <title>KAUST Happy Frisbee hat registration</title>
   <script src="./config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
     .spinner{
@@ -185,11 +186,32 @@
       gap:8px;
       align-items:end;
     }
-    .profileCodeRow{
+    .profileGoogleRow{
       display:grid;
-      grid-template-columns:minmax(0,1fr) auto auto;
+      grid-template-columns:minmax(0,1fr) auto;
       gap:8px;
-      align-items:end;
+      align-items:center;
+      margin-top:8px;
+    }
+    .profileGoogleState{
+      margin:0;
+      min-height:40px;
+      display:flex;
+      align-items:center;
+    }
+    .profileGoogleButton{
+      min-height:40px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+    }
+    .profileGoogleButton:empty{display:none}
+    .profileGoogleButton > div{width:100%}
+    .profileCloudActions{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
       margin-top:8px;
     }
     .profileCheck{
@@ -589,7 +611,8 @@
       .row{gap:10px}
       .hint{margin:6px 0 6px;padding:6px 10px;font-size:12px}
       .profileRow{grid-template-columns:1fr}
-      .profileCodeRow{grid-template-columns:1fr}
+      .profileGoogleRow{grid-template-columns:1fr}
+      .profileCloudActions{gap:6px}
       .profileCheck{
         align-items:flex-start;
         line-height:1.35;
@@ -762,16 +785,17 @@
               <button id="clearProfileBtn" class="smallbtn secondary" type="button">Clear saved</button>
             </div>
 
-            <div class="profileCodeRow">
-              <input
-                id="profileCode"
-                inputmode="numeric"
-                maxlength="6"
-                placeholder="6-digit code for a new device"
-                autocomplete="one-time-code"
-              />
-              <button id="sendCodeBtn" class="smallbtn secondary" type="button">Send code</button>
-              <button id="verifyProfileBtn" class="smallbtn secondary" type="button">Verify & load</button>
+            <div class="profileGoogleRow">
+              <div id="googleAuthState" class="hint profileGoogleState">
+                Google sign-in is optional. Same browser restore uses the email above. Sign in with Google if you also want cloud save/load across devices.
+              </div>
+              <div id="googleSignInButton" class="profileGoogleButton"></div>
+            </div>
+
+            <div class="profileCloudActions">
+              <button id="loadCloudProfileBtn" class="smallbtn secondary" type="button">Load cloud</button>
+              <button id="saveCloudProfileBtn" class="smallbtn secondary" type="button">Save cloud</button>
+              <button id="googleSignOutBtn" class="smallbtn secondary" type="button" style="display:none;">Sign out</button>
             </div>
 
             <label class="profileCheck" for="saveProfileOpt">
@@ -780,7 +804,7 @@
             </label>
 
             <div id="profileStatus" class="hint profileStatus">
-              Same device: enter the same email to load locally. New device: send a code and verify once to load your cloud profile.
+              Same browser: enter the same email to load locally. Cross-device restore: sign in with Google, then use Load cloud.
             </div>
           </div>
 
@@ -1011,6 +1035,7 @@
   <script>
     const CFG = {
       endpoint: "",
+      googleClientId: "",
       timezoneLabel: "Asia/Riyadh",
       gameTimeText: "Friday 7-10PM",
       locationText: "KAUST Stadium",
@@ -1067,11 +1092,13 @@
     const btn = document.getElementById("btn");
     const statusEl = document.getElementById("status");
     const profileEmail = document.getElementById("profileEmail");
-    const profileCode = document.getElementById("profileCode");
     const loadProfileBtn = document.getElementById("loadProfileBtn");
     const clearProfileBtn = document.getElementById("clearProfileBtn");
-    const sendCodeBtn = document.getElementById("sendCodeBtn");
-    const verifyProfileBtn = document.getElementById("verifyProfileBtn");
+    const googleAuthState = document.getElementById("googleAuthState");
+    const googleSignInButton = document.getElementById("googleSignInButton");
+    const loadCloudProfileBtn = document.getElementById("loadCloudProfileBtn");
+    const saveCloudProfileBtn = document.getElementById("saveCloudProfileBtn");
+    const googleSignOutBtn = document.getElementById("googleSignOutBtn");
     const saveProfileOpt = document.getElementById("saveProfileOpt");
     const profileStatus = document.getElementById("profileStatus");
 
@@ -1110,7 +1137,7 @@
     const LS_REGID = "frisbee_last_regid";
     const LS_PROFILE_PREFIX = "frisbee_profile_v1:";
     const LS_LAST_PROFILE_EMAIL = "frisbee_profile_last_email";
-    const LS_PROFILE_DEVICE_TOKEN_PREFIX = "frisbee_profile_device_token_v1:";
+    const SS_GOOGLE_SESSION = "frisbee_google_session_v1";
     const LS_STATUS_CACHE = "frisbee_status_cache_v1";
     const STATUS_CACHE_MAX_AGE_MS = 20 * 60 * 1000;
 
@@ -1140,6 +1167,32 @@
       }
     }
 
+    function sessionGet(key){
+      try{
+        return window.sessionStorage ? (sessionStorage.getItem(key) || "") : "";
+      }catch(_){
+        return "";
+      }
+    }
+
+    function sessionSet(key, value){
+      try{
+        if (window.sessionStorage) sessionStorage.setItem(key, value);
+        return true;
+      }catch(_){
+        return false;
+      }
+    }
+
+    function sessionRemove(key){
+      try{
+        if (window.sessionStorage) sessionStorage.removeItem(key);
+        return true;
+      }catch(_){
+        return false;
+      }
+    }
+
     function normalizeEmail(email){
       return String(email || "").trim().toLowerCase();
     }
@@ -1149,31 +1202,14 @@
       return normalized ? `${LS_PROFILE_PREFIX}${normalized}` : "";
     }
 
-    function profileDeviceTokenKey(email){
-      const normalized = normalizeEmail(email);
-      return normalized ? `${LS_PROFILE_DEVICE_TOKEN_PREFIX}${normalized}` : "";
-    }
-
-    function getSavedProfileDeviceToken(email){
-      const key = profileDeviceTokenKey(email);
-      return key ? storageGet(key) : "";
-    }
-
-    function saveProfileDeviceToken(email, token){
-      const key = profileDeviceTokenKey(email);
-      if (!key || !token) return false;
-      return storageSet(key, token);
-    }
-
-    function clearProfileDeviceToken(email){
-      const key = profileDeviceTokenKey(email);
-      if (!key) return false;
-      return storageRemove(key);
-    }
-
     function setProfileStatus(text){
       if (!profileStatus) return;
       profileStatus.textContent = text;
+    }
+
+    function setGoogleAuthMessage(text){
+      if (!googleAuthState) return;
+      googleAuthState.textContent = text;
     }
 
     function getProfileFormData(){
@@ -1251,30 +1287,6 @@
       }
     }
 
-    function getBestProfileCandidateForCloud(email, options = {}){
-      const normalized = normalizeEmail(email);
-      if (!normalized) return null;
-
-      if (options.profile) {
-        const provided = profileRecordFromSource({
-          ...options.profile,
-          email: normalized
-        });
-        if (isProfileRecordComplete(provided)) return provided;
-      }
-
-      const current = profileRecordFromSource({
-        ...getProfileFormData(),
-        email: normalized
-      });
-      if (isProfileRecordComplete(current)) return current;
-
-      const local = readProfileFromDevice(normalized);
-      if (isProfileRecordComplete(local)) return local;
-
-      return null;
-    }
-
     function saveProfileToDevice(options = {}){
       const silent = !!options.silent;
       const profile = profileRecordFromSource({
@@ -1342,7 +1354,6 @@
       }
 
       storageRemove(profileStorageKey(normalized));
-      clearProfileDeviceToken(normalized);
       if (normalizeEmail(storageGet(LS_LAST_PROFILE_EMAIL)) === normalized) {
         storageRemove(LS_LAST_PROFILE_EMAIL);
       }
@@ -1363,92 +1374,235 @@
       throw new Error(result.data?.error || result.error || "Profile request failed.");
     }
 
-    async function fetchCloudProfile(email, deviceToken){
-      const normalized = normalizeEmail(email);
-      if (!normalized || !deviceToken) {
-        throw new Error("Email and device token are required.");
-      }
+    function decodeBase64Url(value){
+      const normalized = String(value || "")
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+      const padded = normalized + "=".repeat((4 - normalized.length % 4) % 4);
+      return atob(padded);
+    }
 
-      const data = await safeGetJson(
-        `${ENDPOINT}?action=profile&email=${encodeURIComponent(normalized)}&deviceToken=${encodeURIComponent(deviceToken)}`,
-        {
-          attempts:[4000, 7000, 10000],
-          cacheBust:true
+    function parseJwtPayload(token){
+      try{
+        const parts = String(token || "").split(".");
+        if (parts.length < 2) return null;
+        return JSON.parse(decodeBase64Url(parts[1]));
+      }catch(_){
+        return null;
+      }
+    }
+
+    function readGoogleSession(){
+      const raw = sessionGet(SS_GOOGLE_SESSION);
+      if (!raw) return null;
+
+      try{
+        const parsed = JSON.parse(raw);
+        const payload = parseJwtPayload(parsed?.idToken);
+        if (!payload?.exp || Date.now() >= Number(payload.exp) * 1000) {
+          sessionRemove(SS_GOOGLE_SESSION);
+          return null;
         }
-      );
 
-      if (!data?.ok) {
-        const err = new Error(data?.error || "Unable to load cloud profile.");
-        err.code = data?.code || "";
-        throw err;
+        return {
+          idToken: parsed.idToken,
+          email: normalizeEmail(parsed.email || payload.email),
+          name: String(parsed.name || payload.name || "").trim(),
+          sub: String(parsed.sub || payload.sub || "").trim(),
+          exp: Number(payload.exp || 0)
+        };
+      }catch(_){
+        sessionRemove(SS_GOOGLE_SESSION);
+        return null;
       }
-      return data;
     }
 
-    async function requestProfileCodeFromCloud(email){
-      const normalized = normalizeEmail(email);
-      if (!normalized) throw new Error("Enter your email first.");
-      return postProfileAction({
-        action: "requestProfileCode",
-        email: normalized
+    let googleSession = readGoogleSession();
+
+    function saveGoogleSession(session){
+      googleSession = session ? {
+        idToken: String(session.idToken || "").trim(),
+        email: normalizeEmail(session.email),
+        name: String(session.name || "").trim(),
+        sub: String(session.sub || "").trim(),
+        exp: Number(session.exp || 0)
+      } : null;
+
+      if (!googleSession?.idToken || !googleSession?.email) {
+        sessionRemove(SS_GOOGLE_SESSION);
+        googleSession = null;
+        return null;
+      }
+
+      sessionSet(SS_GOOGLE_SESSION, JSON.stringify(googleSession));
+      return googleSession;
+    }
+
+    function clearGoogleSession(){
+      googleSession = null;
+      sessionRemove(SS_GOOGLE_SESSION);
+    }
+
+    function getGoogleSession(){
+      googleSession = readGoogleSession();
+      return googleSession;
+    }
+
+    function updateGoogleAuthUi(){
+      const session = getGoogleSession();
+
+      if (session) {
+        setGoogleAuthMessage(`Signed in with Google as ${session.email}. Cloud save/load is ready.`);
+        if (googleSignInButton) googleSignInButton.style.display = "none";
+        if (googleSignOutBtn) googleSignOutBtn.style.display = "inline-flex";
+        if (loadCloudProfileBtn) loadCloudProfileBtn.disabled = false;
+        if (saveCloudProfileBtn) saveCloudProfileBtn.disabled = false;
+      } else {
+        setGoogleAuthMessage("Google sign-in is optional. Same browser restore uses the email above. Sign in with Google if you also want cloud save/load across devices.");
+        if (googleSignInButton) googleSignInButton.style.display = "";
+        if (googleSignOutBtn) googleSignOutBtn.style.display = "none";
+        if (loadCloudProfileBtn) loadCloudProfileBtn.disabled = true;
+        if (saveCloudProfileBtn) saveCloudProfileBtn.disabled = true;
+      }
+    }
+
+    function handleGoogleCredentialResponse(response){
+      const payload = parseJwtPayload(response?.credential);
+      if (!payload?.email || !payload?.sub) {
+        setProfileStatus("Google sign-in returned an unreadable session. Please try again.");
+        return;
+      }
+
+      saveGoogleSession({
+        idToken: response.credential,
+        email: payload.email,
+        name: payload.name,
+        sub: payload.sub,
+        exp: payload.exp
+      });
+
+      if (!normalizeEmail(profileEmail.value)) {
+        profileEmail.value = normalizeEmail(payload.email);
+      }
+
+      updateGoogleAuthUi();
+      setProfileStatus("Google sign-in is ready. Use Load cloud to restore a cross-device profile, or just submit and we will sync the current profile to cloud.");
+    }
+
+    function initializeGoogleIdentity(attemptsLeft = 20){
+      if (!CFG.googleClientId) {
+        setGoogleAuthMessage("Google sign-in is not configured yet. Local save still works on this browser.");
+        return;
+      }
+
+      if (window.google?.accounts?.id && googleSignInButton) {
+        window.google.accounts.id.initialize({
+          client_id: CFG.googleClientId,
+          callback: handleGoogleCredentialResponse,
+          ux_mode: "popup",
+          auto_select: false,
+          cancel_on_tap_outside: true
+        });
+        googleSignInButton.innerHTML = "";
+        window.google.accounts.id.renderButton(googleSignInButton, {
+          theme: "outline",
+          size: "medium",
+          shape: "pill",
+          text: "signin_with",
+          width: 220
+        });
+        updateGoogleAuthUi();
+        return;
+      }
+
+      if (attemptsLeft <= 0) {
+        setGoogleAuthMessage("Google sign-in could not load right now. Local save still works on this browser.");
+        return;
+      }
+
+      setTimeout(() => initializeGoogleIdentity(attemptsLeft - 1), 250);
+    }
+
+    function requireGoogleSession(){
+      const session = getGoogleSession();
+      if (!session?.idToken) {
+        throw new Error("Sign in with Google first if you want cloud save/load across devices.");
+      }
+      return session;
+    }
+
+    function buildCloudProfilePayload(options = {}){
+      const session = options.session || getGoogleSession();
+      const sourceProfile = options.profile || getProfileFormData();
+      return profileRecordFromSource({
+        ...sourceProfile,
+        email: options.emailOverride || sourceProfile.email || session?.email || profileEmail?.value
       });
     }
 
-    async function verifyProfileCodeFromCloud(email, code){
-      const normalized = normalizeEmail(email);
-      const cleanCode = String(code || "").trim();
-      if (!normalized) throw new Error("Enter your email first.");
-      if (!cleanCode) throw new Error("Enter the 6-digit code.");
-
-      return postProfileAction({
-        action: "verifyProfileCode",
-        email: normalized,
-        code: cleanCode
+    async function loadProfileFromCloudByGoogle(){
+      const session = requireGoogleSession();
+      const data = await postProfileAction({
+        action: "loadGoogleProfile",
+        idToken: session.idToken
       });
-    }
 
-    async function saveProfileToCloud(profile, deviceToken){
-      if (!profile?.email || !deviceToken) {
-        throw new Error("Verified email/device token required for cloud save.");
-      }
-
-      return postProfileAction({
-        action: "saveProfile",
-        email: profile.email,
-        deviceToken,
-        name: profile.name,
-        gender: profile.gender,
-        throwing: profile.throwing,
-        catch: profile.catch,
-        fitness: profile.fitness,
-        experience: profile.experience,
-        practice: profile.practice,
-        preference: profile.preference
+      saveGoogleSession({
+        ...session,
+        ...(data?.google || {})
       });
-    }
+      updateGoogleAuthUi();
 
-    async function syncProfileToCloudIfPossible(email, deviceToken, options = {}){
-      const normalized = normalizeEmail(email);
-      if (!normalized || !deviceToken) {
-        return { synced:false, reason:"unverified" };
+      if (!data?.profile) {
+        throw new Error("No cloud profile is saved for this Google account yet.");
       }
 
-      const candidate = getBestProfileCandidateForCloud(normalized, options);
-      if (!candidate) {
-        return { synced:false, reason:"incomplete" };
+      const preferredEmail = normalizeEmail(data.profile.email || session.email);
+      if (preferredEmail) {
+        profileEmail.value = preferredEmail;
       }
 
-      const data = await saveProfileToCloud(candidate, deviceToken);
+      fillProfileForm(data.profile);
       saveProfileToDevice({
         silent:true,
-        emailOverride: normalized,
-        profile: data?.profile || candidate
+        emailOverride: preferredEmail,
+        profile: data.profile
+      });
+      return data.profile;
+    }
+
+    async function saveProfileToCloud(profile, options = {}){
+      const session = options.session || requireGoogleSession();
+      const payload = buildCloudProfilePayload({
+        profile,
+        session,
+        emailOverride: options.emailOverride
       });
 
-      return {
-        synced:true,
-        profile: data?.profile || candidate
-      };
+      if (!isProfileRecordComplete(payload)) {
+        throw new Error("Complete the profile form first, then save it to cloud.");
+      }
+
+      const data = await postProfileAction({
+        action: "saveGoogleProfile",
+        idToken: session.idToken,
+        email: payload.email,
+        name: payload.name,
+        gender: payload.gender,
+        throwing: payload.throwing,
+        catch: payload.catch,
+        fitness: payload.fitness,
+        experience: payload.experience,
+        practice: payload.practice,
+        preference: payload.preference
+      });
+
+      saveGoogleSession({
+        ...session,
+        ...(data?.google || {})
+      });
+      updateGoogleAuthUi();
+      return data;
     }
 
     async function loadBestProfileForEmail(email, options = {}){
@@ -1461,78 +1615,14 @@
       }
 
       if (loadProfileFromDevice(normalized, { silent:true })) {
-        const deviceToken = getSavedProfileDeviceToken(normalized);
-        if (deviceToken) {
-          try{
-            const syncResult = await syncProfileToCloudIfPossible(normalized, deviceToken);
-            if (syncResult.synced) {
-              profileEmail.value = normalized;
-              fillProfileForm(syncResult.profile);
-              if (!silent) setProfileStatus("Saved profile loaded from this device and synced to cloud.");
-              return { loaded:true, source:"local-synced" };
-            }
-          }catch(err){
-            if (!silent) {
-              setProfileStatus("Saved profile loaded from this device. Cloud sync can be retried later.");
-            }
-            return { loaded:true, source:"local", error:err };
-          }
-        }
-
         if (!silent) setProfileStatus("Saved profile loaded from this device.");
         return { loaded:true, source:"local" };
       }
 
-      const deviceToken = getSavedProfileDeviceToken(normalized);
-      if (!deviceToken) {
-        if (!silent) {
-          setProfileStatus("No saved profile on this device. Send a code to load your cloud profile.");
-        }
-        return { loaded:false, source:"none" };
+      if (!silent) {
+        setProfileStatus("No saved profile was found on this browser for that email. Sign in with Google and use Load cloud if you want cross-device restore.");
       }
-
-      try{
-        const data = await fetchCloudProfile(normalized, deviceToken);
-        if (data?.profile) {
-          profileEmail.value = normalized;
-          fillProfileForm(data.profile);
-          saveProfileToDevice({
-            silent:true,
-            emailOverride: normalized,
-            profile: data.profile
-          });
-          if (!silent) setProfileStatus("Cloud profile loaded and saved on this device.");
-          return { loaded:true, source:"cloud" };
-        }
-
-        try{
-          const syncResult = await syncProfileToCloudIfPossible(normalized, deviceToken);
-          if (syncResult.synced) {
-            profileEmail.value = normalized;
-            fillProfileForm(syncResult.profile);
-            if (!silent) setProfileStatus("Verified device found. Your complete profile was synced to cloud and saved on this device.");
-            return { loaded:true, source:"cloud-synced" };
-          }
-        }catch(err){
-          if (!silent) {
-            setProfileStatus(err.message || "Device is verified, but cloud sync failed.");
-          }
-          return { loaded:false, source:"cloud-empty", error:err };
-        }
-
-        if (!silent) {
-          setProfileStatus("Email verified on this device, but no complete profile exists yet. Finish the form and it will sync after verification or registration.");
-        }
-        return { loaded:false, source:"cloud-empty" };
-      }catch(err){
-        if (String(err.code || "").toLowerCase() === "invalid_device_token") {
-          clearProfileDeviceToken(normalized);
-        }
-        if (!silent) {
-          setProfileStatus("No local profile was found. Send a code to verify this device and load your cloud profile.");
-        }
-        return { loaded:false, source:"none", error:err };
-      }
+      return { loaded:false, source:"none" };
     }
 
     function appendCacheBust(url){
@@ -2873,6 +2963,8 @@
       if (n) cancelName.value = n;
       if (r) cancelId.value = r;
     })();
+    updateGoogleAuthUi();
+    initializeGoogleIdentity();
 
     loadProfileBtn.addEventListener("click", async () => {
       await loadBestProfileForEmail(profileEmail.value, { silent:false });
@@ -2880,83 +2972,71 @@
 
     clearProfileBtn.addEventListener("click", () => {
       clearProfileFromDevice(profileEmail.value);
-      if (profileCode) profileCode.value = "";
     });
 
-    sendCodeBtn.addEventListener("click", async () => {
-      const email = normalizeEmail(profileEmail.value);
-      if (!email) {
-        setProfileStatus("Enter your email first.");
-        return;
-      }
-
-      sendCodeBtn.disabled = true;
+    loadCloudProfileBtn.addEventListener("click", async () => {
+      loadCloudProfileBtn.disabled = true;
       try{
-        await requestProfileCodeFromCloud(email);
-        setProfileStatus("Verification code sent. Check your email and enter the 6-digit code here.");
+        await loadProfileFromCloudByGoogle();
+        setProfileStatus("Cloud profile loaded and saved on this browser.");
       }catch(err){
-        setProfileStatus(err.message || "Unable to send verification code.");
+        if (String(err.message || "").toLowerCase().includes("token")) {
+          clearGoogleSession();
+          updateGoogleAuthUi();
+        }
+        setProfileStatus(err.message || "Unable to load cloud profile.");
       } finally {
-        sendCodeBtn.disabled = false;
+        updateGoogleAuthUi();
       }
     });
 
-    verifyProfileBtn.addEventListener("click", async () => {
-      const email = normalizeEmail(profileEmail.value);
-      const code = String(profileCode.value || "").trim();
-
-      if (!email) {
-        setProfileStatus("Enter your email first.");
-        return;
-      }
-      if (!code) {
-        setProfileStatus("Enter the 6-digit code from your email.");
-        return;
-      }
-
-      verifyProfileBtn.disabled = true;
+    saveCloudProfileBtn.addEventListener("click", async () => {
+      saveCloudProfileBtn.disabled = true;
       try{
-        const data = await verifyProfileCodeFromCloud(email, code);
-        if (data?.deviceToken) {
-          saveProfileDeviceToken(email, data.deviceToken);
+        const emailValue = normalizeEmail(profileEmail.value) || normalizeEmail(getGoogleSession()?.email);
+        if (emailValue && !normalizeEmail(profileEmail.value)) {
+          profileEmail.value = emailValue;
         }
-        storageSet(LS_LAST_PROFILE_EMAIL, email);
-        profileCode.value = "";
 
-        if (data?.profile) {
-          profileEmail.value = email;
-          fillProfileForm(data.profile);
-          saveProfileToDevice({
-            silent:true,
-            emailOverride: email,
-            profile: data.profile
-          });
-          setProfileStatus("Email verified. Cloud profile loaded and saved on this device.");
-        } else {
-          try{
-            const syncResult = await syncProfileToCloudIfPossible(email, data?.deviceToken);
-            if (syncResult.synced) {
-              profileEmail.value = email;
-              fillProfileForm(syncResult.profile);
-              setProfileStatus("Email verified. Your complete profile was synced to cloud and saved on this device.");
-            } else {
-              setProfileStatus("Email verified for this device. No complete profile was available yet, so cloud sync will happen after you complete the form.");
-            }
-          }catch(err){
-            setProfileStatus(err.message || "Email verified, but cloud sync failed.");
-          }
-        }
+        const profile = buildCloudProfilePayload({
+          emailOverride: emailValue
+        });
+        const data = await saveProfileToCloud(profile);
+
+        saveProfileToDevice({
+          silent:true,
+          emailOverride: normalizeEmail(data?.profile?.email || emailValue),
+          profile: data?.profile || profile
+        });
+
+        setProfileStatus("Cloud profile saved. This browser now also has a local copy for quick restore.");
       }catch(err){
-        setProfileStatus(err.message || "Code verification failed.");
+        if (String(err.message || "").toLowerCase().includes("token")) {
+          clearGoogleSession();
+          updateGoogleAuthUi();
+        }
+        setProfileStatus(err.message || "Unable to save cloud profile.");
       } finally {
-        verifyProfileBtn.disabled = false;
+        updateGoogleAuthUi();
       }
+    });
+
+    googleSignOutBtn.addEventListener("click", () => {
+      clearGoogleSession();
+      try{
+        if (window.google?.accounts?.id?.disableAutoSelect) {
+          window.google.accounts.id.disableAutoSelect();
+        }
+      }catch(_){
+      }
+      updateGoogleAuthUi();
+      setProfileStatus("Google cloud session cleared on this browser. Local saved profiles are unchanged.");
     });
 
     profileEmail.addEventListener("change", async () => {
       const email = normalizeEmail(profileEmail.value);
       if (!email) {
-        setProfileStatus("Same device: enter the same email to load locally. New device: send a code and verify once to load your cloud profile.");
+        setProfileStatus("Same browser: enter the same email to load locally. For cross-device restore, sign in with Google and use Load cloud.");
         return;
       }
 
@@ -3010,9 +3090,12 @@
       btn.disabled = true;
       btn.textContent = "Submitting…";
       showOverlay("Submitting registration…");
-      const profileEmailValue = normalizeEmail(profileEmail.value);
+      const activeGoogleSession = getGoogleSession();
+      const profileEmailValue = normalizeEmail(profileEmail.value) || normalizeEmail(activeGoogleSession?.email);
+      if (profileEmailValue && !normalizeEmail(profileEmail.value)) {
+        profileEmail.value = profileEmailValue;
+      }
       const shouldSaveProfile = !!saveProfileOpt.checked;
-      const deviceToken = getSavedProfileDeviceToken(profileEmailValue);
       const profileRecord = profileRecordFromSource({
         email: profileEmailValue,
         name: payload.name,
@@ -3044,14 +3127,15 @@
               emailOverride: profileEmailValue,
               profile: profileRecord
             });
-            if (deviceToken) {
-              try{
-                await saveProfileToCloud(profileRecord, deviceToken);
-                cloudSaved = true;
-              }catch(err){
-                if (String(err.message || "").toLowerCase().includes("device")) {
-                  clearProfileDeviceToken(profileEmailValue);
-                }
+          }
+          if (activeGoogleSession?.idToken) {
+            try{
+              await saveProfileToCloud(profileRecord, { session: activeGoogleSession });
+              cloudSaved = true;
+            }catch(err){
+              if (String(err.message || "").toLowerCase().includes("token")) {
+                clearGoogleSession();
+                updateGoogleAuthUi();
               }
             }
           }
@@ -3065,15 +3149,17 @@
             loadProfileFromDevice(profileEmailValue, { silent:true });
             setProfileStatus(
               cloudSaved
-                ? "Profile saved on this device and synced to your verified cloud profile."
-                : (deviceToken
-                    ? "Profile saved on this device. Cloud sync needs a fresh email verification on this browser."
-                    : "Profile saved on this device. Verify your email once if you want cross-device restore.")
+                ? "Profile saved on this device and synced to your Google cloud profile."
+                : (activeGoogleSession?.idToken
+                    ? "Profile saved on this device. Google cloud sync needs a fresh sign-in on this browser."
+                    : "Profile saved on this device. Sign in with Google if you want cross-device restore.")
             );
+          } else if (cloudSaved) {
+            setProfileStatus("Registration submitted. Your Google cloud profile was updated, and local save is still optional.");
           } else if (profileEmailValue) {
             setProfileStatus("Profile not updated on this device. Check the save box if you want to remember changes.");
           } else {
-            setProfileStatus("Add an email if you want this device to remember your profile next time.");
+            setProfileStatus("Add an email if you want this browser to remember your profile next time.");
           }
         } else if (result.data && result.data.ok === false) {
           setStatusMessage(statusEl, result.data.error || "Registration failed.", "bad");
