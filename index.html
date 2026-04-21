@@ -176,6 +176,32 @@
       line-height:1.35;
     }
     .hint + .row{margin-top:4px}
+    .profileBox{
+      margin-bottom:12px;
+    }
+    .profileRow{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto auto;
+      gap:8px;
+      align-items:end;
+    }
+    .profileCheck{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      margin-top:8px;
+      font-weight:500;
+      font-size:13px;
+    }
+    .profileCheck input{
+      width:auto;
+      margin:0;
+      flex:0 0 auto;
+    }
+    .profileStatus{
+      margin-top:8px;
+      margin-bottom:0;
+    }
 
     button{
       width:100%;
@@ -555,6 +581,11 @@
       input,select{padding:11px;font-size:15px}
       .row{gap:10px}
       .hint{margin:6px 0 6px;padding:6px 10px;font-size:12px}
+      .profileRow{grid-template-columns:1fr}
+      .profileCheck{
+        align-items:flex-start;
+        line-height:1.35;
+      }
       .gameLine2{
         gap:5px 8px;
         align-items:flex-start;
@@ -710,6 +741,29 @@
 
       <div id="signupArea">
         <form id="form">
+          <div class="box profileBox">
+            <label for="profileEmail">Email</label>
+            <div class="profileRow">
+              <input
+                id="profileEmail"
+                type="email"
+                placeholder="yourname@email.com"
+                autocomplete="email"
+              />
+              <button id="loadProfileBtn" class="smallbtn secondary" type="button">Load profile</button>
+              <button id="clearProfileBtn" class="smallbtn secondary" type="button">Clear saved</button>
+            </div>
+
+            <label class="profileCheck" for="saveProfileOpt">
+              <input id="saveProfileOpt" type="checkbox" checked />
+              <span>Save this profile on this device for future Fridays</span>
+            </label>
+
+            <div id="profileStatus" class="hint profileStatus">
+              Enter the same email on this device to load your saved profile next time.
+            </div>
+          </div>
+
           <div class="row">
             <div>
               <label for="name">Full Name *</label>
@@ -992,6 +1046,11 @@
     const form = document.getElementById("form");
     const btn = document.getElementById("btn");
     const statusEl = document.getElementById("status");
+    const profileEmail = document.getElementById("profileEmail");
+    const loadProfileBtn = document.getElementById("loadProfileBtn");
+    const clearProfileBtn = document.getElementById("clearProfileBtn");
+    const saveProfileOpt = document.getElementById("saveProfileOpt");
+    const profileStatus = document.getElementById("profileStatus");
 
     const regTools = document.getElementById("regTools");
     const copyRegBtn = document.getElementById("copyRegBtn");
@@ -1026,6 +1085,8 @@
 
     const LS_NAME = "frisbee_last_name";
     const LS_REGID = "frisbee_last_regid";
+    const LS_PROFILE_PREFIX = "frisbee_profile_v1:";
+    const LS_LAST_PROFILE_EMAIL = "frisbee_profile_last_email";
     const LS_STATUS_CACHE = "frisbee_status_cache_v1";
     const STATUS_CACHE_MAX_AGE_MS = 20 * 60 * 1000;
 
@@ -1053,6 +1114,120 @@
       }catch(_){
         return false;
       }
+    }
+
+    function normalizeEmail(email){
+      return String(email || "").trim().toLowerCase();
+    }
+
+    function profileStorageKey(email){
+      const normalized = normalizeEmail(email);
+      return normalized ? `${LS_PROFILE_PREFIX}${normalized}` : "";
+    }
+
+    function setProfileStatus(text){
+      if (!profileStatus) return;
+      profileStatus.textContent = text;
+    }
+
+    function getProfileFormData(){
+      return {
+        email: normalizeEmail(profileEmail?.value),
+        name: document.getElementById("name").value.trim(),
+        gender: document.getElementById("gender").value,
+        throwing: document.getElementById("throwing").value,
+        catch: document.getElementById("catch").value,
+        fitness: document.getElementById("fitness").value,
+        experience: document.getElementById("experience").value,
+        preference: document.getElementById("pref").value,
+        practice: document.getElementById("pd").value,
+        savedAt: new Date().toISOString()
+      };
+    }
+
+    function fillProfileForm(profile){
+      if (!profile) return;
+      document.getElementById("name").value = profile.name || "";
+      document.getElementById("gender").value = profile.gender || "";
+      document.getElementById("throwing").value = profile.throwing || "";
+      document.getElementById("catch").value = profile.catch || "";
+      document.getElementById("fitness").value = profile.fitness || "";
+      document.getElementById("experience").value = profile.experience || "";
+      document.getElementById("pref").value = profile.preference || "";
+      document.getElementById("pd").value = profile.practice || "";
+    }
+
+    function saveProfileToDevice(options = {}){
+      const silent = !!options.silent;
+      const emailOverride = normalizeEmail(options.emailOverride);
+      const profile = getProfileFormData();
+      profile.email = emailOverride || profile.email;
+
+      if (!profile.email) {
+        if (!silent) {
+          setProfileStatus("Enter an email if you want this device to remember your profile.");
+        }
+        return false;
+      }
+
+      const key = profileStorageKey(profile.email);
+      if (!key) return false;
+
+      const ok1 = storageSet(key, JSON.stringify(profile));
+      const ok2 = storageSet(LS_LAST_PROFILE_EMAIL, profile.email);
+
+      if (!silent) {
+        setProfileStatus(
+          (ok1 && ok2)
+            ? "Profile saved on this device."
+            : "Profile submitted, but local save is unavailable in this browser."
+        );
+      }
+      return ok1 && ok2;
+    }
+
+    function loadProfileFromDevice(email, options = {}){
+      const silent = !!options.silent;
+      const normalized = normalizeEmail(email);
+
+      if (!normalized) {
+        if (!silent) setProfileStatus("Enter your email first.");
+        return false;
+      }
+
+      const raw = storageGet(profileStorageKey(normalized));
+      if (!raw) {
+        if (!silent) setProfileStatus("No saved profile found on this device for that email.");
+        return false;
+      }
+
+      try{
+        const profile = JSON.parse(raw);
+        profileEmail.value = normalized;
+        fillProfileForm(profile);
+        storageSet(LS_LAST_PROFILE_EMAIL, normalized);
+        if (!silent) setProfileStatus("Saved profile loaded.");
+        return true;
+      }catch(_){
+        if (!silent) setProfileStatus("Saved profile is unreadable. Please save it again.");
+        return false;
+      }
+    }
+
+    function clearProfileFromDevice(email){
+      const normalized = normalizeEmail(email) || normalizeEmail(storageGet(LS_LAST_PROFILE_EMAIL));
+      if (!normalized) {
+        setProfileStatus("Enter the email of the saved profile you want to remove.");
+        return false;
+      }
+
+      storageRemove(profileStorageKey(normalized));
+      if (normalizeEmail(storageGet(LS_LAST_PROFILE_EMAIL)) === normalized) {
+        storageRemove(LS_LAST_PROFILE_EMAIL);
+      }
+
+      setProfileStatus("Saved profile removed from this device.");
+      return true;
     }
 
     function appendCacheBust(url){
@@ -2394,6 +2569,28 @@
       if (r) cancelId.value = r;
     })();
 
+    loadProfileBtn.addEventListener("click", () => {
+      loadProfileFromDevice(profileEmail.value, { silent:false });
+    });
+
+    clearProfileBtn.addEventListener("click", () => {
+      clearProfileFromDevice(profileEmail.value);
+    });
+
+    profileEmail.addEventListener("change", () => {
+      const email = normalizeEmail(profileEmail.value);
+      if (!email) {
+        setProfileStatus("Enter the same email on this device to load your saved profile next time.");
+        return;
+      }
+
+      if (!loadProfileFromDevice(email, { silent:true })) {
+        setProfileStatus("No saved profile found on this device yet. Fill the form and submit once to save it.");
+      } else {
+        setProfileStatus("Saved profile loaded.");
+      }
+    });
+
     copyRegBtn.addEventListener("click", async () => {
       const regId = storageGet(LS_REGID);
       if (!regId) {
@@ -2441,6 +2638,8 @@
       btn.disabled = true;
       btn.textContent = "Submitting…";
       showOverlay("Submitting registration…");
+      const profileEmailValue = normalizeEmail(profileEmail.value);
+      const shouldSaveProfile = !!saveProfileOpt.checked;
 
       let submitConfirmed = false;
 
@@ -2454,8 +2653,23 @@
           statusEl.className = "status okText";
 
           saveLastReg(payload.name, result.data.regId);
+          if (shouldSaveProfile && profileEmailValue) {
+            saveProfileToDevice({ silent:true, emailOverride: profileEmailValue });
+          }
           regTools.style.display = "flex";
           form.reset();
+          if (profileEmailValue) {
+            profileEmail.value = profileEmailValue;
+          }
+          saveProfileOpt.checked = shouldSaveProfile;
+          if (shouldSaveProfile && profileEmailValue) {
+            loadProfileFromDevice(profileEmailValue, { silent:true });
+            setProfileStatus("Profile saved on this device.");
+          } else if (profileEmailValue) {
+            setProfileStatus("Profile not updated on this device. Check the save box if you want to remember changes.");
+          } else {
+            setProfileStatus("Add an email if you want this device to remember your profile next time.");
+          }
         } else if (result.data && result.data.ok === false) {
           setStatusMessage(statusEl, result.data.error || "Registration failed.", "bad");
         } else {
