@@ -185,6 +185,13 @@
       gap:8px;
       align-items:end;
     }
+    .profileCodeRow{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto auto;
+      gap:8px;
+      align-items:end;
+      margin-top:8px;
+    }
     .profileCheck{
       display:flex;
       gap:8px;
@@ -582,6 +589,7 @@
       .row{gap:10px}
       .hint{margin:6px 0 6px;padding:6px 10px;font-size:12px}
       .profileRow{grid-template-columns:1fr}
+      .profileCodeRow{grid-template-columns:1fr}
       .profileCheck{
         align-items:flex-start;
         line-height:1.35;
@@ -754,13 +762,25 @@
               <button id="clearProfileBtn" class="smallbtn secondary" type="button">Clear saved</button>
             </div>
 
+            <div class="profileCodeRow">
+              <input
+                id="profileCode"
+                inputmode="numeric"
+                maxlength="6"
+                placeholder="6-digit code for a new device"
+                autocomplete="one-time-code"
+              />
+              <button id="sendCodeBtn" class="smallbtn secondary" type="button">Send code</button>
+              <button id="verifyProfileBtn" class="smallbtn secondary" type="button">Verify & load</button>
+            </div>
+
             <label class="profileCheck" for="saveProfileOpt">
               <input id="saveProfileOpt" type="checkbox" checked />
               <span>Save this profile on this device for future Fridays</span>
             </label>
 
             <div id="profileStatus" class="hint profileStatus">
-              Enter the same email on this device to load your saved profile next time.
+              Same device: enter the same email to load locally. New device: send a code and verify once to load your cloud profile.
             </div>
           </div>
 
@@ -1047,8 +1067,11 @@
     const btn = document.getElementById("btn");
     const statusEl = document.getElementById("status");
     const profileEmail = document.getElementById("profileEmail");
+    const profileCode = document.getElementById("profileCode");
     const loadProfileBtn = document.getElementById("loadProfileBtn");
     const clearProfileBtn = document.getElementById("clearProfileBtn");
+    const sendCodeBtn = document.getElementById("sendCodeBtn");
+    const verifyProfileBtn = document.getElementById("verifyProfileBtn");
     const saveProfileOpt = document.getElementById("saveProfileOpt");
     const profileStatus = document.getElementById("profileStatus");
 
@@ -1087,6 +1110,7 @@
     const LS_REGID = "frisbee_last_regid";
     const LS_PROFILE_PREFIX = "frisbee_profile_v1:";
     const LS_LAST_PROFILE_EMAIL = "frisbee_profile_last_email";
+    const LS_PROFILE_DEVICE_TOKEN_PREFIX = "frisbee_profile_device_token_v1:";
     const LS_STATUS_CACHE = "frisbee_status_cache_v1";
     const STATUS_CACHE_MAX_AGE_MS = 20 * 60 * 1000;
 
@@ -1125,6 +1149,28 @@
       return normalized ? `${LS_PROFILE_PREFIX}${normalized}` : "";
     }
 
+    function profileDeviceTokenKey(email){
+      const normalized = normalizeEmail(email);
+      return normalized ? `${LS_PROFILE_DEVICE_TOKEN_PREFIX}${normalized}` : "";
+    }
+
+    function getSavedProfileDeviceToken(email){
+      const key = profileDeviceTokenKey(email);
+      return key ? storageGet(key) : "";
+    }
+
+    function saveProfileDeviceToken(email, token){
+      const key = profileDeviceTokenKey(email);
+      if (!key || !token) return false;
+      return storageSet(key, token);
+    }
+
+    function clearProfileDeviceToken(email){
+      const key = profileDeviceTokenKey(email);
+      if (!key) return false;
+      return storageRemove(key);
+    }
+
     function setProfileStatus(text){
       if (!profileStatus) return;
       profileStatus.textContent = text;
@@ -1157,11 +1203,28 @@
       document.getElementById("pd").value = profile.practice || "";
     }
 
+    function profileRecordFromSource(source = {}){
+      return {
+        email: normalizeEmail(source.email || profileEmail?.value),
+        name: String(source.name || "").trim(),
+        gender: String(source.gender || ""),
+        throwing: String(source.throwing || ""),
+        catch: String(source.catch || ""),
+        fitness: String(source.fitness || ""),
+        experience: String(source.experience || ""),
+        preference: String(source.preference || ""),
+        practice: String(source.practice || ""),
+        savedAt: new Date().toISOString()
+      };
+    }
+
     function saveProfileToDevice(options = {}){
       const silent = !!options.silent;
-      const emailOverride = normalizeEmail(options.emailOverride);
-      const profile = getProfileFormData();
-      profile.email = emailOverride || profile.email;
+      const profile = profileRecordFromSource({
+        ...getProfileFormData(),
+        ...(options.profile || {}),
+        email: options.emailOverride || options.profile?.email || profileEmail?.value
+      });
 
       if (!profile.email) {
         if (!silent) {
@@ -1222,12 +1285,140 @@
       }
 
       storageRemove(profileStorageKey(normalized));
+      clearProfileDeviceToken(normalized);
       if (normalizeEmail(storageGet(LS_LAST_PROFILE_EMAIL)) === normalized) {
         storageRemove(LS_LAST_PROFILE_EMAIL);
       }
 
       setProfileStatus("Saved profile removed from this device.");
       return true;
+    }
+
+    async function postProfileAction(bodyObj){
+      if (!ENDPOINT) {
+        throw new Error("Endpoint is not configured.");
+      }
+
+      const result = await postJsonStrict(ENDPOINT, bodyObj, 12000);
+      if (result.confirmed && result.data?.ok) {
+        return result.data;
+      }
+      throw new Error(result.data?.error || result.error || "Profile request failed.");
+    }
+
+    async function fetchCloudProfile(email, deviceToken){
+      const normalized = normalizeEmail(email);
+      if (!normalized || !deviceToken) {
+        throw new Error("Email and device token are required.");
+      }
+
+      const data = await safeGetJson(
+        `${ENDPOINT}?action=profile&email=${encodeURIComponent(normalized)}&deviceToken=${encodeURIComponent(deviceToken)}`,
+        {
+          attempts:[4000, 7000, 10000],
+          cacheBust:true
+        }
+      );
+
+      if (!data?.ok) {
+        const err = new Error(data?.error || "Unable to load cloud profile.");
+        err.code = data?.code || "";
+        throw err;
+      }
+      return data;
+    }
+
+    async function requestProfileCodeFromCloud(email){
+      const normalized = normalizeEmail(email);
+      if (!normalized) throw new Error("Enter your email first.");
+      return postProfileAction({
+        action: "requestProfileCode",
+        email: normalized
+      });
+    }
+
+    async function verifyProfileCodeFromCloud(email, code){
+      const normalized = normalizeEmail(email);
+      const cleanCode = String(code || "").trim();
+      if (!normalized) throw new Error("Enter your email first.");
+      if (!cleanCode) throw new Error("Enter the 6-digit code.");
+
+      return postProfileAction({
+        action: "verifyProfileCode",
+        email: normalized,
+        code: cleanCode
+      });
+    }
+
+    async function saveProfileToCloud(profile, deviceToken){
+      if (!profile?.email || !deviceToken) {
+        throw new Error("Verified email/device token required for cloud save.");
+      }
+
+      return postProfileAction({
+        action: "saveProfile",
+        email: profile.email,
+        deviceToken,
+        name: profile.name,
+        gender: profile.gender,
+        throwing: profile.throwing,
+        catch: profile.catch,
+        fitness: profile.fitness,
+        experience: profile.experience,
+        practice: profile.practice,
+        preference: profile.preference
+      });
+    }
+
+    async function loadBestProfileForEmail(email, options = {}){
+      const normalized = normalizeEmail(email);
+      const silent = !!options.silent;
+
+      if (!normalized) {
+        if (!silent) setProfileStatus("Enter your email first.");
+        return { loaded:false, source:"none" };
+      }
+
+      if (loadProfileFromDevice(normalized, { silent:true })) {
+        if (!silent) setProfileStatus("Saved profile loaded from this device.");
+        return { loaded:true, source:"local" };
+      }
+
+      const deviceToken = getSavedProfileDeviceToken(normalized);
+      if (!deviceToken) {
+        if (!silent) {
+          setProfileStatus("No saved profile on this device. Send a code to load your cloud profile.");
+        }
+        return { loaded:false, source:"none" };
+      }
+
+      try{
+        const data = await fetchCloudProfile(normalized, deviceToken);
+        if (data?.profile) {
+          profileEmail.value = normalized;
+          fillProfileForm(data.profile);
+          saveProfileToDevice({
+            silent:true,
+            emailOverride: normalized,
+            profile: data.profile
+          });
+          if (!silent) setProfileStatus("Cloud profile loaded and saved on this device.");
+          return { loaded:true, source:"cloud" };
+        }
+
+        if (!silent) {
+          setProfileStatus("Email verified on this device, but no cloud profile exists yet. Submit once to save it.");
+        }
+        return { loaded:false, source:"cloud-empty" };
+      }catch(err){
+        if (String(err.code || "").toLowerCase() === "invalid_device_token") {
+          clearProfileDeviceToken(normalized);
+        }
+        if (!silent) {
+          setProfileStatus("No local profile was found. Send a code to verify this device and load your cloud profile.");
+        }
+        return { loaded:false, source:"none", error:err };
+      }
     }
 
     function appendCacheBust(url){
@@ -2569,26 +2760,82 @@
       if (r) cancelId.value = r;
     })();
 
-    loadProfileBtn.addEventListener("click", () => {
-      loadProfileFromDevice(profileEmail.value, { silent:false });
+    loadProfileBtn.addEventListener("click", async () => {
+      await loadBestProfileForEmail(profileEmail.value, { silent:false });
     });
 
     clearProfileBtn.addEventListener("click", () => {
       clearProfileFromDevice(profileEmail.value);
+      if (profileCode) profileCode.value = "";
     });
 
-    profileEmail.addEventListener("change", () => {
+    sendCodeBtn.addEventListener("click", async () => {
       const email = normalizeEmail(profileEmail.value);
       if (!email) {
-        setProfileStatus("Enter the same email on this device to load your saved profile next time.");
+        setProfileStatus("Enter your email first.");
         return;
       }
 
-      if (!loadProfileFromDevice(email, { silent:true })) {
-        setProfileStatus("No saved profile found on this device yet. Fill the form and submit once to save it.");
-      } else {
-        setProfileStatus("Saved profile loaded.");
+      sendCodeBtn.disabled = true;
+      try{
+        await requestProfileCodeFromCloud(email);
+        setProfileStatus("Verification code sent. Check your email and enter the 6-digit code here.");
+      }catch(err){
+        setProfileStatus(err.message || "Unable to send verification code.");
+      } finally {
+        sendCodeBtn.disabled = false;
       }
+    });
+
+    verifyProfileBtn.addEventListener("click", async () => {
+      const email = normalizeEmail(profileEmail.value);
+      const code = String(profileCode.value || "").trim();
+
+      if (!email) {
+        setProfileStatus("Enter your email first.");
+        return;
+      }
+      if (!code) {
+        setProfileStatus("Enter the 6-digit code from your email.");
+        return;
+      }
+
+      verifyProfileBtn.disabled = true;
+      try{
+        const data = await verifyProfileCodeFromCloud(email, code);
+        if (data?.deviceToken) {
+          saveProfileDeviceToken(email, data.deviceToken);
+        }
+        storageSet(LS_LAST_PROFILE_EMAIL, email);
+        profileCode.value = "";
+
+        if (data?.profile) {
+          profileEmail.value = email;
+          fillProfileForm(data.profile);
+          saveProfileToDevice({
+            silent:true,
+            emailOverride: email,
+            profile: data.profile
+          });
+          setProfileStatus("Email verified. Cloud profile loaded and saved on this device.");
+        } else {
+          setProfileStatus("Email verified for this device. No cloud profile yet, so fill the form and submit once to create one.");
+        }
+      }catch(err){
+        setProfileStatus(err.message || "Code verification failed.");
+      } finally {
+        verifyProfileBtn.disabled = false;
+      }
+    });
+
+    profileEmail.addEventListener("change", async () => {
+      const email = normalizeEmail(profileEmail.value);
+      if (!email) {
+        setProfileStatus("Same device: enter the same email to load locally. New device: send a code and verify once to load your cloud profile.");
+        return;
+      }
+
+      await loadBestProfileForEmail(email, { silent:false });
     });
 
     copyRegBtn.addEventListener("click", async () => {
@@ -2640,6 +2887,18 @@
       showOverlay("Submitting registration…");
       const profileEmailValue = normalizeEmail(profileEmail.value);
       const shouldSaveProfile = !!saveProfileOpt.checked;
+      const deviceToken = getSavedProfileDeviceToken(profileEmailValue);
+      const profileRecord = profileRecordFromSource({
+        email: profileEmailValue,
+        name: payload.name,
+        gender: payload.gender,
+        throwing: payload.throwing,
+        catch: payload.catch,
+        fitness: payload.fitness,
+        experience: payload.experience,
+        practice: payload.practice,
+        preference: payload.preference
+      });
 
       let submitConfirmed = false;
 
@@ -2653,8 +2912,23 @@
           statusEl.className = "status okText";
 
           saveLastReg(payload.name, result.data.regId);
+          let cloudSaved = false;
           if (shouldSaveProfile && profileEmailValue) {
-            saveProfileToDevice({ silent:true, emailOverride: profileEmailValue });
+            saveProfileToDevice({
+              silent:true,
+              emailOverride: profileEmailValue,
+              profile: profileRecord
+            });
+            if (deviceToken) {
+              try{
+                await saveProfileToCloud(profileRecord, deviceToken);
+                cloudSaved = true;
+              }catch(err){
+                if (String(err.message || "").toLowerCase().includes("device")) {
+                  clearProfileDeviceToken(profileEmailValue);
+                }
+              }
+            }
           }
           regTools.style.display = "flex";
           form.reset();
@@ -2664,7 +2938,13 @@
           saveProfileOpt.checked = shouldSaveProfile;
           if (shouldSaveProfile && profileEmailValue) {
             loadProfileFromDevice(profileEmailValue, { silent:true });
-            setProfileStatus("Profile saved on this device.");
+            setProfileStatus(
+              cloudSaved
+                ? "Profile saved on this device and synced to your verified cloud profile."
+                : (deviceToken
+                    ? "Profile saved on this device. Cloud sync needs a fresh email verification on this browser."
+                    : "Profile saved on this device. Verify your email once if you want cross-device restore.")
+            );
           } else if (profileEmailValue) {
             setProfileStatus("Profile not updated on this device. Check the save box if you want to remember changes.");
           } else {
@@ -2688,7 +2968,8 @@
       } finally {
         hideOverlay();
         await refreshVisibleSections();
-        if (!btn.disabled) btn.textContent = "Submit";
+        btn.disabled = false;
+        btn.textContent = "Submit";
       }
     });
 
