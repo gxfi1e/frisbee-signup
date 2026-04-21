@@ -180,15 +180,22 @@
     .profileBox{
       margin-bottom:12px;
     }
-    .profileTopRow{
+    .profileTopBar{
       display:grid;
       grid-template-columns:minmax(0,1fr) 180px;
       gap:8px;
-      align-items:end;
+      align-items:center;
+      margin-bottom:6px;
+    }
+    .profileLabel{
+      margin:0;
+    }
+    .profileTopRow{
+      display:block;
     }
     .profileGoogleSlot{
       display:flex;
-      align-items:end;
+      align-items:center;
       justify-content:flex-end;
       min-width:0;
     }
@@ -610,14 +617,13 @@
     .pickItem:last-child{border-bottom:0}
     .pickItem.active{background:#f6f7fb}
 
-    @media (max-width:520px){
+    @media (max-width:768px){
       body{padding:14px}
       .card{padding:14px}
       label{margin:8px 0 6px;font-size:15px}
       input,select{padding:11px;font-size:15px}
-      .row{grid-template-columns:1fr;gap:10px}
       .hint{margin:6px 0 6px;padding:6px 10px;font-size:12px}
-      .profileTopRow{grid-template-columns:minmax(0,1fr) 148px}
+      .profileTopBar{grid-template-columns:minmax(0,1fr) 148px}
       .profileLocalActions{grid-template-columns:repeat(2, minmax(0,1fr));gap:6px}
       .profileSyncActions{margin-top:6px}
       .smallbtn{font-size:12px;padding:10px 8px}
@@ -782,7 +788,13 @@
       <div id="signupArea">
         <form id="form">
           <div class="box profileBox">
-            <label for="profileEmail">Email</label>
+            <div class="profileTopBar">
+              <label for="profileEmail" class="profileLabel">Email</label>
+              <div class="profileGoogleSlot">
+                <div id="googleSignInButton" class="profileGoogleButton"></div>
+                <button id="googleSignOutBtn" class="smallbtn secondary profileGoogleToggle" type="button" style="display:none;">Log out</button>
+              </div>
+            </div>
             <div class="profileTopRow">
               <input
                 id="profileEmail"
@@ -790,10 +802,6 @@
                 placeholder="yourname@email.com"
                 autocomplete="email"
               />
-              <div class="profileGoogleSlot">
-                <div id="googleSignInButton" class="profileGoogleButton"></div>
-                <button id="googleSignOutBtn" class="smallbtn secondary profileGoogleToggle" type="button" style="display:none;">Log out</button>
-              </div>
             </div>
 
             <div class="profileLocalActions">
