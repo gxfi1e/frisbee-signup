@@ -6,10 +6,10 @@
   <meta http-equiv="Cache-Control" content="no-store" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>KAUST Happy Frisbee hat registration</title>
+  <title>KAUST Happy Frisbee registration</title>
   <script src="./config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://accounts.google.com/gsi/client?hl=en" async defer></script>
 
   <style>
     .spinner{
@@ -198,6 +198,7 @@
       align-items:center;
       justify-content:flex-end;
       min-width:0;
+      overflow:hidden;
     }
     .profileGoogleButton,
     .profileGoogleToggle{
@@ -206,9 +207,11 @@
       display:flex;
       align-items:center;
       justify-content:center;
+      overflow:hidden;
     }
     .profileGoogleButton:empty{display:none}
-    .profileGoogleButton > div{width:100%}
+    .profileGoogleButton > div{width:100%;max-width:100%;overflow:hidden}
+    .profileGoogleButton iframe{max-width:100% !important;}
     .profileLocalActions{
       display:grid;
       grid-template-columns:repeat(2, minmax(0, 1fr));
@@ -357,6 +360,8 @@
 
     #playersStatus:empty{display:none}
     #playersStatus{display:inline-block}
+
+    .analyticsCard[hidden]{display:none !important}
 
     #analyticsBox canvas{
       width:100% !important;
@@ -623,7 +628,7 @@
       label{margin:8px 0 6px;font-size:15px}
       input,select{padding:11px;font-size:15px}
       .hint{margin:6px 0 6px;padding:6px 10px;font-size:12px}
-      .profileTopBar{grid-template-columns:minmax(0,1fr) 148px}
+      .profileTopBar{grid-template-columns:minmax(0,1fr) 172px}
       .profileLocalActions{grid-template-columns:repeat(2, minmax(0,1fr));gap:6px}
       .profileSyncActions{margin-top:6px}
       .smallbtn{font-size:12px;padding:10px 8px}
@@ -747,7 +752,7 @@
 
   <div class="wrap">
     <div class="card">
-      <h1>Friday Frisbee Signup</h1>
+      <h1>Friday Frisbee register</h1>
 
       <div class="bar" aria-label="Status pills (swipe)">
         <span id="countPill" class="pill">Loading...</span>
@@ -757,7 +762,7 @@
 
       <div id="aqiBox" class="box aqiCompact">
         <div class="aqiTopLine">
-          <div class="aqiTitle">KAUST air quality forecast</div>
+          <div class="aqiTitle">KAUST air quality</div>
           <div class="aqiActions">
           <div class="badge" id="aqiModeBadge">Loading…</div>
           <button type="button" class="aqiToggleBtn" id="aqiToggleSummary">Hourly PM</button>
@@ -1004,37 +1009,37 @@
 
           <div class="hint" id="anaStatus" style="margin-top:6px;"></div>
 
-          <div class="box" style="margin-top:10px;">
+          <div class="box analyticsCard" id="latestCard" style="margin-top:10px;" hidden>
             <div class="teamtitle" style="margin:0;">Latest week</div>
             <div class="hint" id="latestSummary" style="margin-top:6px;"></div>
           </div>
 
-          <div class="box" style="margin-top:10px;">
+          <div class="box analyticsCard" id="histCard" style="margin-top:10px;" hidden>
             <div class="teamtitle" style="margin:0;">Score Distribution</div>
             <canvas id="c_hist"></canvas>
           </div>
 
-          <div class="box" style="margin-top:10px;">
+          <div class="box analyticsCard" id="levelsCard" style="margin-top:10px;" hidden>
             <div class="teamtitle" style="margin:0;">Skill Level Distribution</div>
             <canvas id="c_levels"></canvas>
           </div>
 
-          <div class="box" style="margin-top:10px;">
+          <div class="box analyticsCard" id="genderCard" style="margin-top:10px;" hidden>
             <div class="teamtitle" style="margin:0;">Male vs Female Avg</div>
             <canvas id="c_gender"></canvas>
           </div>
 
-          <div class="box" style="margin-top:10px;">
+          <div class="box analyticsCard" id="percentCard" style="margin-top:10px;" hidden>
             <div class="teamtitle" style="margin:0;">Score Percentiles</div>
             <canvas id="c_percent"></canvas>
           </div>
 
-          <div class="box" style="margin-top:10px;">
+          <div class="box analyticsCard" id="trend1Card" style="margin-top:10px;" hidden>
             <div class="teamtitle" style="margin:0;">Weekly Avg & Std Trend</div>
             <canvas id="c_trend1"></canvas>
           </div>
 
-          <div class="box" style="margin-top:10px;">
+          <div class="box analyticsCard" id="trend2Card" style="margin-top:10px;" hidden>
             <div class="teamtitle" style="margin:0;">Weekly Elite% Trend</div>
             <canvas id="c_trend2"></canvas>
           </div>
@@ -1595,7 +1600,8 @@
           theme: "outline",
           size: "medium",
           shape: "pill",
-          text: "signin_with",
+          text: "signin",
+          locale: "en",
           width: getGoogleButtonWidth()
         });
         updateGoogleAuthUi();
@@ -3603,6 +3609,22 @@
     const anaStatus = document.getElementById("anaStatus");
     const anaWeekBadge = document.getElementById("anaWeekBadge");
     const latestSummary = document.getElementById("latestSummary");
+    const latestCard = document.getElementById("latestCard");
+    const histCard = document.getElementById("histCard");
+    const levelsCard = document.getElementById("levelsCard");
+    const genderCard = document.getElementById("genderCard");
+    const percentCard = document.getElementById("percentCard");
+    const trend1Card = document.getElementById("trend1Card");
+    const trend2Card = document.getElementById("trend2Card");
+    const analyticsCards = [latestCard, histCard, levelsCard, genderCard, percentCard, trend1Card, trend2Card].filter(Boolean);
+
+    function setAnalyticsCardsVisible(visible){
+      analyticsCards.forEach(el => { el.hidden = !visible; });
+    }
+
+    function setAnalyticsChartsVisible(visible){
+      [histCard, levelsCard, genderCard, percentCard, trend1Card, trend2Card].forEach(el => { if (el) el.hidden = !visible; });
+    }
 
     let CH = {};
     let analyticsLoadedOnce = false;
@@ -3644,6 +3666,9 @@
       analyticsLoading = true;
 
       anaStatus.textContent = "Loading…";
+      latestSummary.textContent = "";
+      anaWeekBadge.textContent = "—";
+      setAnalyticsCardsVisible(false);
       try{
         const data = await safeGetJson(ENDPOINT + "?action=analytics");
         if(!data || !data.ok) throw new Error((data && data.error) || "analytics failed");
@@ -3660,6 +3685,8 @@
         if (!st) {
           anaWeekBadge.textContent = wk;
           latestSummary.textContent = "No completed game week is available yet.";
+          if (latestCard) latestCard.hidden = false;
+          setAnalyticsChartsVisible(false);
           anaStatus.textContent = "Updated - weeks without games were skipped.";
           analyticsLoadedOnce = true;
           return;
@@ -3677,6 +3704,7 @@
         anaWeekBadge.textContent = wk;
         latestSummary.textContent =
           `Players: ${st.n} · Avg: ${st.avg} · Std: ${st.std} · Elite: ${pct(st.eliteFrac)}`;
+        setAnalyticsCardsVisible(true);
 
         destroyChart("hist");
         const bins = st.bins || {};
@@ -3836,18 +3864,21 @@
         analyticsLoadedOnce = true;
 
       }catch(e){
-        anaStatus.textContent = "Failed / slow. Close and open again.";
+        setAnalyticsCardsVisible(false);
+        anaStatus.textContent = "Analytics unavailable right now. Open this section again later.";
       } finally {
         analyticsLoading = false;
       }
     }
 
     analyticsDetails.addEventListener("toggle", () => {
-      if(analyticsDetails.open && !analyticsLoadedOnce){
+      if(analyticsDetails.open && !analyticsLoading){
         loadAnalytics();
       }
     });
-    loadAnalytics();
+    if (analyticsDetails.open) {
+      loadAnalytics();
+    }
 
     const scrollHint = document.getElementById("scrollHint");
     const scrollHintBtn = document.getElementById("scrollHintBtn");
