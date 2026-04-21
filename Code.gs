@@ -63,12 +63,15 @@ const SCORE_FORMULA = `=ARRAYFORMULA(
   )
 )`;
 
-
 // ================= BASIC =================
-function sheet_(){
+function getMainSheetSafe(){
   const sh = SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
-  ensureMainSheetSchema_(sh);
+  ensureMainSheetSchema(sh);
   return sh;
+}
+
+function sheet(){
+  return getMainSheetSafe();
 }
 
 function ensureMainSheetSchema_(sh){
@@ -127,9 +130,9 @@ function profilesSheet_(){
   return sh;
 }
 
-function installScoreFormula_(){
+function installScoreFormula(){
   const sh = SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
-  ensureMainSheetSchema_(sh);
+  ensureMainSheetSchema(sh);
 
   sh.getRange(1, COL.score + 1).setValue("Score");
 
@@ -142,8 +145,8 @@ function installScoreFormula_(){
   Logger.log("Installed ARRAYFORMULA in L2.");
 }
 
-function resetScoreFormula_(){
-  installScoreFormula_();
+function resetScoreFormula(){
+  installScoreFormula();
 }
 
 function json_(o){
@@ -161,8 +164,8 @@ function normalizeEmail_(email){
   return String(email || "").trim().toLowerCase();
 }
 
-function isValidEmail_(email){
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail_(email));
+function isValidEmail(email){
+  return /^ (\s@)+@ (\s@)+. (\s@)+$/.test(normalizeEmail(email));
 }
 
 function getSheetDataRows_(sh){
@@ -186,18 +189,21 @@ function getNextDataRow_(sh) {
   return 2;
 }
 
-function getMainLastDataRow_(sh){
-  return getNextDataRow_(sh) - 1;
+function getMainLastDataRow(sh){
+  return getNextDataRow(sh) - 1;
 }
 
-function getMainInputRows_(sh){
-  const lastDataRow = getMainLastDataRow_(sh);
+function getMainInputRows(sh){
+  const lastDataRow = getMainLastDataRow(sh);
   if (lastDataRow < 2) return [];
   return sh.getRange(2, 1, lastDataRow - 1, MAIN_INPUT_COLS).getValues();
 }
 
-function getAllRows_(){
-  const sh = sheet_();
+function getAllRows(){
+  const sh = (typeof getMainSheetSafe === "function")
+    ? getMainSheetSafe()
+    : SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
+  ensureMainSheetSchema(sh);
   const lastDataRow = getMainLastDataRow_(sh);
   if (lastDataRow < 2) return [];
   return sh.getRange(2, 1, lastDataRow - 1, MAIN_TOTAL_COLS).getValues();
@@ -207,11 +213,56 @@ function activeRows_(rows){
   return rows.filter(r => String(r[COL.status] || "").trim() === "Active");
 }
 
-function activeCount_(){
-  return activeRows_(getAllRows_()).length;
+function activeCount(){
+  return activeRows(getAllRows_()).length;
 }
 
 function findActiveRowByName_(rows, name){
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const r = rows[i];
+    const rName = String(r[COL.name] || "").trim();
+    const rStat = String(r[COL.status] || "").trim();
+    if (rName === name && rStat === "Active") {
+      return { index: i, row: r };
+    }
+  }
+  return null;
+}
+
+function getMainInputRowsSafe(sh){
+  if (typeof getMainInputRows === "function") {
+    return getMainInputRows_(sh);
+  }
+
+  const maxRows = sh.getMaxRows();
+  if (maxRows < 2) return [];
+
+  const vals = sh.getRange(2, 1, maxRows - 1, MAIN_INPUT_COLS).getValues();
+  for (let i = vals.length - 1; i >= 0; i--) {
+    const hasData = vals[i].some(v => String(v || "").trim() !== "");
+    if (hasData) {
+      return vals.slice(0, i + 1);
+    }
+  }
+  return [];
+}
+
+function activeCountSafe(sh){
+  if (typeof activeCount === "function") {
+    return activeCount_();
+  }
+
+  const rows = getMainInputRowsSafe(sh || ((typeof getMainSheetSafe === "function")
+    ? getMainSheetSafe_()
+    : SpreadsheetApp.openById(SHEET_ID).getSheets()[0]));
+  return rows.filter(r => String(r[COL.status] || "").trim() === "Active").length;
+}
+
+function findActiveRowByNameSafe(rows, name){
+  if (typeof findActiveRowByName === "function") {
+    return findActiveRowByName_(rows, name);
+  }
+
   for (let i = rows.length - 1; i >= 0; i--) {
     const r = rows[i];
     const rName = String(r[COL.name] || "").trim();
@@ -235,17 +286,17 @@ function getRelevantFridayDate_(refDate){
   return friday;
 }
 
-function getWeekKey_(){
+function getWeekKey(){
   return Utilities.formatDate(
-    getRelevantFridayDate_(new Date()),
+    getRelevantFridayDate(new Date()),
     Session.getScriptTimeZone(),
     "yyyy-MM-dd"
   );
 }
 
-function isAfterCutoff_(){
+function isAfterCutoff(){
   const now = new Date();
-  const cutoff = new Date(getRelevantFridayDate_(now));
+  const cutoff = new Date(getRelevantFridayDate(now));
   cutoff.setHours(15, 0, 0, 0);
   return now.getTime() >= cutoff.getTime();
 }
@@ -263,8 +314,8 @@ function getCutoffTime_() {
   return cutoff;
 }
 
-function getRegistrationStatus_(){
-  const cutoff = getCutoffTime_();
+function getRegistrationStatus(){
+  const cutoff = getCutoffTime();
   const now = new Date();
   const count = activeCount_();
   const isFull = count >= MAX_PLAYERS;
@@ -279,39 +330,141 @@ function getRegistrationStatus_(){
   };
 }
 
+function getRegistrationStatusSafe(){
+  if (typeof getRegistrationStatus === "function") {
+    return getRegistrationStatus_();
+  }
+
+  const cutoff = (typeof getCutoffTime_ === "function")
+    ? getCutoffTime()
+    : (function(){
+        const now = new Date();
+        const cutoff = new Date(now);
+        const day = cutoff.getDay();
+        const diffToFriday = (5 - day + 7) % 7;
+        cutoff.setDate(cutoff.getDate() + diffToFriday);
+        cutoff.setHours(15, 0, 0, 0);
+        return cutoff;
+      })();
+  const now = new Date();
+  const sh = (typeof getMainSheetSafe === "function")
+    ? getMainSheetSafe()
+    : SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
+  if (typeof ensureMainSheetSchema === "function") {
+    ensureMainSheetSchema(sh);
+  }
+  const count = activeCountSafe(sh);
+  const isFull = count >= MAX_PLAYERS;
+  const open = now.getTime() < cutoff.getTime() && !isFull;
+
+  return {
+    now,
+    cutoff,
+    count,
+    isFull,
+    open
+  };
+}
+
+function getRegistrationStatusCompat(){
+  if (typeof getRegistrationStatusSafe === "function") {
+    return getRegistrationStatusSafe();
+  }
+  if (typeof getRegistrationStatus === "function") {
+    return getRegistrationStatus_();
+  }
+
+  const cutoff = (typeof getCutoffTime_ === "function")
+    ? getCutoffTime()
+    : (function(){
+        const now = new Date();
+        const c = new Date(now);
+        const day = c.getDay();
+        const diffToFriday = (5 - day + 7) % 7;
+        c.setDate(c.getDate() + diffToFriday);
+        c.setHours(15, 0, 0, 0);
+        return c;
+      })();
+  const now = new Date();
+  const sh = (typeof getMainSheetSafe === "function")
+    ? getMainSheetSafe()
+    : SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
+  if (typeof ensureMainSheetSchema === "function") {
+    ensureMainSheetSchema(sh);
+  }
+  const count = activeCountCompat(sh);
+  const isFull = count >= MAX_PLAYERS;
+  const open = now.getTime() < cutoff.getTime() && !isFull;
+  return { now, cutoff, count, isFull, open };
+}
+
+function getMainInputRowsCompat(sh){
+  if (typeof getMainInputRowsSafe === "function") return getMainInputRowsSafe(sh);
+  if (typeof getMainInputRows === "function") return getMainInputRows_(sh);
+
+  const maxRows = sh.getMaxRows();
+  if (maxRows < 2) return [];
+  const vals = sh.getRange(2, 1, maxRows - 1, MAIN_INPUT_COLS).getValues();
+  for (let i = vals.length - 1; i >= 0; i--) {
+    if (vals[i].some(v => String(v || "").trim() !== "")) return vals.slice(0, i + 1);
+  }
+  return [];
+}
+
+function activeCountCompat(sh){
+  if (typeof activeCountSafe === "function") return activeCountSafe(sh);
+  if (typeof activeCount === "function") return activeCount();
+  return getMainInputRowsCompat(sh).filter(r => String(r[COL.status] || "").trim() === "Active").length;
+}
+
+function findActiveRowByNameCompat(rows, name){
+  if (typeof findActiveRowByNameSafe === "function") return findActiveRowByNameSafe(rows, name);
+  if (typeof findActiveRowByName === "function") return findActiveRowByName_(rows, name);
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const r = rows[i];
+    if (String(r[COL.name] || "").trim() === name && String(r[COL.status] || "").trim() === "Active") {
+      return { index: i, row: r };
+    }
+  }
+  return null;
+}
+
+function getRegistrationStatusSafe(){ return getRegistrationStatusCompat(); }
+function getRegistrationStatus(){ return getRegistrationStatusCompat(); }
+
 // ================= PROFILE CLOUD LAYER =================
-function findProfileRowIndexByEmail_(email){
-  const sh = profilesSheet_();
-  const rows = getSheetDataRows_(sh);
-  const normalized = normalizeEmail_(email);
+function findProfileRowIndexByEmail(email){
+  const sh = profilesSheet();
+  const rows = getSheetDataRows(sh);
+  const normalized = normalizeEmail(email);
 
   for (let i = rows.length - 1; i >= 0; i--) {
-    if (normalizeEmail_(rows[i][PROFILE_COL.email]) === normalized) {
+    if (normalizeEmail_(rowsi) === normalized) {
       return i + 2;
     }
   }
   return 0;
 }
 
-function findProfileRowIndexByGoogleSub_(googleSub){
-  const sh = profilesSheet_();
+function findProfileRowIndexByGoogleSub(googleSub){
+  const sh = profilesSheet();
   const rows = getSheetDataRows_(sh);
   const normalizedSub = String(googleSub || "").trim();
 
   if (!normalizedSub) return 0;
 
   for (let i = rows.length - 1; i >= 0; i--) {
-    if (String(rows[i][PROFILE_COL.googleSub] || "").trim() === normalizedSub) {
+    if (String(rowsi || "").trim() === normalizedSub) {
       return i + 2;
     }
   }
   return 0;
 }
 
-function profileRecordFromRow_(row){
+function profileRecordFromRow(row){
   if (!row) return null;
   return {
-    email: normalizeEmail_(row[PROFILE_COL.email]),
+    email: normalizeEmail(row[PROFILE_COL.email]),
     name: String(row[PROFILE_COL.name] || "").trim(),
     gender: String(row[PROFILE_COL.gender] || "").trim(),
     throwing: String(row[PROFILE_COL.throwing] || "").trim(),
@@ -329,8 +482,8 @@ function profileRecordFromRow_(row){
   };
 }
 
-function readProfileByEmail_(email){
-  const sh = profilesSheet_();
+function readProfileByEmail(email){
+  const sh = profilesSheet();
   const rowIndex = findProfileRowIndexByEmail_(email);
   if (!rowIndex) return null;
 
@@ -340,8 +493,8 @@ function readProfileByEmail_(email){
   return profile;
 }
 
-function readProfileByGoogleSub_(googleSub){
-  const sh = profilesSheet_();
+function readProfileByGoogleSub(googleSub){
+  const sh = profilesSheet();
   const rowIndex = findProfileRowIndexByGoogleSub_(googleSub);
   if (!rowIndex) return null;
 
@@ -351,13 +504,13 @@ function readProfileByGoogleSub_(googleSub){
   return profile;
 }
 
-function findProfileRowIndexByIdentity_(identity, emailFallback){
-  const idxBySub = findProfileRowIndexByGoogleSub_(identity && identity.sub);
+function findProfileRowIndexByIdentity(identity, emailFallback){
+  const idxBySub = findProfileRowIndexByGoogleSub(identity && identity.sub);
   if (idxBySub) return idxBySub;
 
   const candidates = [
-    normalizeEmail_(emailFallback),
-    normalizeEmail_(identity && identity.email)
+    normalizeEmail(emailFallback),
+    normalizeEmail(identity && identity.email)
   ].filter(Boolean);
 
   for (let i = 0; i < candidates.length; i++) {
@@ -368,9 +521,9 @@ function findProfileRowIndexByIdentity_(identity, emailFallback){
   return 0;
 }
 
-function buildProfileRowValues_(profile, existingRow, identity){
+function buildProfileRowValues(profile, existingRow, identity){
   return [[
-    normalizeEmail_(profile.email) || normalizeEmail_(existingRow && existingRow[PROFILE_COL.email]) || normalizeEmail_(identity && identity.email),
+    normalizeEmail(profile.email) || normalizeEmail(existingRow && existingRow[PROFILE_COL.email]) || normalizeEmail(identity && identity.email),
     String(profile.name || (existingRow && existingRow[PROFILE_COL.name]) || "").trim(),
     String(profile.gender || (existingRow && existingRow[PROFILE_COL.gender]) || "").trim(),
     String(profile.throwing || (existingRow && existingRow[PROFILE_COL.throwing]) || "").trim(),
@@ -388,13 +541,13 @@ function buildProfileRowValues_(profile, existingRow, identity){
   ]];
 }
 
-function upsertProfileByGoogleIdentity_(profile, identity){
-  const sh = profilesSheet_();
-  const rowIndex = findProfileRowIndexByIdentity_(identity, profile.email);
+function upsertProfileByGoogleIdentity(profile, identity){
+  const sh = profilesSheet();
+  const rowIndex = findProfileRowIndexByIdentity(identity, profile.email);
   const existingRow = rowIndex
     ? sh.getRange(rowIndex, 1, 1, PROFILE_TOTAL_COLS).getValues()[0]
     : null;
-  const rowValues = buildProfileRowValues_(profile, existingRow, identity);
+  const rowValues = buildProfileRowValues(profile, existingRow, identity);
 
   if (rowIndex) {
     sh.getRange(rowIndex, 1, 1, PROFILE_TOTAL_COLS).setValues(rowValues);
@@ -402,7 +555,7 @@ function upsertProfileByGoogleIdentity_(profile, identity){
     sh.appendRow(rowValues[0]);
   }
 
-  return readProfileByGoogleSub_(identity.sub) || readProfileByEmail_(profile.email || identity.email);
+  return readProfileByGoogleSub(identity.sub) || readProfileByEmail(profile.email || identity.email);
 }
 
 function publicProfilePayload_(profile){
@@ -495,26 +648,26 @@ function loadGoogleProfileAction_(data){
     };
   }
 
-  let profile = readProfileByGoogleSub_(identity.sub);
+  let profile = readProfileByGoogleSub(identity.sub);
   if (!profile) {
-    const fallbackRowIndex = findProfileRowIndexByEmail_(identity.email);
+    const fallbackRowIndex = findProfileRowIndexByEmail(identity.email);
     if (fallbackRowIndex) {
-      const sh = profilesSheet_();
+      const sh = profilesSheet();
       sh.getRange(fallbackRowIndex, PROFILE_COL.googleSub + 1, 1, 3).setValues([[
         identity.sub,
         identity.email,
         new Date()
       ]]);
-      profile = readProfileByGoogleSub_(identity.sub);
+      profile = readProfileByGoogleSub(identity.sub);
     }
   } else if (profile.rowIndex) {
-    const sh = profilesSheet_();
+    const sh = profilesSheet();
     sh.getRange(profile.rowIndex, PROFILE_COL.googleSub + 1, 1, 3).setValues([[
       identity.sub,
       identity.email,
       new Date()
     ]]);
-    profile = readProfileByGoogleSub_(identity.sub);
+    profile = readProfileByGoogleSub(identity.sub);
   }
 
   return {
@@ -567,7 +720,7 @@ function saveGoogleProfileAction_(data){
     return { ok:false, error:"Complete profile fields required for cloud save" };
   }
 
-  const saved = upsertProfileByGoogleIdentity_(profile, identity);
+  const saved = upsertProfileByGoogleIdentity(profile, identity);
   return {
     ok:true,
     saved:true,
@@ -576,16 +729,16 @@ function saveGoogleProfileAction_(data){
       email: identity.email,
       name: identity.name
     },
-    profile: publicProfilePayload_(saved)
+    profile: publicProfilePayload(saved)
   };
 }
 
-function parsePostData_(e){
+function parsePostData(e){
   const raw = e && e.postData ? String(e.postData.contents || "").trim() : "";
   if (raw) {
     try {
       return JSON.parse(raw);
-    } catch (_err) {
+    } catch (err) {
     }
   }
 
@@ -599,23 +752,27 @@ function parsePostData_(e){
 
 // ================= API =================
 function doGet(e){
-  const action = String(e?.parameter?.action || "status");
+  try {
+    const action = String(e && e.parameter ? (e.parameter.action || "status") : "status");
 
-  if (action === "players") return players_();
-  if (action === "teams") return getTeamsWithAuto_();
-  if (action === "analytics") return analytics_();
-  if (action !== "status") return json_({ ok:false, error:"unknown action: " + action });
+    if (action === "players") return players_();
+    if (action === "teams") return getTeamsWithAuto_();
+    if (action === "analytics") return analytics_();
+    if (action !== "status") return json_({ ok:false, error:"unknown action: " + action });
+    
+    const st = getRegistrationStatusCompat_();
+    return json_({
+      ok: true,
+      count: st.count,
+      max: MAX_PLAYERS,
+      open: st.open,
+      isFull: st.isFull,
+      cutoffIso: st.cutoff.toISOString()
+    });
 
-  const st = getRegistrationStatus_();
-
-  return json_({
-    ok: true,
-    count: st.count,
-    max: MAX_PLAYERS,
-    open: st.open,
-    isFull: st.isFull,
-    cutoffIso: st.cutoff.toISOString()
-  });
+  } catch (err) {
+    return json_({ ok:false, error:String(err && err.message || err) });
+  }
 }
 
 
@@ -628,7 +785,7 @@ function generateRegId_() {
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
 
-  const datePart = `${yyyy}${mm}${dd}`;
+  const datePart = String(yyyy) + mm + dd;
 
   const rand = Math.random()
     .toString(36)
@@ -639,6 +796,7 @@ function generateRegId_() {
   return "FRI-" + datePart + "-" + rand;
 }
 
+
 // ================= POST =================
 function doPost(e){
   const out = (obj) => ContentService
@@ -648,24 +806,46 @@ function doPost(e){
   let lock = null;
 
   try{
-    const data = parsePostData_(e);
+    const data = (typeof parsePostData_ === "function")
+      ? parsePostData(e)
+      : (function(){
+          const raw = e && e.postData ? String(e.postData.contents || "").trim() : "";
+          if (raw) {
+            try {
+              return JSON.parse(raw);
+            } catch (err) {
+            }
+          }
+
+          const params = (e && e.parameter) ? e.parameter : {};
+          const obj = {};
+          Object.keys(params).forEach(key => {
+            obj[key] = params[key];
+          });
+          return obj;
+        })();
     const action = String(data.action || "register");
     
     if (action === "loadGoogleProfile") {
       return out(loadGoogleProfileAction_(data));
     }
-
+    
     if (action === "saveGoogleProfile") {
       return out(saveGoogleProfileAction_(data));
     }
-
+    
     lock = LockService.getScriptLock();
     lock.waitLock(10000);
     
     // ============ CANCEL ============
     if (action === "cancel") {
-      const sh = sheet_();
-      const rows = getMainInputRows_(sh);
+      const sh = (typeof getMainSheetSafe_ === "function")
+        ? getMainSheetSafe_()
+        : SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
+      if (typeof ensureMainSheetSchema_ === "function") {
+        ensureMainSheetSchema_(sh);
+      }
+      const rows = getMainInputRowsCompat_(sh);
       const name = (data.name || "").toString().trim();
       const regId = (data.regId || "").toString().trim();
     
@@ -690,7 +870,12 @@ function doPost(e){
     
     // ============ REGISTER ============
     if (action === "register") {
-      const sh = sheet_();
+      const sh = (typeof getMainSheetSafe_ === "function")
+        ? getMainSheetSafe_()
+        : SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
+      if (typeof ensureMainSheetSchema_ === "function") {
+        ensureMainSheetSchema_(sh);
+      }
       const name = (data.name || "").toString().trim();
       const gender = (data.gender || "").toString().trim();
       const throwing = (data.throwing || "").toString().trim();
@@ -704,7 +889,7 @@ function doPost(e){
         return out({ ok:false, error:"missing required fields" });
       }
     
-      const regStatus = getRegistrationStatus_();
+      const regStatus = getRegistrationStatusCompat_();
       if (!regStatus.open) {
         return out({
           ok:false,
@@ -712,8 +897,8 @@ function doPost(e){
         });
       }
     
-      const rows = getMainInputRows_(sh);
-      const existing = findActiveRowByName_(rows, name);
+      const rows = getMainInputRowsCompat_(sh);
+      const existing = findActiveRowByNameCompat_(rows, name);
       if (existing) {
         return out({
           ok:false,
@@ -722,13 +907,24 @@ function doPost(e){
       }
     
       // Re-check capacity immediately before append while still holding the lock
-      const freshCount = activeCount_();
+      const freshCount = activeCountCompat_(sh);
       if (freshCount >= MAX_PLAYERS) {
         return out({ ok:false, error:"Registration is full." });
       }
     
       const regId = generateRegId_();
-      const nextRow = getNextDataRow_(sh);
+      const nextRow = (typeof getNextDataRow_ === "function")
+        ? getNextDataRow_(sh)
+        : (function(){
+            const maxRows = sh.getMaxRows();
+            if (maxRows < 2) return 2;
+            const vals = sh.getRange(2, 1, maxRows - 1, MAIN_INPUT_COLS).getValues();
+            for (let i = vals.length - 1; i >= 0; i--) {
+              const hasData = vals[i].some(v => String(v || "").trim() !== "");
+              if (hasData) return i + 3;
+            }
+            return 2;
+          })();
     
       sh.getRange(nextRow, 1, 1, MAIN_INPUT_COLS).setValues([[
         new Date(),
@@ -760,8 +956,8 @@ function doPost(e){
 }
 
 // ================= PLAYERS =================
-function players_(){
-  const rows = activeRows_(getAllRows_());
+function players(){
+  const rows = activeRows(getAllRows_());
 
   const players = rows.map(r => ({
     name: r[COL.name],
@@ -801,8 +997,8 @@ function buildPublicTeamsText_(teams){
   }).join("\n\n");
 }
 
-function makePublicTeamsPayload_(full){
-  const publicTeams = buildPublicTeams_(full?.teams || []);
+function makePublicTeamsPayload(full){
+  const publicTeams = buildPublicTeams(full?.teams || []);
   return {
     nTeams: Number(full?.nTeams) || publicTeams.length,
     nPlayers: Number(full?.nPlayers) ||
@@ -813,11 +1009,11 @@ function makePublicTeamsPayload_(full){
 }
 
 // ================= TEAM AUTO =================
-function getTeamsWithAuto_(){
-  if (!isAfterCutoff_()) {
-    return json_({ ok:false, error:"Not generated yet" });
+function getTeamsWithAuto(){
+  if (!isAfterCutoff()) {
+    return json({ ok:false, error:"Not generated yet" });
   }
-  ensureTeamsGenerated_();
+  ensureTeamsGenerated();
   return getTeams_();
 }
 
@@ -881,7 +1077,7 @@ function getTeams_(){
 
   for (let i = vals.length - 1; i >= 0; i--) {
     const existingKey = Utilities.formatDate(
-      new Date(vals[i][0]),
+      new Date(valsi),
       Session.getScriptTimeZone(),
       "yyyy-MM-dd"
     );
@@ -907,16 +1103,16 @@ function getTeams_(){
 // ================= TEAM GENERATOR =================
 function generateTeams_(){
 
-  const rows = activeRows_(getAllRows_());
+  const rows = activeRows(getAllRows());
   if (rows.length === 0) {
     return { nTeams:0, nPlayers:0, teams:[], teamsText:"No players." };
   }
 
   const players = rows.map((r, idx) => {
-    const throwing = safeNum_(r[COL.throwing]);
-    const catchV = safeNum_(r[COL.catch]);
-    const fitness = safeNum_(r[COL.fitness]);
-    const experience = safeNum_(r[COL.experience]);
+    const throwing = safeNum(r[COL.throwing]);
+    const catchV = safeNum(r[COL.catch]);
+    const fitness = safeNum(r[COL.fitness]);
+    const experience = safeNum(r[COL.experience]);
     const preference = (r[COL.pref] || "").toString().trim();
 
     return {
@@ -1445,8 +1641,8 @@ function generateTeams_(){
 
   }));
 
-  const publicTeams = buildPublicTeams_(resultTeams);
-  const publicTeamsText = buildPublicTeamsText_(publicTeams);
+  const publicTeams = buildPublicTeams(resultTeams);
+  const publicTeamsText = buildPublicTeamsText(publicTeams);
 
   const adminTeamsText = resultTeams.map(t =>
     t.name +
@@ -1961,8 +2157,8 @@ function writeTeamReadableTable(){
   (jsonData.teams || []).forEach(team => {
     const players = (team.players || []).map(p => ({
       ...p,
-      score: safeNum_(p.score),
-      fitness: safeNum_(p.fitness)
+      score: safeNum(p.score),
+      fitness: safeNum(p.fitness)
     }));
 
     sh.getRange(rowPointer, colPointer)
@@ -2025,8 +2221,8 @@ function buildScoreAnalyticsV3() {
   }
 
   const { headers, byWeek, weeks } = archiveInfo;
-  const idxGender = findHeaderIndex_(headers, ["Gender"]);
-  const idxScore = findHeaderIndex_(headers, ["Score"]);
+  const idxGender = findHeaderIndex(headers, ["Gender"]);
+  const idxScore = findHeaderIndex(headers, ["Score"]);
 
   if (idxGender < 0 || idxScore < 0) {
     Logger.log("Missing required columns: Gender / Score");
@@ -2298,15 +2494,15 @@ function clearTeamsAll_All(){
 }
 
 // ================= API ANALYTICS =================
-function analytics_(){
-  const archiveInfo = getArchiveInfo_();
+function analytics(){
+  const archiveInfo = getArchiveInfo();
   if (!archiveInfo || !archiveInfo.weeks.length) {
     return json_({ ok:false, error:"No archive data" });
   }
 
   const { headers, byWeek, weeks } = archiveInfo;
-  const idxGender = findHeaderIndex_(headers, ["Gender"]);
-  const idxScore = findHeaderIndex_(headers, ["Score"]);
+  const idxGender = findHeaderIndex(headers, ["Gender"]);
+  const idxScore = findHeaderIndex(headers, ["Score"]);
 
   if (idxGender < 0 || idxScore < 0) {
     return json_({ ok:false, error:"Missing Gender/Score" });
@@ -2362,4 +2558,3 @@ function analytics_(){
     trend
   });
 }
-

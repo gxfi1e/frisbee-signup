@@ -2671,8 +2671,17 @@
       for(const ms of attempts){
         try{
           const res = await fetchWithTimeout(fetchUrl, ms, fetchOptions);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return await res.json();
+          const text = await res.text();
+          let data = null;
+          if (text) {
+            try { data = JSON.parse(text); } catch (_) {}
+          }
+          const serverError = extractServerErrorText(text);
+          if (!res.ok) {
+            throw new Error((data && data.error) || serverError || `HTTP ${res.status}`);
+          }
+          if (data && typeof data === "object") return data;
+          throw new Error(serverError || "GET response not readable as JSON");
         }catch(e){
           lastErr = e;
         }
@@ -2884,7 +2893,7 @@
         applySignupVisibility(data);
 
         return data;
-      } catch {
+      } catch (err) {
         const fallback = latestStatusData || readCachedStatus();
         if (fallback) {
           latestStatusData = fallback;
@@ -2898,6 +2907,10 @@
         statusPill.textContent = "UNKNOWN";
         statusPill.className = "pill";
         timeLeftPill.textContent = "";
+        const msg = err?.message || String(err) || "";
+        if (msg && statusEl && !statusEl.textContent) {
+          setStatusMessage(statusEl, msg, "bad");
+        }
         applySignupVisibility(null);
         return null;
       }
