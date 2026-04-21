@@ -367,21 +367,36 @@ function getRegistrationStatusSafe(){
   };
 }
 
-function getRegistrationStatusCompat(){
-  return getRegistrationStatusSafe();
-}
-
-function getRegistrationStatusCompat(){
-  return getRegistrationStatusSafe_();
-}
-
-function getRegistrationStatusSafe(){
-  return getRegistrationStatusSafe_();
-}
-
-function getRegistrationStatus(){
-  return getRegistrationStatusSafe_();
-}
+// Compatibility aliases for projects that still reference plain helper names.
+function getMainSheetSafe(){ return getMainSheetSafe(); }
+function sheet(){ return sheet(); }
+function ensureMainSheetSchema(sh){ return ensureMainSheetSchema(sh); }
+function installScoreFormula(){ return installScoreFormula(); }
+function resetScoreFormula(){ return resetScoreFormula(); }
+function isValidEmail(email){ return isValidEmail(email); }
+function getMainLastDataRow(sh){ return getMainLastDataRow(sh); }
+function getMainInputRows(sh){ return getMainInputRows(sh); }
+function getAllRows(){ return getAllRows(); }
+function activeCount(){ return activeCount(); }
+function getWeekKey(){ return getWeekKey(); }
+function isAfterCutoff(){ return isAfterCutoff(); }
+function getRegistrationStatus(){ return getRegistrationStatus(); }
+function getRegistrationStatusSafe(){ return getRegistrationStatusSafe(); }
+function getRegistrationStatusCompat(){ return getRegistrationStatusSafe(); }
+function profilesSheet(){ return profilesSheet(); }
+function findProfileRowIndexByEmail(email){ return findProfileRowIndexByEmail(email); }
+function findProfileRowIndexByGoogleSub(googleSub){ return findProfileRowIndexByGoogleSub(googleSub); }
+function profileRecordFromRow(row){ return profileRecordFromRow(row); }
+function readProfileByEmail(email){ return readProfileByEmail(email); }
+function readProfileByGoogleSub(googleSub){ return readProfileByGoogleSub(googleSub); }
+function findProfileRowIndexByIdentity(identity, emailFallback){ return findProfileRowIndexByIdentity(identity, emailFallback); }
+function buildProfileRowValues(profile, existingRow, identity){ return buildProfileRowValues(profile, existingRow, identity); }
+function upsertProfileByGoogleIdentity(profile, identity){ return upsertProfileByGoogleIdentity(profile, identity); }
+function publicProfilePayload(profile){ return publicProfilePayload(profile); }
+function parsePostData(e){ return parsePostData(e); }
+function players(){ return players(); }
+function getTeamsWithAuto(){ return getTeamsWithAuto(); }
+function analytics(){ return analytics_(); }
 
 // ================= PROFILE CLOUD LAYER =================
 function findProfileRowIndexByEmail(email){
@@ -703,7 +718,7 @@ function parsePostData(e){
 
 // ================= API =================
 function doGet(e){
-  try{
+  try {
     const action = String(e?.parameter?.action || "status");
 
     if (action === "players") return players_();
@@ -723,11 +738,9 @@ function doGet(e){
     });
 
   } catch (err) {
-    return json_({ ok:false, error:String(err) });
+    return json_({ ok:false, error:String(err && err.message || err) });
   }
 }
-
-
 
 // ================= REGID =================
 function generateRegId_() {
