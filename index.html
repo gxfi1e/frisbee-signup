@@ -2968,7 +2968,8 @@
       } finally {
         hideOverlay();
         await refreshVisibleSections();
-        if (!btn.disabled) btn.textContent = "Submit";
+        btn.disabled = false;
+        btn.textContent = "Submit";
       }
     });
 
