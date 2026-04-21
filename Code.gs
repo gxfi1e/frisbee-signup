@@ -81,7 +81,7 @@ const SCORE_FORMULA = `=ARRAYFORMULA(
 
 
 // ================= BASIC =================
-function sheet(){
+function sheet_(){
   const sh = SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
   ensureMainSheetSchema_(sh);
   return sh;
@@ -176,7 +176,7 @@ function profileDevicesSheet_(){
   return sh;
 }
 
-function installScoreFormula(){
+function installScoreFormula_(){
   const sh = SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
   ensureMainSheetSchema_(sh);
 
@@ -191,8 +191,8 @@ function installScoreFormula(){
   Logger.log("Installed ARRAYFORMULA in L2.");
 }
 
-function resetScoreFormula(){
-  installScoreFormula();
+function resetScoreFormula_(){
+  installScoreFormula_();
 }
 
 function json_(o){
@@ -210,8 +210,8 @@ function normalizeEmail_(email){
   return String(email || "").trim().toLowerCase();
 }
 
-function isValidEmail(email){
-  return /^ (\s@)+@ (\s@)+. (\s@)+$/.test(normalizeEmail_(email));
+function isValidEmail_(email){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail_(email));
 }
 
 function getSheetDataRows_(sh){
@@ -235,19 +235,19 @@ function getNextDataRow_(sh) {
   return 2;
 }
 
-function getMainLastDataRow(sh){
+function getMainLastDataRow_(sh){
   return getNextDataRow_(sh) - 1;
 }
 
-function getMainInputRows(sh){
-  const lastDataRow = getMainLastDataRow(sh);
+function getMainInputRows_(sh){
+  const lastDataRow = getMainLastDataRow_(sh);
   if (lastDataRow < 2) return [];
   return sh.getRange(2, 1, lastDataRow - 1, MAIN_INPUT_COLS).getValues();
 }
 
-function getAllRows(){
-  const sh = sheet();
-  const lastDataRow = getMainLastDataRow(sh);
+function getAllRows_(){
+  const sh = sheet_();
+  const lastDataRow = getMainLastDataRow_(sh);
   if (lastDataRow < 2) return [];
   return sh.getRange(2, 1, lastDataRow - 1, MAIN_TOTAL_COLS).getValues();
 }
@@ -256,8 +256,8 @@ function activeRows_(rows){
   return rows.filter(r => String(r[COL.status] || "").trim() === "Active");
 }
 
-function activeCount(){
-  return activeRows_(getAllRows()).length;
+function activeCount_(){
+  return activeRows_(getAllRows_()).length;
 }
 
 function findActiveRowByName_(rows, name){
@@ -284,7 +284,7 @@ function getRelevantFridayDate_(refDate){
   return friday;
 }
 
-function getWeekKey(){
+function getWeekKey_(){
   return Utilities.formatDate(
     getRelevantFridayDate_(new Date()),
     Session.getScriptTimeZone(),
@@ -292,7 +292,7 @@ function getWeekKey(){
   );
 }
 
-function isAfterCutoff(){
+function isAfterCutoff_(){
   const now = new Date();
   const cutoff = new Date(getRelevantFridayDate_(now));
   cutoff.setHours(15, 0, 0, 0);
@@ -312,10 +312,10 @@ function getCutoffTime_() {
   return cutoff;
 }
 
-function getRegistrationStatus(){
+function getRegistrationStatus_(){
   const cutoff = getCutoffTime_();
   const now = new Date();
-  const count = activeCount();
+  const count = activeCount_();
   const isFull = count >= MAX_PLAYERS;
   const open = now.getTime() < cutoff.getTime() && !isFull;
 
@@ -337,20 +337,20 @@ function generateDeviceToken_(){
   return Utilities.getUuid().replace(/-/g, "") + Utilities.getUuid().replace(/-/g, "");
 }
 
-function findProfileRowIndexByEmail(email){
-  const sh = profilesSheet();
-  const rows = getSheetDataRows(sh);
+function findProfileRowIndexByEmail_(email){
+  const sh = profilesSheet_();
+  const rows = getSheetDataRows_(sh);
   const normalized = normalizeEmail_(email);
 
   for (let i = rows.length - 1; i >= 0; i--) {
-    if (normalizeEmail_(rowsi) === normalized) {
+    if (normalizeEmail_(rows[i][PROFILE_COL.email]) === normalized) {
       return i + 2;
     }
   }
   return 0;
 }
 
-function profileRecordFromRow(row){
+function profileRecordFromRow_(row){
   if (!row) return null;
   return {
     email: normalizeEmail_(row[PROFILE_COL.email]),
@@ -368,20 +368,20 @@ function profileRecordFromRow(row){
   };
 }
 
-function readProfileByEmail(email){
+function readProfileByEmail_(email){
   const sh = profilesSheet_();
-  const rowIndex = findProfileRowIndexByEmail(email);
+  const rowIndex = findProfileRowIndexByEmail_(email);
   if (!rowIndex) return null;
 
   const row = sh.getRange(rowIndex, 1, 1, 12).getValues()[0];
-  const profile = profileRecordFromRow(row);
+  const profile = profileRecordFromRow_(row);
   profile.rowIndex = rowIndex;
   return profile;
 }
 
-function upsertProfile(profile, verifiedAt){
-  const sh = profilesSheet();
-  const email = normalizeEmail(profile.email);
+function upsertProfile_(profile, verifiedAt){
+  const sh = profilesSheet_();
+  const email = normalizeEmail_(profile.email);
   const rowValues = [[
     email,
     String(profile.name || "").trim(),
@@ -397,21 +397,21 @@ function upsertProfile(profile, verifiedAt){
     "Active"
   ]];
 
-  const rowIndex = findProfileRowIndexByEmail(email);
+  const rowIndex = findProfileRowIndexByEmail_(email);
   if (rowIndex) {
     const existingVerifiedAt = sh.getRange(rowIndex, PROFILE_COL.lastVerifiedAt + 1).getValue();
-    rowValues0 = verifiedAt || existingVerifiedAt || "";
+    rowValues[0][PROFILE_COL.lastVerifiedAt] = verifiedAt || existingVerifiedAt || "";
     sh.getRange(rowIndex, 1, 1, rowValues[0].length).setValues(rowValues);
-    return readProfileByEmail(email);
+    return readProfileByEmail_(email);
   }
 
   sh.appendRow(rowValues[0]);
-  return readProfileByEmail(email);
+  return readProfileByEmail_(email);
 }
 
-function findValidVerifyCodeRow(email, code){
-  const sh = verifyCodesSheet();
-  const rows = getSheetDataRows(sh);
+function findValidVerifyCodeRow_(email, code){
+  const sh = verifyCodesSheet_();
+  const rows = getSheetDataRows_(sh);
   const normalized = normalizeEmail_(email);
   const cleanCode = String(code || "").trim();
   const nowMs = Date.now();
@@ -435,9 +435,9 @@ function findValidVerifyCodeRow(email, code){
   return null;
 }
 
-function createProfileDeviceToken(email){
-  const sh = profileDevicesSheet();
-  const token = generateDeviceToken();
+function createProfileDeviceToken_(email){
+  const sh = profileDevicesSheet_();
+  const token = generateDeviceToken_();
   const createdAt = new Date();
   const expiresAt = new Date(createdAt.getTime() + PROFILE_DEVICE_TTL_DAYS * 24 * 60 * 60 * 1000);
 
@@ -453,9 +453,9 @@ function createProfileDeviceToken(email){
   return token;
 }
 
-function validateProfileDeviceToken(email, token){
-  const sh = profileDevicesSheet();
-  const rows = getSheetDataRows(sh);
+function validateProfileDeviceToken_(email, token){
+  const sh = profileDevicesSheet_();
+  const rows = getSheetDataRows_(sh);
   const normalized = normalizeEmail_(email);
   const targetToken = String(token || "").trim();
   const nowMs = Date.now();
@@ -495,14 +495,14 @@ function publicProfilePayload_(profile){
   };
 }
 
-function requestProfileCodeAction(data){
+function requestProfileCodeAction_(data){
   const email = normalizeEmail_(data.email);
-  if (!isValidEmail(email)) {
+  if (!isValidEmail_(email)) {
     return { ok:false, error:"Valid email required" };
   }
 
-  const sh = verifyCodesSheet();
-  const code = generateVerificationCode();
+  const sh = verifyCodesSheet_();
+  const code = generateVerificationCode_();
   const createdAt = new Date();
   const expiresAt = new Date(createdAt.getTime() + PROFILE_CODE_TTL_MIN * 60 * 1000);
 
@@ -535,14 +535,14 @@ function requestProfileCodeAction(data){
   };
 }
 
-function verifyProfileCodeAction(data){
+function verifyProfileCodeAction_(data){
   const email = normalizeEmail_(data.email);
   const code = String(data.code || "").trim();
 
-  if (!isValidEmail(email)) return { ok:false, error:"Valid email required" };
+  if (!isValidEmail_(email)) return { ok:false, error:"Valid email required" };
   if (!code) return { ok:false, error:"Verification code required" };
 
-  const match = findValidVerifyCodeRow(email, code);
+  const match = findValidVerifyCodeRow_(email, code);
   if (!match) {
     return {
       ok:false,
@@ -553,8 +553,8 @@ function verifyProfileCodeAction(data){
 
   match.sh.getRange(match.rowIndex, VERIFY_COL.usedAt + 1).setValue(new Date());
 
-  const deviceToken = createProfileDeviceToken(email);
-  const profile = readProfileByEmail(email);
+  const deviceToken = createProfileDeviceToken_(email);
+  const profile = readProfileByEmail_(email);
   if (profile) {
     profilesSheet_().getRange(profile.rowIndex, PROFILE_COL.lastVerifiedAt + 1).setValue(new Date());
   }
@@ -567,17 +567,17 @@ function verifyProfileCodeAction(data){
   };
 }
 
-function getProfile(e){
+function getProfile_(e){
   const email = normalizeEmail_(e && e.parameter ? e.parameter.email : "");
   const deviceToken = String(e && e.parameter ? (e.parameter.deviceToken || "") : "").trim();
 
-  if (!isValidEmail(email)) {
-    return json({ ok:false, error:"Valid email required" });
+  if (!isValidEmail_(email)) {
+    return json_({ ok:false, error:"Valid email required" });
   }
   if (!deviceToken) {
-    return json({ ok:false, error:"Device token required", code:"invalid_device_token" });
+    return json_({ ok:false, error:"Device token required", code:"invalid_device_token" });
   }
-  if (!validateProfileDeviceToken(email, deviceToken)) {
+  if (!validateProfileDeviceToken_(email, deviceToken)) {
     return json_({
       ok:false,
       error:"Device verification expired. Please verify this browser again.",
@@ -585,17 +585,17 @@ function getProfile(e){
     });
   }
 
-  return json({
+  return json_({
     ok:true,
-    profile: publicProfilePayload(readProfileByEmail(email))
+    profile: publicProfilePayload_(readProfileByEmail_(email))
   });
 }
 
-function saveProfileAction(data){
+function saveProfileAction_(data){
   const email = normalizeEmail_(data.email);
   const deviceToken = String(data.deviceToken || "").trim();
 
-  if (!isValidEmail(email)) {
+  if (!isValidEmail_(email)) {
     return { ok:false, error:"Valid email required" };
   }
   if (!deviceToken) {
@@ -605,7 +605,7 @@ function saveProfileAction(data){
       code:"invalid_device_token"
     };
   }
-  if (!validateProfileDeviceToken(email, deviceToken)) {
+  if (!validateProfileDeviceToken_(email, deviceToken)) {
     return {
       ok:false,
       error:"This browser is no longer verified. Please verify again.",
@@ -638,7 +638,7 @@ function saveProfileAction(data){
     return { ok:false, error:"Complete profile fields required for cloud save" };
   }
 
-  const saved = upsertProfile(profile, new Date());
+  const saved = upsertProfile_(profile, new Date());
   return {
     ok:true,
     saved:true,
@@ -650,10 +650,10 @@ function saveProfileAction(data){
 function doGet(e){
   const action = String(e?.parameter?.action || "status");
 
-  if (action === "profile") return getProfile(e);
-  if (action === "players") return players();
-  if (action === "teams") return getTeamsWithAuto();
-  if (action === "analytics") return analytics();
+  if (action === "profile") return getProfile_(e);
+  if (action === "players") return players_();
+  if (action === "teams") return getTeamsWithAuto_();
+  if (action === "analytics") return analytics_();
   if (action !== "status") return json_({ ok:false, error:"unknown action: " + action });
 
   const st = getRegistrationStatus_();
@@ -682,7 +682,7 @@ function generateRegId_() {
 
   const rand = Math.random()
     .toString(36)
-    .replace(/ (a-z0-9)/g, "")
+    .replace(/[^a-z0-9]/g, "")
     .substring(0, 8)
     .toUpperCase();
 
@@ -812,8 +812,8 @@ function doPost(e){
 }
 
 // ================= PLAYERS =================
-function players(){
-  const rows = activeRows(getAllRows_());
+function players_(){
+  const rows = activeRows_(getAllRows_());
 
   const players = rows.map(r => ({
     name: r[COL.name],
@@ -853,8 +853,8 @@ function buildPublicTeamsText_(teams){
   }).join("\n\n");
 }
 
-function makePublicTeamsPayload(full){
-  const publicTeams = buildPublicTeams(full?.teams || []);
+function makePublicTeamsPayload_(full){
+  const publicTeams = buildPublicTeams_(full?.teams || []);
   return {
     nTeams: Number(full?.nTeams) || publicTeams.length,
     nPlayers: Number(full?.nPlayers) ||
@@ -865,11 +865,11 @@ function makePublicTeamsPayload(full){
 }
 
 // ================= TEAM AUTO =================
-function getTeamsWithAuto(){
-  if (!isAfterCutoff()) {
-    return json({ ok:false, error:"Not generated yet" });
+function getTeamsWithAuto_(){
+  if (!isAfterCutoff_()) {
+    return json_({ ok:false, error:"Not generated yet" });
   }
-  ensureTeamsGenerated();
+  ensureTeamsGenerated_();
   return getTeams_();
 }
 
@@ -933,7 +933,7 @@ function getTeams_(){
 
   for (let i = vals.length - 1; i >= 0; i--) {
     const existingKey = Utilities.formatDate(
-      new Date(valsi),
+      new Date(vals[i][0]),
       Session.getScriptTimeZone(),
       "yyyy-MM-dd"
     );
@@ -959,16 +959,16 @@ function getTeams_(){
 // ================= TEAM GENERATOR =================
 function generateTeams_(){
 
-  const rows = activeRows(getAllRows());
+  const rows = activeRows_(getAllRows_());
   if (rows.length === 0) {
     return { nTeams:0, nPlayers:0, teams:[], teamsText:"No players." };
   }
 
   const players = rows.map((r, idx) => {
-    const throwing = safeNum(r[COL.throwing]);
-    const catchV = safeNum(r[COL.catch]);
-    const fitness = safeNum(r[COL.fitness]);
-    const experience = safeNum(r[COL.experience]);
+    const throwing = safeNum_(r[COL.throwing]);
+    const catchV = safeNum_(r[COL.catch]);
+    const fitness = safeNum_(r[COL.fitness]);
+    const experience = safeNum_(r[COL.experience]);
     const preference = (r[COL.pref] || "").toString().trim();
 
     return {
@@ -1497,8 +1497,8 @@ function generateTeams_(){
 
   }));
 
-  const publicTeams = buildPublicTeams(resultTeams);
-  const publicTeamsText = buildPublicTeamsText(publicTeams);
+  const publicTeams = buildPublicTeams_(resultTeams);
+  const publicTeamsText = buildPublicTeamsText_(publicTeams);
 
   const adminTeamsText = resultTeams.map(t =>
     t.name +
@@ -2013,8 +2013,8 @@ function writeTeamReadableTable(){
   (jsonData.teams || []).forEach(team => {
     const players = (team.players || []).map(p => ({
       ...p,
-      score: safeNum(p.score),
-      fitness: safeNum(p.fitness)
+      score: safeNum_(p.score),
+      fitness: safeNum_(p.fitness)
     }));
 
     sh.getRange(rowPointer, colPointer)
@@ -2077,8 +2077,8 @@ function buildScoreAnalyticsV3() {
   }
 
   const { headers, byWeek, weeks } = archiveInfo;
-  const idxGender = findHeaderIndex(headers, ["Gender"]);
-  const idxScore = findHeaderIndex(headers, ["Score"]);
+  const idxGender = findHeaderIndex_(headers, ["Gender"]);
+  const idxScore = findHeaderIndex_(headers, ["Score"]);
 
   if (idxGender < 0 || idxScore < 0) {
     Logger.log("Missing required columns: Gender / Score");
@@ -2350,15 +2350,15 @@ function clearTeamsAll_All(){
 }
 
 // ================= API ANALYTICS =================
-function analytics(){
-  const archiveInfo = getArchiveInfo();
+function analytics_(){
+  const archiveInfo = getArchiveInfo_();
   if (!archiveInfo || !archiveInfo.weeks.length) {
     return json_({ ok:false, error:"No archive data" });
   }
 
   const { headers, byWeek, weeks } = archiveInfo;
-  const idxGender = findHeaderIndex(headers, ["Gender"]);
-  const idxScore = findHeaderIndex(headers, ["Score"]);
+  const idxGender = findHeaderIndex_(headers, ["Gender"]);
+  const idxScore = findHeaderIndex_(headers, ["Score"]);
 
   if (idxGender < 0 || idxScore < 0) {
     return json_({ ok:false, error:"Missing Gender/Score" });
@@ -2415,40 +2415,3 @@ function analytics(){
   });
 }
 
-// ================= COMPAT WRAPPERS =================
-function sheet(){ return sheet(); }
-function ensureMainSheetSchema(sh){ return ensureMainSheetSchema(sh); }
-function getSheetDataRows(sh){ return getSheetDataRows(sh); }
-function getNextDataRow(sh){ return getNextDataRow(sh); }
-function getMainLastDataRow(sh){ return getMainLastDataRow(sh); }
-function getMainInputRows(sh){ return getMainInputRows(sh); }
-function getAllRows(){ return getAllRows(); }
-function activeRows(rows){ return activeRows(rows); }
-function activeCount(){ return activeCount(); }
-function getRelevantFridayDate(refDate){ return getRelevantFridayDate(refDate); }
-function getWeekKey(){ return getWeekKey(); }
-function isAfterCutoff(){ return isAfterCutoff(); }
-function getCutoffTime(){ return getCutoffTime(); }
-function getRegistrationStatus(){ return getRegistrationStatus(); }
-function normalizeEmail(email){ return normalizeEmail(email); }
-function isValidEmail(email){ return isValidEmail(email); }
-function profilesSheet(){ return profilesSheet(); }
-function verifyCodesSheet(){ return verifyCodesSheet(); }
-function profileDevicesSheet(){ return profileDevicesSheet(); }
-function findProfileRowIndexByEmail(email){ return findProfileRowIndexByEmail(email); }
-function profileRecordFromRow(row){ return profileRecordFromRow(row); }
-function readProfileByEmail(email){ return readProfileByEmail(email); }
-function findValidVerifyCodeRow(email, code){ return findValidVerifyCodeRow(email, code); }
-function requestProfileCodeAction(data){ return requestProfileCodeAction(data); }
-function verifyProfileCodeAction(data){ return verifyProfileCodeAction(data); }
-function saveProfileAction(data){ return saveProfileAction(data); }
-function publicProfilePayload(profile){ return publicProfilePayload(profile); }
-function json(o){ return json(o); }
-function safeNum(v){ return safeNum(v); }
-function buildPublicTeams(teams){ return buildPublicTeams(teams); }
-function buildPublicTeamsText(teams){ return buildPublicTeamsText(teams); }
-function makePublicTeamsPayload(full){ return makePublicTeamsPayload(full); }
-function ensureTeamsGenerated(){ return ensureTeamsGenerated(); }
-function getArchiveInfo(){ return getArchiveInfo(); }
-function findHeaderIndex(headers, candidates){ return findHeaderIndex(headers, candidates); }
-function percentileSorted(a, p){ return percentileSorted(a, p); }
