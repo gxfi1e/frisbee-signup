@@ -580,6 +580,23 @@ function saveGoogleProfileAction_(data){
   };
 }
 
+function parsePostData_(e){
+  const raw = e && e.postData ? String(e.postData.contents || "").trim() : "";
+  if (raw) {
+    try {
+      return JSON.parse(raw);
+    } catch (_err) {
+    }
+  }
+
+  const params = (e && e.parameter) ? e.parameter : {};
+  const obj = {};
+  Object.keys(params).forEach(key => {
+    obj[key] = params[key];
+  });
+  return obj;
+}
+
 // ================= API =================
 function doGet(e){
   const action = String(e?.parameter?.action || "status");
@@ -624,17 +641,14 @@ function generateRegId_() {
 
 // ================= POST =================
 function doPost(e){
-  const sh = sheet_();
-  const lock = LockService.getScriptLock();
-
   const out = (obj) => ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 
-  try{
-    lock.waitLock(10000);
+  let lock = null;
 
-    const data = JSON.parse(e.postData.contents || "{}");
+  try{
+    const data = parsePostData_(e);
     const action = String(data.action || "register");
     
     if (action === "loadGoogleProfile") {
@@ -644,9 +658,13 @@ function doPost(e){
     if (action === "saveGoogleProfile") {
       return out(saveGoogleProfileAction_(data));
     }
+
+    lock = LockService.getScriptLock();
+    lock.waitLock(10000);
     
     // ============ CANCEL ============
     if (action === "cancel") {
+      const sh = sheet_();
       const rows = getMainInputRows_(sh);
       const name = (data.name || "").toString().trim();
       const regId = (data.regId || "").toString().trim();
@@ -672,6 +690,7 @@ function doPost(e){
     
     // ============ REGISTER ============
     if (action === "register") {
+      const sh = sheet_();
       const name = (data.name || "").toString().trim();
       const gender = (data.gender || "").toString().trim();
       const throwing = (data.throwing || "").toString().trim();

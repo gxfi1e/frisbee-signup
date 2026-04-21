@@ -2680,6 +2680,33 @@
       throw lastErr || new Error("GET failed");
     }
 
+    function decodeHtmlEntities(text){
+      const el = document.createElement("textarea");
+      el.innerHTML = String(text || "");
+      return el.value;
+    }
+
+    function extractServerErrorText(text){
+      const raw = String(text || "");
+      if (!raw) return "";
+
+      const refMatch = raw.match(/ReferenceError:[^<\n]*/i);
+      if (refMatch) return decodeHtmlEntities(refMatch[0]).trim();
+
+      const typeMatch = raw.match(/TypeError:[^<\n]*/i);
+      if (typeMatch) return decodeHtmlEntities(typeMatch[0]).trim();
+
+      const syntaxMatch = raw.match(/SyntaxError:[^<\n]*/i);
+      if (syntaxMatch) return decodeHtmlEntities(syntaxMatch[0]).trim();
+
+      const divMatch = raw.match(/<div[^>]*>([\s\S]*?)<\/div>/i);
+      if (divMatch && divMatch[1]) {
+        return decodeHtmlEntities(divMatch[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).trim();
+      }
+
+      return "";
+    }
+
     async function postJsonStrict(url, bodyObj, ms=12000){
       const controller = new AbortController();
       const t = setTimeout(()=>controller.abort(), ms);
@@ -2698,36 +2725,37 @@
           text = await res.text();
         }catch(_){}
 
-        let data = null;
-        if(text){
-          try{ data = JSON.parse(text); }catch(_){}
-        }
+          let data = null;
+          if(text){
+            try{ data = JSON.parse(text); }catch(_){}
+          }
+          const serverError = extractServerErrorText(text);
 
-        if(!res.ok){
-          return {
-            confirmed:false,
-            data,
-            error:data?.error || `HTTP ${res.status}`
-          };
-        }
+          if(!res.ok){
+            return {
+              confirmed:false,
+              data,
+              error:data?.error || serverError || `HTTP ${res.status}`
+            };
+          }
 
-        if(data && typeof data === "object"){
-          return {
+          if(data && typeof data === "object"){
+            return {
             confirmed: !!data.ok,
             data,
             error: data.ok ? null : (data.error || "Request failed")
           };
         }
 
-        return {
-          confirmed:false,
-          data:null,
-          error:"Response not readable from browser"
-        };
-      }catch(e){
-        return {
-          confirmed:false,
-          data:null,
+          return {
+            confirmed:false,
+            data:null,
+            error:serverError || "Response not readable from browser"
+          };
+        }catch(e){
+          return {
+            confirmed:false,
+            data:null,
           error:String(e)
         };
       } finally {
@@ -3166,15 +3194,15 @@
         } else {
           setStatusMessage(
             statusEl,
-            "Request was sent, but registration could not be verified from the browser. Please refresh and check before submitting again.",
-            "warn"
+            result.error || "Request was sent, but registration could not be verified from the browser. Please refresh and check before submitting again.",
+            result.error ? "bad" : "warn"
           );
         }
       } catch (err) {
         setStatusMessage(
           statusEl,
-          "Request was sent, but registration could not be verified from the browser. Please refresh and check before submitting again.",
-          "warn"
+          err?.message || String(err) || "Request was sent, but registration could not be verified from the browser. Please refresh and check before submitting again.",
+          "bad"
         );
       } finally {
         hideOverlay();
@@ -3212,15 +3240,15 @@
         } else {
           setStatusMessage(
             cancelStatus,
-            "Cancellation could not be confirmed. Your saved RegID was kept.",
-            "warn"
+            result.error || "Cancellation could not be confirmed. Your saved RegID was kept.",
+            result.error ? "bad" : "warn"
           );
         }
       } catch (e) {
         setStatusMessage(
           cancelStatus,
-          "Cancellation could not be confirmed. Your saved RegID was kept.",
-          "warn"
+          e?.message || String(e) || "Cancellation could not be confirmed. Your saved RegID was kept.",
+          "bad"
         );
       } finally {
         hideOverlay();
