@@ -61,28 +61,27 @@ const DEVICE_COL = {
   revokedAt: 5
 };
 
-const SCORE_FORMULA = [
-  "=ARRAYFORMULA(",
-  '  IF(B2:B="","",',
-  "    ROUND(",
-  "      0.3*N(D2:D) +",
-  "      0.25*N(E2:E) +",
-  "      0.2*N(F2:F) +",
-  "      0.15*N(G2:G) +",
-  '      0.1*IF(REGEXMATCH(H2:H,"^<\\s*3\\s*months$"),1,',
-  '        IF(REGEXMATCH(H2:H,"^3.*12\\s*months$"),2,',
-  '        IF(REGEXMATCH(H2:H,"^1.*3\\s*years$"),3.1,',
-  '        IF(REGEXMATCH(H2:H,"^3.*5\\s*years$"),4.1,',
-  '        IF(REGEXMATCH(H2:H,"^>\\s*5\\s*years$"),4.6,',
-  '        IF(REGEXMATCH(H2:H,"^>\\s*3\\s*years$"),4.3,0)))))),',
-  "      3",
-  "    )",
-  "  )",
-  ")"
-].join("\n");
+const SCORE_FORMULA = `=ARRAYFORMULA(
+  IF(B2:B="","",
+    ROUND(
+      0.3*N(D2:D) +
+      0.25*N(E2:E) +
+      0.2*N(F2:F) +
+      0.15*N(G2:G) +
+      0.1*IF(H2:H="< 3 months",1,
+        IF(H2:H="3–12 months",2,
+        IF(H2:H="1–3 years",3.1,
+        IF(H2:H="3–5 years",4.1,
+        IF(H2:H="> 5 years",4.6,
+        IF(H2:H="> 3 years",4.3,0)))))),
+      3
+    )
+  )
+)`;
+
 
 // ================= BASIC =================
-function sheet_(){
+function sheet(){
   const sh = SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
   ensureMainSheetSchema_(sh);
   return sh;
@@ -177,7 +176,7 @@ function profileDevicesSheet_(){
   return sh;
 }
 
-function installScoreFormula_(){
+function installScoreFormula(){
   const sh = SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
   ensureMainSheetSchema_(sh);
 
@@ -192,8 +191,8 @@ function installScoreFormula_(){
   Logger.log("Installed ARRAYFORMULA in L2.");
 }
 
-function resetScoreFormula_(){
-  installScoreFormula_();
+function resetScoreFormula(){
+  installScoreFormula();
 }
 
 function json_(o){
@@ -211,8 +210,8 @@ function normalizeEmail_(email){
   return String(email || "").trim().toLowerCase();
 }
 
-function isValidEmail_(email){
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail_(email));
+function isValidEmail(email){
+  return /^ (\s@)+@ (\s@)+. (\s@)+$/.test(normalizeEmail_(email));
 }
 
 function getSheetDataRows_(sh){
@@ -236,19 +235,19 @@ function getNextDataRow_(sh) {
   return 2;
 }
 
-function getMainLastDataRow_(sh){
+function getMainLastDataRow(sh){
   return getNextDataRow_(sh) - 1;
 }
 
-function getMainInputRows_(sh){
-  const lastDataRow = getMainLastDataRow_(sh);
+function getMainInputRows(sh){
+  const lastDataRow = getMainLastDataRow(sh);
   if (lastDataRow < 2) return [];
   return sh.getRange(2, 1, lastDataRow - 1, MAIN_INPUT_COLS).getValues();
 }
 
-function getAllRows_(){
-  const sh = sheet_();
-  const lastDataRow = getMainLastDataRow_(sh);
+function getAllRows(){
+  const sh = sheet();
+  const lastDataRow = getMainLastDataRow(sh);
   if (lastDataRow < 2) return [];
   return sh.getRange(2, 1, lastDataRow - 1, MAIN_TOTAL_COLS).getValues();
 }
@@ -257,8 +256,8 @@ function activeRows_(rows){
   return rows.filter(r => String(r[COL.status] || "").trim() === "Active");
 }
 
-function activeCount_(){
-  return activeRows_(getAllRows_()).length;
+function activeCount(){
+  return activeRows_(getAllRows()).length;
 }
 
 function findActiveRowByName_(rows, name){
@@ -285,7 +284,7 @@ function getRelevantFridayDate_(refDate){
   return friday;
 }
 
-function getWeekKey_(){
+function getWeekKey(){
   return Utilities.formatDate(
     getRelevantFridayDate_(new Date()),
     Session.getScriptTimeZone(),
@@ -293,7 +292,7 @@ function getWeekKey_(){
   );
 }
 
-function isAfterCutoff_(){
+function isAfterCutoff(){
   const now = new Date();
   const cutoff = new Date(getRelevantFridayDate_(now));
   cutoff.setHours(15, 0, 0, 0);
@@ -313,10 +312,10 @@ function getCutoffTime_() {
   return cutoff;
 }
 
-function getRegistrationStatus_(){
+function getRegistrationStatus(){
   const cutoff = getCutoffTime_();
   const now = new Date();
-  const count = activeCount_();
+  const count = activeCount();
   const isFull = count >= MAX_PLAYERS;
   const open = now.getTime() < cutoff.getTime() && !isFull;
 
@@ -338,20 +337,20 @@ function generateDeviceToken_(){
   return Utilities.getUuid().replace(/-/g, "") + Utilities.getUuid().replace(/-/g, "");
 }
 
-function findProfileRowIndexByEmail_(email){
-  const sh = profilesSheet_();
-  const rows = getSheetDataRows_(sh);
+function findProfileRowIndexByEmail(email){
+  const sh = profilesSheet();
+  const rows = getSheetDataRows(sh);
   const normalized = normalizeEmail_(email);
 
   for (let i = rows.length - 1; i >= 0; i--) {
-    if (normalizeEmail_(rows[i][PROFILE_COL.email]) === normalized) {
+    if (normalizeEmail_(rowsi) === normalized) {
       return i + 2;
     }
   }
   return 0;
 }
 
-function profileRecordFromRow_(row){
+function profileRecordFromRow(row){
   if (!row) return null;
   return {
     email: normalizeEmail_(row[PROFILE_COL.email]),
@@ -369,20 +368,20 @@ function profileRecordFromRow_(row){
   };
 }
 
-function readProfileByEmail_(email){
+function readProfileByEmail(email){
   const sh = profilesSheet_();
-  const rowIndex = findProfileRowIndexByEmail_(email);
+  const rowIndex = findProfileRowIndexByEmail(email);
   if (!rowIndex) return null;
 
   const row = sh.getRange(rowIndex, 1, 1, 12).getValues()[0];
-  const profile = profileRecordFromRow_(row);
+  const profile = profileRecordFromRow(row);
   profile.rowIndex = rowIndex;
   return profile;
 }
 
-function upsertProfile_(profile, verifiedAt){
-  const sh = profilesSheet_();
-  const email = normalizeEmail_(profile.email);
+function upsertProfile(profile, verifiedAt){
+  const sh = profilesSheet();
+  const email = normalizeEmail(profile.email);
   const rowValues = [[
     email,
     String(profile.name || "").trim(),
@@ -398,21 +397,21 @@ function upsertProfile_(profile, verifiedAt){
     "Active"
   ]];
 
-  const rowIndex = findProfileRowIndexByEmail_(email);
+  const rowIndex = findProfileRowIndexByEmail(email);
   if (rowIndex) {
     const existingVerifiedAt = sh.getRange(rowIndex, PROFILE_COL.lastVerifiedAt + 1).getValue();
-    rowValues[0][PROFILE_COL.lastVerifiedAt] = verifiedAt || existingVerifiedAt || "";
+    rowValues0 = verifiedAt || existingVerifiedAt || "";
     sh.getRange(rowIndex, 1, 1, rowValues[0].length).setValues(rowValues);
-    return readProfileByEmail_(email);
+    return readProfileByEmail(email);
   }
 
   sh.appendRow(rowValues[0]);
-  return readProfileByEmail_(email);
+  return readProfileByEmail(email);
 }
 
-function findValidVerifyCodeRow_(email, code){
-  const sh = verifyCodesSheet_();
-  const rows = getSheetDataRows_(sh);
+function findValidVerifyCodeRow(email, code){
+  const sh = verifyCodesSheet();
+  const rows = getSheetDataRows(sh);
   const normalized = normalizeEmail_(email);
   const cleanCode = String(code || "").trim();
   const nowMs = Date.now();
@@ -428,16 +427,17 @@ function findValidVerifyCodeRow_(email, code){
     if (rowEmail !== normalized || rowCode !== cleanCode) continue;
     if (usedAt) continue;
     if (!expiresMs || nowMs > expiresMs) continue;
-
+    
     return { sh, rowIndex: i + 2 };
+
   }
 
   return null;
 }
 
-function createProfileDeviceToken_(email){
-  const sh = profileDevicesSheet_();
-  const token = generateDeviceToken_();
+function createProfileDeviceToken(email){
+  const sh = profileDevicesSheet();
+  const token = generateDeviceToken();
   const createdAt = new Date();
   const expiresAt = new Date(createdAt.getTime() + PROFILE_DEVICE_TTL_DAYS * 24 * 60 * 60 * 1000);
 
@@ -453,9 +453,9 @@ function createProfileDeviceToken_(email){
   return token;
 }
 
-function validateProfileDeviceToken_(email, token){
-  const sh = profileDevicesSheet_();
-  const rows = getSheetDataRows_(sh);
+function validateProfileDeviceToken(email, token){
+  const sh = profileDevicesSheet();
+  const rows = getSheetDataRows(sh);
   const normalized = normalizeEmail_(email);
   const targetToken = String(token || "").trim();
   const nowMs = Date.now();
@@ -471,9 +471,10 @@ function validateProfileDeviceToken_(email, token){
     if (rowEmail !== normalized || rowToken !== targetToken) continue;
     if (revokedAt) return false;
     if (!expiresMs || nowMs > expiresMs) return false;
-
+    
     sh.getRange(i + 2, DEVICE_COL.lastUsedAt + 1).setValue(new Date());
     return true;
+
   }
 
   return false;
@@ -494,14 +495,14 @@ function publicProfilePayload_(profile){
   };
 }
 
-function requestProfileCodeAction_(data){
+function requestProfileCodeAction(data){
   const email = normalizeEmail_(data.email);
-  if (!isValidEmail_(email)) {
+  if (!isValidEmail(email)) {
     return { ok:false, error:"Valid email required" };
   }
 
-  const sh = verifyCodesSheet_();
-  const code = generateVerificationCode_();
+  const sh = verifyCodesSheet();
+  const code = generateVerificationCode();
   const createdAt = new Date();
   const expiresAt = new Date(createdAt.getTime() + PROFILE_CODE_TTL_MIN * 60 * 1000);
 
@@ -534,14 +535,14 @@ function requestProfileCodeAction_(data){
   };
 }
 
-function verifyProfileCodeAction_(data){
+function verifyProfileCodeAction(data){
   const email = normalizeEmail_(data.email);
   const code = String(data.code || "").trim();
 
-  if (!isValidEmail_(email)) return { ok:false, error:"Valid email required" };
+  if (!isValidEmail(email)) return { ok:false, error:"Valid email required" };
   if (!code) return { ok:false, error:"Verification code required" };
 
-  const match = findValidVerifyCodeRow_(email, code);
+  const match = findValidVerifyCodeRow(email, code);
   if (!match) {
     return {
       ok:false,
@@ -552,8 +553,8 @@ function verifyProfileCodeAction_(data){
 
   match.sh.getRange(match.rowIndex, VERIFY_COL.usedAt + 1).setValue(new Date());
 
-  const deviceToken = createProfileDeviceToken_(email);
-  const profile = readProfileByEmail_(email);
+  const deviceToken = createProfileDeviceToken(email);
+  const profile = readProfileByEmail(email);
   if (profile) {
     profilesSheet_().getRange(profile.rowIndex, PROFILE_COL.lastVerifiedAt + 1).setValue(new Date());
   }
@@ -566,17 +567,17 @@ function verifyProfileCodeAction_(data){
   };
 }
 
-function getProfile_(e){
+function getProfile(e){
   const email = normalizeEmail_(e && e.parameter ? e.parameter.email : "");
   const deviceToken = String(e && e.parameter ? (e.parameter.deviceToken || "") : "").trim();
 
-  if (!isValidEmail_(email)) {
-    return json_({ ok:false, error:"Valid email required" });
+  if (!isValidEmail(email)) {
+    return json({ ok:false, error:"Valid email required" });
   }
   if (!deviceToken) {
-    return json_({ ok:false, error:"Device token required", code:"invalid_device_token" });
+    return json({ ok:false, error:"Device token required", code:"invalid_device_token" });
   }
-  if (!validateProfileDeviceToken_(email, deviceToken)) {
+  if (!validateProfileDeviceToken(email, deviceToken)) {
     return json_({
       ok:false,
       error:"Device verification expired. Please verify this browser again.",
@@ -584,17 +585,17 @@ function getProfile_(e){
     });
   }
 
-  return json_({
+  return json({
     ok:true,
-    profile: publicProfilePayload_(readProfileByEmail_(email))
+    profile: publicProfilePayload(readProfileByEmail(email))
   });
 }
 
-function saveProfileAction_(data){
+function saveProfileAction(data){
   const email = normalizeEmail_(data.email);
   const deviceToken = String(data.deviceToken || "").trim();
 
-  if (!isValidEmail_(email)) {
+  if (!isValidEmail(email)) {
     return { ok:false, error:"Valid email required" };
   }
   if (!deviceToken) {
@@ -604,7 +605,7 @@ function saveProfileAction_(data){
       code:"invalid_device_token"
     };
   }
-  if (!validateProfileDeviceToken_(email, deviceToken)) {
+  if (!validateProfileDeviceToken(email, deviceToken)) {
     return {
       ok:false,
       error:"This browser is no longer verified. Please verify again.",
@@ -637,7 +638,7 @@ function saveProfileAction_(data){
     return { ok:false, error:"Complete profile fields required for cloud save" };
   }
 
-  const saved = upsertProfile_(profile, new Date());
+  const saved = upsertProfile(profile, new Date());
   return {
     ok:true,
     saved:true,
@@ -649,10 +650,10 @@ function saveProfileAction_(data){
 function doGet(e){
   const action = String(e?.parameter?.action || "status");
 
-  if (action === "profile") return getProfile_(e);
-  if (action === "players") return players_();
-  if (action === "teams") return getTeamsWithAuto_();
-  if (action === "analytics") return analytics_();
+  if (action === "profile") return getProfile(e);
+  if (action === "players") return players();
+  if (action === "teams") return getTeamsWithAuto();
+  if (action === "analytics") return analytics();
   if (action !== "status") return json_({ ok:false, error:"unknown action: " + action });
 
   const st = getRegistrationStatus_();
@@ -677,17 +678,16 @@ function generateRegId_() {
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
 
-  const datePart = String(yyyy) + mm + dd;
+  const datePart = `${yyyy}${mm}${dd}`;
 
   const rand = Math.random()
     .toString(36)
-    .replace(/[^a-z0-9]/g, "")
+    .replace(/ (a-z0-9)/g, "")
     .substring(0, 8)
     .toUpperCase();
 
   return "FRI-" + datePart + "-" + rand;
 }
-
 
 // ================= POST =================
 function doPost(e){
@@ -703,44 +703,44 @@ function doPost(e){
 
     const data = JSON.parse(e.postData.contents || "{}");
     const action = String(data.action || "register");
-
+    
     if (action === "requestProfileCode") {
       return out(requestProfileCodeAction_(data));
     }
-
+    
     if (action === "verifyProfileCode") {
       return out(verifyProfileCodeAction_(data));
     }
-
+    
     if (action === "saveProfile") {
       return out(saveProfileAction_(data));
     }
-
+    
     // ============ CANCEL ============
     if (action === "cancel") {
       const rows = getMainInputRows_(sh);
       const name = (data.name || "").toString().trim();
       const regId = (data.regId || "").toString().trim();
-
+    
       if (!name || !regId) {
         return out({ ok:false, error:"name and regId required" });
       }
-
+    
       for (let i = rows.length - 1; i >= 0; i--) {
         const r = rows[i];
         const rName  = (r[COL.name] || "").toString().trim();
         const rRegId = (r[COL.regId] || "").toString().trim();
         const rStat  = (r[COL.status] || "").toString().trim();
-
+    
         if (rName === name && rRegId === regId && rStat === "Active") {
           sh.getRange(i + 2, COL.status + 1).setValue("Cancelled");
           return out({ ok:true, cancelled:true });
         }
       }
-
+    
       return out({ ok:false, error:"Active record not found (name/regId mismatch or already cancelled)" });
     }
-
+    
     // ============ REGISTER ============
     if (action === "register") {
       const name = (data.name || "").toString().trim();
@@ -751,11 +751,11 @@ function doPost(e){
       const experience = (data.experience || "").toString().trim();
       const pd = (data.practice || "").toString().trim();
       const pref = (data.preference || "").toString().trim();
-
+    
       if (!name || !gender || !throwing || !catchV || !fitness || !experience || !pref || !pd) {
         return out({ ok:false, error:"missing required fields" });
       }
-
+    
       const regStatus = getRegistrationStatus_();
       if (!regStatus.open) {
         return out({
@@ -763,7 +763,7 @@ function doPost(e){
           error: regStatus.isFull ? "Registration is full." : "Registration is closed."
         });
       }
-
+    
       const rows = getMainInputRows_(sh);
       const existing = findActiveRowByName_(rows, name);
       if (existing) {
@@ -772,16 +772,16 @@ function doPost(e){
           error:"This name is already registered. Please use your full name to avoid repeat registration with other people."
         });
       }
-
+    
       // Re-check capacity immediately before append while still holding the lock
       const freshCount = activeCount_();
       if (freshCount >= MAX_PLAYERS) {
         return out({ ok:false, error:"Registration is full." });
       }
-
+    
       const regId = generateRegId_();
       const nextRow = getNextDataRow_(sh);
-
+    
       sh.getRange(nextRow, 1, 1, MAIN_INPUT_COLS).setValues([[
         new Date(),
         name,
@@ -795,10 +795,10 @@ function doPost(e){
         regId,
         "Active"
       ]]);
-
+    
       return out({ ok:true, updated:false, regId });
     }
-
+    
     return out({ ok:false, error:"unknown action: " + action });
 
   } catch(err) {
@@ -811,10 +811,9 @@ function doPost(e){
   }
 }
 
-
 // ================= PLAYERS =================
-function players_(){
-  const rows = activeRows_(getAllRows_());
+function players(){
+  const rows = activeRows(getAllRows_());
 
   const players = rows.map(r => ({
     name: r[COL.name],
@@ -854,8 +853,8 @@ function buildPublicTeamsText_(teams){
   }).join("\n\n");
 }
 
-function makePublicTeamsPayload_(full){
-  const publicTeams = buildPublicTeams_(full?.teams || []);
+function makePublicTeamsPayload(full){
+  const publicTeams = buildPublicTeams(full?.teams || []);
   return {
     nTeams: Number(full?.nTeams) || publicTeams.length,
     nPlayers: Number(full?.nPlayers) ||
@@ -866,14 +865,13 @@ function makePublicTeamsPayload_(full){
 }
 
 // ================= TEAM AUTO =================
-function getTeamsWithAuto_(){
-  if (!isAfterCutoff_()) {
-    return json_({ ok:false, error:"Not generated yet" });
+function getTeamsWithAuto(){
+  if (!isAfterCutoff()) {
+    return json({ ok:false, error:"Not generated yet" });
   }
-  ensureTeamsGenerated_();
+  ensureTeamsGenerated();
   return getTeams_();
 }
-
 
 // ================= ENSURE GENERATED =================
 function ensureTeamsGenerated_(){
@@ -886,14 +884,14 @@ function ensureTeamsGenerated_(){
 
     const ss = SpreadsheetApp.openById(SHEET_ID);
     let sh = ss.getSheetByName("Teams");
-
+    
     if (!sh) {
       sh = ss.insertSheet("Teams");
       sh.appendRow(["WeekKey", "GeneratedAt", "TeamsJSON", "TeamsText"]);
     }
-
+    
     const lastRow = sh.getLastRow();
-
+    
     if (lastRow > 1) {
       const vals = sh.getRange(2, 1, lastRow - 1, 1).getValues();
       for (let i = vals.length - 1; i >= 0; i--) {
@@ -905,9 +903,9 @@ function ensureTeamsGenerated_(){
         if (existingKey === key) return;
       }
     }
-
+    
     const result = generateTeams_();
-
+    
     sh.appendRow([
       key,
       new Date(),
@@ -919,7 +917,6 @@ function ensureTeamsGenerated_(){
     lock.releaseLock();
   }
 }
-
 
 // ================= READ TEAMS =================
 function getTeams_(){
@@ -936,7 +933,7 @@ function getTeams_(){
 
   for (let i = vals.length - 1; i >= 0; i--) {
     const existingKey = Utilities.formatDate(
-      new Date(vals[i][0]),
+      new Date(valsi),
       Session.getScriptTimeZone(),
       "yyyy-MM-dd"
     );
@@ -944,7 +941,7 @@ function getTeams_(){
     if (existingKey === key) {
       try {
         const full = JSON.parse(String(vals[i][2] || "{}"));
-
+    
         return json_({
           ok:true,
           ...makePublicTeamsPayload_(full)
@@ -953,6 +950,7 @@ function getTeams_(){
         return json_({ ok:false, error:"Teams cache is corrupted" });
       }
     }
+
   }
 
   return json_({ ok:false, error:"Not generated yet" });
@@ -961,16 +959,16 @@ function getTeams_(){
 // ================= TEAM GENERATOR =================
 function generateTeams_(){
 
-  const rows = activeRows_(getAllRows_());
+  const rows = activeRows(getAllRows());
   if (rows.length === 0) {
     return { nTeams:0, nPlayers:0, teams:[], teamsText:"No players." };
   }
 
   const players = rows.map((r, idx) => {
-    const throwing = safeNum_(r[COL.throwing]);
-    const catchV = safeNum_(r[COL.catch]);
-    const fitness = safeNum_(r[COL.fitness]);
-    const experience = safeNum_(r[COL.experience]);
+    const throwing = safeNum(r[COL.throwing]);
+    const catchV = safeNum(r[COL.catch]);
+    const fitness = safeNum(r[COL.fitness]);
+    const experience = safeNum(r[COL.experience]);
     const preference = (r[COL.pref] || "").toString().trim();
 
     return {
@@ -983,17 +981,18 @@ function generateTeams_(){
       fitness,
       experience,
       score: safeNum_(r[COL.score]),
-
+    
       athlete: fitness >= 4,
       lowFitness: fitness <= 2,
-
+    
       // New internal balancing indices
       offenseValue: 0.45 * throwing + 0.30 * catchV + 0.15 * experience + 0.10 * fitness,
       defenseValue: 0.55 * fitness + 0.25 * experience + 0.20 * catchV,
-
+    
       // New handler-quality flag
       reliableHandler: preference === "Handler" && throwing >= 4
     };
+
   });
 
   const nPlayers = players.length;
@@ -1035,13 +1034,14 @@ function generateTeams_(){
     const eliteCut = Math.ceil(n * 0.25);
     const strongCut = Math.ceil(n * 0.50);
     const midCut = Math.ceil(n * 0.75);
-
+    
     return {
       ELITE: arr.slice(0, eliteCut),
       STRONG: arr.slice(eliteCut, strongCut),
       MID: arr.slice(strongCut, midCut),
       NEWBIE: arr.slice(midCut)
     };
+
   }
 
   function snakeDraftPreferFemale(group, teams){
@@ -1050,7 +1050,7 @@ function generateTeams_(){
 
     group.forEach(p => {
       let target = index;
-
+    
       if (p.gender === "Female") {
         const femaleCounts = teams.map(t => t.filter(x => x.gender === "Female").length);
         const minF = Math.min(...femaleCounts);
@@ -1062,9 +1062,9 @@ function generateTeams_(){
           return Math.abs(k - target) < Math.abs(best - target) ? k : best;
         }, candidates[0]);
       }
-
+    
       teams[target].push(p);
-
+    
       if (direction === 1) {
         if (index === nTeams - 1) direction = -1;
         else index++;
@@ -1073,6 +1073,7 @@ function generateTeams_(){
         else index--;
       }
     });
+
   }
 
   function draftRolePool_(pool, teams, { usePercentile = true, temperature = 0.6 } = {}){
@@ -1080,19 +1081,20 @@ function generateTeams_(){
 
     const sorted = [...pool].sort((a, b) => b.score - a.score);
     const small = pool.length < 10;
-
+    
     if (!usePercentile || small) {
       const arr = temperature > 0 ? jitterSorted(sorted, temperature * 0.35) : sorted;
       snakeDraftPreferFemale(arr, teams);
       return;
     }
-
+    
     const G = splitByPercentile(sorted);
-
+    
     snakeDraftPreferFemale(jitterSorted(G.ELITE,  temperature * 0.90), teams);
     snakeDraftPreferFemale(jitterSorted(G.STRONG, temperature * 0.80), teams);
     snakeDraftPreferFemale(jitterSorted(G.MID,    temperature * 0.70), teams);
     snakeDraftPreferFemale(jitterSorted(G.NEWBIE, temperature * 0.60), teams);
+
   }
 
   function avgScoreOfRole(team, role){
@@ -1152,16 +1154,17 @@ function generateTeams_(){
     const highTeams = totalFemale - low * nTeams;
 
     let p = 0;
-
+    
     for (const c of femaleCounts) {
       if (c < low) p += (low - c) * 6;
       else if (c > high) p += (c - high) * 6;
     }
-
+    
     const actualHighTeams = femaleCounts.filter(c => c === high).length;
     p += Math.abs(actualHighTeams - highTeams) * 2;
-
+    
     return p;
+
   }
 
   // =============================
@@ -1189,7 +1192,7 @@ function generateTeams_(){
       Math.min(nTeams, players.length)
     );
     snakeDraftPreferFemale(jitterSorted(topScoreSeeds, temperature * 0.25), teams);
-
+    
     // 2) athletes: one per team if possible
     const athleteSeeds = takeUnassigned(
       [...players]
@@ -1199,7 +1202,7 @@ function generateTeams_(){
       Math.min(nTeams, players.filter(p => p.athlete).length)
     );
     snakeDraftPreferFemale(jitterSorted(athleteSeeds, temperature * 0.20), teams);
-
+    
     // 3) reliable handlers: one per team if possible
     const reliableHandlerSeeds = takeUnassigned(
       [...players]
@@ -1209,16 +1212,17 @@ function generateTeams_(){
       Math.min(nTeams, players.filter(p => p.reliableHandler).length)
     );
     snakeDraftPreferFemale(jitterSorted(reliableHandlerSeeds, temperature * 0.20), teams);
-
+    
     const remainingPlayers = players.filter(p => !assigned.has(p.uid));
-
+    
     const HANDLERS = remainingPlayers.filter(p => p.preference === "Handler");
     const CUTTERS  = remainingPlayers.filter(p => p.preference !== "Handler");
-
+    
     draftRolePool_(HANDLERS, teams, { usePercentile:false, temperature });
     draftRolePool_(CUTTERS, teams, { usePercentile:true, temperature });
-
+    
     return teams;
+
   }
 
   function evaluatePenalty(teams){
@@ -1231,7 +1235,7 @@ function generateTeams_(){
     const totalCutters = players.filter(p => p.preference !== "Handler").length;
     const totalAthletes = players.filter(p => p.athlete).length;
     const totalReliableHandlers = players.filter(p => p.reliableHandler).length;
-
+    
     const scoreAvgs = teams.map(t => t.reduce((s, p) => s + p.score, 0) / t.length);
     const femaleCounts = teams.map(t => t.filter(p => p.gender === "Female").length);
     const handlerCounts = teams.map(t => t.filter(p => p.preference === "Handler").length);
@@ -1239,74 +1243,74 @@ function generateTeams_(){
     const handlerAvgs = teams.map(t => avgScoreOfRole(t, "Handler"));
     const cutterAvgs = teams.map(t => avgScoreOfRole(t, "Cutter"));
     const eliteCounts = teams.map(t => t.filter(p => ELITE.includes(p)).length);
-
+    
     // Existing fitness metrics
     const fitnessAvgs = teams.map(t => avgFitness(t));
     const athleteCounts = teams.map(t => athleteCount(t));
     const top2Fitness = teams.map(t => topKFitnessSum(t, 2));
     const lowFitnessCounts = teams.map(t => lowFitnessCount(t));
     const cutterFitnessAvgs = teams.map(t => avgRoleFitness(t, "Cutter"));
-
+    
     // New: top-end score concentration
     const top2Score = teams.map(t => topKScoreSum(t, 2));
-
+    
     // New: handler quality
     const reliableHandlerCounts = teams.map(t => reliableHandlerCount(t));
     const handlerThrowingAvgs = teams.map(t => avgRoleAttr(t, "Handler", "throwing"));
-
+    
     // New: offense / defense balance
     const offenseAvgs = teams.map(t => avgAttr(t, "offenseValue"));
     const defenseAvgs = teams.map(t => avgAttr(t, "defenseValue"));
-
+    
     let hardPenalty = 0;
     let fragilePenalty = 0;
-
+    
     if (ELITE.length >= nTeams) {
       eliteCounts.forEach(c => {
         if (c === 0) hardPenalty += 1000;
       });
     }
-
+    
     if (totalHandlers >= nTeams) {
       handlerCounts.forEach(c => {
         if (c === 0) hardPenalty += 1000;
       });
     }
-
+    
     if (totalAthletes >= nTeams) {
       athleteCounts.forEach(c => {
         if (c === 0) hardPenalty += 1000;
       });
     }
-
+    
     // New: each team should get 1 reliable handler if possible
     if (totalReliableHandlers >= nTeams) {
       reliableHandlerCounts.forEach(c => {
         if (c === 0) hardPenalty += 900;
       });
     }
-
+    
     // New: fragile-structure penalty
     if (totalAthletes >= 2 * nTeams) {
       athleteCounts.forEach(c => {
         if (c < 2) fragilePenalty += (2 - c) * 18;
       });
     }
-
+    
     if (totalHandlers >= 2 * nTeams) {
       handlerCounts.forEach(c => {
         if (c < 2) fragilePenalty += (2 - c) * 12;
       });
     }
-
+    
     if (totalReliableHandlers >= 2 * nTeams) {
       reliableHandlerCounts.forEach(c => {
         if (c < 2) fragilePenalty += (2 - c) * 15;
       });
     }
-
+    
     const femaleP = femaleAchievablePenalty(femaleCounts);
-
+    
     const W = {
       scoreAvgVar: 10,
       female: 25,
@@ -1315,14 +1319,14 @@ function generateTeams_(){
       handlerAvgVar: 10,
       cutterAvgVar: 8,
       sizeVar: 20,
-
+    
       // Existing fitness terms
       fitnessAvgVar: 16,
       athleteCountVar: 18,
       top2FitnessVar: 16,
       lowFitnessVar: 12,
       cutterFitnessVar: 10,
-
+    
       // New five upgrades
       top2ScoreVar: 14,
       reliableHandlerCountVar: 12,
@@ -1330,22 +1334,22 @@ function generateTeams_(){
       offenseAvgVar: 10,
       defenseAvgVar: 12
     };
-
+    
     const cutterFitnessPenalty = (totalCutters >= nTeams)
       ? variance(cutterFitnessAvgs) * W.cutterFitnessVar
       : 0;
-
+    
     const handlerThrowPenalty = (totalHandlers >= nTeams)
       ? variance(handlerThrowingAvgs) * W.handlerThrowVar
       : 0;
-
+    
     const reliableHandlerPenalty = (totalReliableHandlers > 0)
       ? variance(reliableHandlerCounts) * W.reliableHandlerCountVar
       : 0;
-
+    
     return hardPenalty +
       fragilePenalty +
-
+    
       variance(scoreAvgs)           * W.scoreAvgVar +
       variance(top2Score)           * W.top2ScoreVar +
       femaleP                       * W.female +
@@ -1354,17 +1358,18 @@ function generateTeams_(){
       variance(handlerAvgs)         * W.handlerAvgVar +
       variance(cutterAvgs)          * W.cutterAvgVar +
       variance(teamSizes)           * W.sizeVar +
-
+    
       variance(fitnessAvgs)         * W.fitnessAvgVar +
       variance(athleteCounts)       * W.athleteCountVar +
       variance(top2Fitness)         * W.top2FitnessVar +
       variance(lowFitnessCounts)    * W.lowFitnessVar +
       cutterFitnessPenalty +
-
+    
       reliableHandlerPenalty +
       handlerThrowPenalty +
       variance(offenseAvgs)         * W.offenseAvgVar +
       variance(defenseAvgs)         * W.defenseAvgVar;
+
   }
 
   let bestTeams = null;
@@ -1375,11 +1380,12 @@ function generateTeams_(){
     const teams = buildInitialTeams_(t);
 
     const penalty = evaluatePenalty(teams);
-
+    
     if (penalty < bestPenalty) {
       bestPenalty = penalty;
       bestTeams = teams.map(t2 => [...t2]);
     }
+
   }
 
   if (!bestTeams) {
@@ -1394,9 +1400,9 @@ function generateTeams_(){
   }
 
   function swapInPlace(teams, i, ai, j, bj){
-    const tmp = teams[i][ai];
-    teams[i][ai] = teams[j][bj];
-    teams[j][bj] = tmp;
+    const tmp = teamsi;
+    teamsi = teamsj;
+    teamsj = tmp;
   }
 
   function getIndicesByRole(team, role){
@@ -1416,17 +1422,17 @@ function generateTeams_(){
     for (let iter = 0; iter < iterations; iter++) {
       let improved = false;
       const T = Math.max(0.02, T0 * (1.0 - iter / iterations));
-
+    
       for (let s = 0; s < samplesPerIter; s++) {
         const i = randInt(nTeams);
         let j = randInt(nTeams);
         if (j === i) j = (j + 1) % nTeams;
-
+    
         const allowCross = (iter % allowCrossRoleEvery === 0);
         const roleMode = allowCross ? (Math.random() < 0.90 ? "same" : "cross") : "same";
-
+    
         let aiList, bjList;
-
+    
         if (roleMode === "same") {
           const role = (Math.random() < 0.5) ? "Handler" : "Cutter";
           aiList = getIndicesByRole(curTeams[i], role);
@@ -1437,31 +1443,32 @@ function generateTeams_(){
           bjList = [...Array(curTeams[j].length).keys()];
           if (aiList.length === 0 || bjList.length === 0) continue;
         }
-
+    
         const ai = aiList[randInt(aiList.length)];
         const bj = bjList[randInt(bjList.length)];
-
+    
         const trial = deepCopyTeams(curTeams);
         swapInPlace(trial, i, ai, j, bj);
-
+    
         const p = evaluatePenalty(trial);
         const delta = p - curPenalty;
-
+    
         if (delta <= 0 || Math.random() < Math.exp(-delta / Math.max(1e-6, T * 50))) {
           curTeams = trial;
           curPenalty = p;
-
+    
           if (curPenalty < bestPenalty) {
             bestPenalty = curPenalty;
             bestTeams = deepCopyTeams(curTeams);
           }
-
+    
           if (delta < 0) improved = true;
         }
       }
-
+    
       if (!improved && T <= 0.03) break;
     }
+
   }
 
   sampledImprove({
@@ -1485,12 +1492,13 @@ function generateTeams_(){
     handlerAvgThrowing: avgRoleAttr(team, "Handler", "throwing").toFixed(2),
     avgOffense: avgAttr(team, "offenseValue").toFixed(2),
     avgDefense: avgAttr(team, "defenseValue").toFixed(2),
-
+    
     players:team
+
   }));
 
-  const publicTeams = buildPublicTeams_(resultTeams);
-  const publicTeamsText = buildPublicTeamsText_(publicTeams);
+  const publicTeams = buildPublicTeams(resultTeams);
+  const publicTeamsText = buildPublicTeamsText(publicTeams);
 
   const adminTeamsText = resultTeams.map(t =>
     t.name +
@@ -1512,7 +1520,6 @@ function generateTeams_(){
     adminTeamsText             // optional internal use
   };
 }
-
 
 // ================= ARCHIVE =================
 function archiveAndResetWeek(force = false){
@@ -1584,6 +1591,7 @@ function archiveAndResetWeek(force = false){
         archive.deleteRow(i + 2);
       }
     }
+
   }
 
   const rowsToWrite = activeOnly.map(r => [weekKey, ...r]);
@@ -1602,7 +1610,6 @@ function archiveAndResetWeek(force = false){
 
   Logger.log("Archived week: " + weekKey);
 }
-
 
 // ================= ARCHIVE HELPERS =================
 function wkText_(wk) {
@@ -1662,9 +1669,9 @@ function avg_(a){
   return a.reduce((x, y) => x + y, 0) / a.length;
 }
 
-function std_(a){
+function std(a){
   if (!a.length) return 0;
-  const m = avg_(a);
+  const m = avg(a);
   return Math.sqrt(avg_(a.map(x => (x - m) ** 2)));
 }
 
@@ -1682,10 +1689,11 @@ function computeArchiveStats_(rows, idxGender, idxScore){
     if (isNaN(s)) return;
 
     scores.push(s);
-
+    
     const g = String(r[idxGender] || "").trim();
     if (g === "Male") male.push(s);
     if (g === "Female") female.push(s);
+
   });
 
   if (!scores.length) return null;
@@ -1708,8 +1716,8 @@ function computeArchiveStats_(rows, idxGender, idxScore){
     else bins["4.0-5.0"]++;
   });
 
-  const A = avg_(scores);
-  const S = std_(scores);
+  const A = avg(scores);
+  const S = std(scores);
 
   return {
     scores,
@@ -1722,16 +1730,15 @@ function computeArchiveStats_(rows, idxGender, idxScore){
     std: Number(S.toFixed(2)),
     balance: Number((S / A).toFixed(2)),
     min: Number(scores[0].toFixed(2)),
-    p25: Number(percentileSorted_(scores, 0.25).toFixed(2)),
-    median: Number(percentileSorted_(scores, 0.50).toFixed(2)),
-    p75: Number(percentileSorted_(scores, 0.75).toFixed(2)),
+    p25: Number(percentileSorted(scores, 0.25).toFixed(2)),
+    median: Number(percentileSorted(scores, 0.50).toFixed(2)),
+    p75: Number(percentileSorted(scores, 0.75).toFixed(2)),
     max: Number(scores[scores.length - 1].toFixed(2)),
     eliteFrac: Number((levels.Elite / scores.length).toFixed(4)),
-    maleAvg: male.length ? Number(avg_(male).toFixed(2)) : null,
+    maleAvg: male.length ? Number(avg(male).toFixed(2)) : null,
     femaleAvg: female.length ? Number(avg_(female).toFixed(2)) : null
   };
 }
-
 
 // ================= SEASON SUMMARY =================
 function rebuildSeasonSummary(){
@@ -1767,6 +1774,7 @@ function rebuildSeasonSummary(){
     const femalePercent = total ? (females / total) : 0;
 
     summary.appendRow([week, males, females, total, femalePercent]);
+
   });
 
   const lastSummaryRow = summary.getLastRow();
@@ -1776,7 +1784,6 @@ function rebuildSeasonSummary(){
 
   Logger.log("Season summary rebuilt");
 }
-
 
 // ================= FEMALE TREND CHART =================
 function buildGenderChart(){
@@ -1810,7 +1817,6 @@ function buildGenderChart(){
 
   Logger.log("Gender chart rebuilt");
 }
-
 
 // ================= ATTENDANCE RANKING =================
 function buildAttendanceRanking(){
@@ -1854,7 +1860,6 @@ function buildAttendanceRanking(){
   Logger.log("Attendance ranking rebuilt");
 }
 
-
 // ================= MASTER FUNCTION =================
 function rebuildAllSeasonAnalytics(){
   rebuildSeasonSummary();
@@ -1865,7 +1870,6 @@ function rebuildAllSeasonAnalytics(){
 function testTeams(){
   ensureTeamsGenerated_();
 }
-
 
 // ================= READABLE TEAM TABLE =================
 function writeTeamReadableTable(){
@@ -1888,7 +1892,7 @@ function writeTeamReadableTable(){
   const hits = [];
   for (let r = 0; r < scanR; r++) {
     for (let c = 0; c < scanC; c++) {
-      const v = (disp[r][c] || "").toString().trim();
+      const v = (dispr || "").toString().trim();
       if (v !== "") {
         hits.push({ r:r + 1, c:c + 1, a1:sh.getRange(r + 1, c + 1).getA1Notation(), val:v.slice(0, 120) });
         if (hits.length >= 40) break;
@@ -1937,7 +1941,7 @@ function writeTeamReadableTable(){
         }
       }
     }
-
+    
     if (!jsonData) {
       for (let i = data.length - 1; i >= 0; i--) {
         const cell = (data[i][2] || "").toString().trim();
@@ -1953,6 +1957,7 @@ function writeTeamReadableTable(){
         } catch(e) {}
       }
     }
+
   } else {
     Logger.log("Teams lastRow<2, so A2:C cache does not exist.");
   }
@@ -2008,8 +2013,8 @@ function writeTeamReadableTable(){
   (jsonData.teams || []).forEach(team => {
     const players = (team.players || []).map(p => ({
       ...p,
-      score: safeNum_(p.score),
-      fitness: safeNum_(p.fitness)
+      score: safeNum(p.score),
+      fitness: safeNum(p.fitness)
     }));
 
     sh.getRange(rowPointer, colPointer)
@@ -2025,24 +2030,25 @@ function writeTeamReadableTable(){
       )
       .setFontWeight("bold");
     rowPointer++;
-
+    
     sh.getRange(rowPointer, colPointer, 1, 3)
       .setValues([["Name", "Score", "Fitness"]])
       .setFontWeight("bold");
     rowPointer++;
-
+    
     const outRows = players.map(p => [
       p.name || "",
       safeNum_(p.score).toFixed(2),
       safeNum_(p.fitness).toFixed(0)
     ]);
-
+    
     if (outRows.length) {
       sh.getRange(rowPointer, colPointer, outRows.length, 3).setValues(outRows);
       rowPointer += outRows.length;
     }
-
+    
     rowPointer += 2;
+
   });
 
   sh.autoResizeColumns(5, 3);
@@ -2062,7 +2068,6 @@ function manualArchive(){
   archiveAndResetWeek(true);
 }
 
-
 // ================= SCORE ANALYTICS =================
 function buildScoreAnalyticsV3() {
   const archiveInfo = getArchiveInfo_();
@@ -2072,8 +2077,8 @@ function buildScoreAnalyticsV3() {
   }
 
   const { headers, byWeek, weeks } = archiveInfo;
-  const idxGender = findHeaderIndex_(headers, ["Gender"]);
-  const idxScore = findHeaderIndex_(headers, ["Score"]);
+  const idxGender = findHeaderIndex(headers, ["Gender"]);
+  const idxScore = findHeaderIndex(headers, ["Score"]);
 
   if (idxGender < 0 || idxScore < 0) {
     Logger.log("Missing required columns: Gender / Score");
@@ -2276,7 +2281,6 @@ function buildScoreAnalyticsV3() {
   Logger.log("Analytics V3 complete (latest week + weekly trend)");
 }
 
-
 // ================= TEAMS CLEAR HELPERS =================
 function weekKeyText_(v){
   if (v instanceof Date) {
@@ -2312,7 +2316,7 @@ function clearTeamsCacheThisWeek(){
   const vals = sh.getRange(2, 1, lastRow - 1, 1).getValues();
 
   for (let i = vals.length - 1; i >= 0; i--) {
-    const existingKey = weekKeyText_(vals[i][0]);
+    const existingKey = weekKeyText_(valsi);
     if (existingKey === key) {
       sh.deleteRow(i + 2);
       Logger.log("Deleted Teams cache row for weekKey=" + key);
@@ -2345,17 +2349,16 @@ function clearTeamsAll_All(){
   Logger.log("Cleared Teams for ALL weeks (cache + readable area).");
 }
 
-
 // ================= API ANALYTICS =================
-function analytics_(){
-  const archiveInfo = getArchiveInfo_();
+function analytics(){
+  const archiveInfo = getArchiveInfo();
   if (!archiveInfo || !archiveInfo.weeks.length) {
     return json_({ ok:false, error:"No archive data" });
   }
 
   const { headers, byWeek, weeks } = archiveInfo;
-  const idxGender = findHeaderIndex_(headers, ["Gender"]);
-  const idxScore = findHeaderIndex_(headers, ["Score"]);
+  const idxGender = findHeaderIndex(headers, ["Gender"]);
+  const idxScore = findHeaderIndex(headers, ["Score"]);
 
   if (idxGender < 0 || idxScore < 0) {
     return json_({ ok:false, error:"Missing Gender/Score" });
@@ -2411,3 +2414,41 @@ function analytics_(){
     trend
   });
 }
+
+// ================= COMPAT WRAPPERS =================
+function sheet(){ return sheet(); }
+function ensureMainSheetSchema(sh){ return ensureMainSheetSchema(sh); }
+function getSheetDataRows(sh){ return getSheetDataRows(sh); }
+function getNextDataRow(sh){ return getNextDataRow(sh); }
+function getMainLastDataRow(sh){ return getMainLastDataRow(sh); }
+function getMainInputRows(sh){ return getMainInputRows(sh); }
+function getAllRows(){ return getAllRows(); }
+function activeRows(rows){ return activeRows(rows); }
+function activeCount(){ return activeCount(); }
+function getRelevantFridayDate(refDate){ return getRelevantFridayDate(refDate); }
+function getWeekKey(){ return getWeekKey(); }
+function isAfterCutoff(){ return isAfterCutoff(); }
+function getCutoffTime(){ return getCutoffTime(); }
+function getRegistrationStatus(){ return getRegistrationStatus(); }
+function normalizeEmail(email){ return normalizeEmail(email); }
+function isValidEmail(email){ return isValidEmail(email); }
+function profilesSheet(){ return profilesSheet(); }
+function verifyCodesSheet(){ return verifyCodesSheet(); }
+function profileDevicesSheet(){ return profileDevicesSheet(); }
+function findProfileRowIndexByEmail(email){ return findProfileRowIndexByEmail(email); }
+function profileRecordFromRow(row){ return profileRecordFromRow(row); }
+function readProfileByEmail(email){ return readProfileByEmail(email); }
+function findValidVerifyCodeRow(email, code){ return findValidVerifyCodeRow(email, code); }
+function requestProfileCodeAction(data){ return requestProfileCodeAction(data); }
+function verifyProfileCodeAction(data){ return verifyProfileCodeAction(data); }
+function saveProfileAction(data){ return saveProfileAction(data); }
+function publicProfilePayload(profile){ return publicProfilePayload(profile); }
+function json(o){ return json(o); }
+function safeNum(v){ return safeNum(v); }
+function buildPublicTeams(teams){ return buildPublicTeams(teams); }
+function buildPublicTeamsText(teams){ return buildPublicTeamsText(teams); }
+function makePublicTeamsPayload(full){ return makePublicTeamsPayload(full); }
+function ensureTeamsGenerated(){ return ensureTeamsGenerated(); }
+function getArchiveInfo(){ return getArchiveInfo(); }
+function findHeaderIndex(headers, candidates){ return findHeaderIndex(headers, candidates); }
+function percentileSorted(a, p){ return percentileSorted(a, p); }
