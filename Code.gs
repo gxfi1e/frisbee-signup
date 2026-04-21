@@ -63,6 +63,7 @@ const SCORE_FORMULA = `=ARRAYFORMULA(
   )
 )`;
 
+
 // ================= BASIC =================
 function getMainSheetSafe(){
   const sh = SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
@@ -367,70 +368,20 @@ function getRegistrationStatusSafe(){
 }
 
 function getRegistrationStatusCompat(){
-  if (typeof getRegistrationStatusSafe === "function") {
-    return getRegistrationStatusSafe();
-  }
-  if (typeof getRegistrationStatus === "function") {
-    return getRegistrationStatus_();
-  }
-
-  const cutoff = (typeof getCutoffTime_ === "function")
-    ? getCutoffTime()
-    : (function(){
-        const now = new Date();
-        const c = new Date(now);
-        const day = c.getDay();
-        const diffToFriday = (5 - day + 7) % 7;
-        c.setDate(c.getDate() + diffToFriday);
-        c.setHours(15, 0, 0, 0);
-        return c;
-      })();
-  const now = new Date();
-  const sh = (typeof getMainSheetSafe === "function")
-    ? getMainSheetSafe()
-    : SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
-  if (typeof ensureMainSheetSchema === "function") {
-    ensureMainSheetSchema(sh);
-  }
-  const count = activeCountCompat(sh);
-  const isFull = count >= MAX_PLAYERS;
-  const open = now.getTime() < cutoff.getTime() && !isFull;
-  return { now, cutoff, count, isFull, open };
+  return getRegistrationStatusSafe();
 }
 
-function getMainInputRowsCompat(sh){
-  if (typeof getMainInputRowsSafe === "function") return getMainInputRowsSafe(sh);
-  if (typeof getMainInputRows === "function") return getMainInputRows_(sh);
-
-  const maxRows = sh.getMaxRows();
-  if (maxRows < 2) return [];
-  const vals = sh.getRange(2, 1, maxRows - 1, MAIN_INPUT_COLS).getValues();
-  for (let i = vals.length - 1; i >= 0; i--) {
-    if (vals[i].some(v => String(v || "").trim() !== "")) return vals.slice(0, i + 1);
-  }
-  return [];
+function getRegistrationStatusCompat(){
+  return getRegistrationStatusSafe_();
 }
 
-function activeCountCompat(sh){
-  if (typeof activeCountSafe === "function") return activeCountSafe(sh);
-  if (typeof activeCount === "function") return activeCount();
-  return getMainInputRowsCompat(sh).filter(r => String(r[COL.status] || "").trim() === "Active").length;
+function getRegistrationStatusSafe(){
+  return getRegistrationStatusSafe_();
 }
 
-function findActiveRowByNameCompat(rows, name){
-  if (typeof findActiveRowByNameSafe === "function") return findActiveRowByNameSafe(rows, name);
-  if (typeof findActiveRowByName === "function") return findActiveRowByName_(rows, name);
-  for (let i = rows.length - 1; i >= 0; i--) {
-    const r = rows[i];
-    if (String(r[COL.name] || "").trim() === name && String(r[COL.status] || "").trim() === "Active") {
-      return { index: i, row: r };
-    }
-  }
-  return null;
+function getRegistrationStatus(){
+  return getRegistrationStatusSafe_();
 }
-
-function getRegistrationStatusSafe(){ return getRegistrationStatusCompat(); }
-function getRegistrationStatus(){ return getRegistrationStatusCompat(); }
 
 // ================= PROFILE CLOUD LAYER =================
 function findProfileRowIndexByEmail(email){
@@ -752,15 +703,16 @@ function parsePostData(e){
 
 // ================= API =================
 function doGet(e){
-  try {
-    const action = String(e && e.parameter ? (e.parameter.action || "status") : "status");
+  try{
+    const action = String(e?.parameter?.action || "status");
 
     if (action === "players") return players_();
     if (action === "teams") return getTeamsWithAuto_();
     if (action === "analytics") return analytics_();
     if (action !== "status") return json_({ ok:false, error:"unknown action: " + action });
     
-    const st = getRegistrationStatusCompat_();
+    const st = getRegistrationStatusSafe_();
+    
     return json_({
       ok: true,
       count: st.count,
@@ -771,7 +723,7 @@ function doGet(e){
     });
 
   } catch (err) {
-    return json_({ ok:false, error:String(err && err.message || err) });
+    return json_({ ok:false, error:String(err) });
   }
 }
 
@@ -845,7 +797,7 @@ function doPost(e){
       if (typeof ensureMainSheetSchema_ === "function") {
         ensureMainSheetSchema_(sh);
       }
-      const rows = getMainInputRowsCompat_(sh);
+      const rows = getMainInputRowsSafe_(sh);
       const name = (data.name || "").toString().trim();
       const regId = (data.regId || "").toString().trim();
     
@@ -889,7 +841,7 @@ function doPost(e){
         return out({ ok:false, error:"missing required fields" });
       }
     
-      const regStatus = getRegistrationStatusCompat_();
+      const regStatus = getRegistrationStatusSafe_();
       if (!regStatus.open) {
         return out({
           ok:false,
@@ -897,8 +849,8 @@ function doPost(e){
         });
       }
     
-      const rows = getMainInputRowsCompat_(sh);
-      const existing = findActiveRowByNameCompat_(rows, name);
+      const rows = getMainInputRowsSafe_(sh);
+      const existing = findActiveRowByNameSafe_(rows, name);
       if (existing) {
         return out({
           ok:false,
@@ -907,7 +859,7 @@ function doPost(e){
       }
     
       // Re-check capacity immediately before append while still holding the lock
-      const freshCount = activeCountCompat_(sh);
+      const freshCount = activeCountSafe_(sh);
       if (freshCount >= MAX_PLAYERS) {
         return out({ ok:false, error:"Registration is full." });
       }

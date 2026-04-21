@@ -2668,21 +2668,33 @@
         ...(options.fetchOptions || {})
       };
 
-      for(const ms of attempts){
-        try{
+      for (const ms of attempts) {
+        try {
           const res = await fetchWithTimeout(fetchUrl, ms, fetchOptions);
-          const text = await res.text();
+          let text = "";
+          try {
+            text = await res.text();
+          } catch (_) {}
+
           let data = null;
           if (text) {
-            try { data = JSON.parse(text); } catch (_) {}
+            try {
+              data = JSON.parse(text);
+            } catch (_) {}
           }
+
           const serverError = extractServerErrorText(text);
+
           if (!res.ok) {
-            throw new Error((data && data.error) || serverError || `HTTP ${res.status}`);
+            throw new Error(data?.error || serverError || `HTTP ${res.status}`);
           }
-          if (data && typeof data === "object") return data;
-          throw new Error(serverError || "GET response not readable as JSON");
-        }catch(e){
+
+          if (data && typeof data === "object") {
+            return data;
+          }
+
+          throw new Error(serverError || "GET response not readable from browser");
+        } catch (e) {
           lastErr = e;
         }
       }
@@ -2885,7 +2897,7 @@
     async function refresh() {
       try {
         const data = await getStatus();
-        if (data.ok === false) throw new Error("status not ok");
+        if (data.ok === false) throw new Error(data.error || "status not ok");
 
         latestStatusData = data;
         writeCachedStatus(data);
@@ -2906,11 +2918,7 @@
         countPill.textContent = "Status unavailable";
         statusPill.textContent = "UNKNOWN";
         statusPill.className = "pill";
-        timeLeftPill.textContent = "";
-        const msg = err?.message || String(err) || "";
-        if (msg && statusEl && !statusEl.textContent) {
-          setStatusMessage(statusEl, msg, "bad");
-        }
+        timeLeftPill.textContent = String(err?.message || "").slice(0, 60);
         applySignupVisibility(null);
         return null;
       }
