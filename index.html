@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-store" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>KAUST Happy Frisbee registration</title>
+  <title>KAUST Happy Frisbee Signup</title>
   <script src="./config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://accounts.google.com/gsi/client?hl=en" async defer></script>
@@ -181,10 +181,10 @@
       margin-bottom:12px;
     }
     .profileTopBar{
-      display:grid;
-      grid-template-columns:minmax(0,1fr) 180px;
+      display:flex;
       gap:8px;
       align-items:center;
+      justify-content:space-between;
       margin-bottom:6px;
     }
     .profileLabel{
@@ -197,7 +197,10 @@
       display:flex;
       align-items:center;
       justify-content:flex-end;
-      min-width:0;
+      flex:0 0 198px;
+      width:198px;
+      max-width:60%;
+      min-width:160px;
       overflow:hidden;
     }
     .profileGoogleButton,
@@ -229,6 +232,8 @@
       margin-top:8px;
       margin-bottom:0;
     }
+
+    .analyticsCard[hidden]{display:none !important}
     .profileCheck{
       display:flex;
       gap:8px;
@@ -360,8 +365,6 @@
 
     #playersStatus:empty{display:none}
     #playersStatus{display:inline-block}
-
-    .analyticsCard[hidden]{display:none !important}
 
     #analyticsBox canvas{
       width:100% !important;
@@ -628,7 +631,7 @@
       label{margin:8px 0 6px;font-size:15px}
       input,select{padding:11px;font-size:15px}
       .hint{margin:6px 0 6px;padding:6px 10px;font-size:12px}
-      .profileTopBar{grid-template-columns:minmax(0,1fr) 172px}
+      .profileGoogleSlot{flex-basis:190px;width:190px;max-width:62%;}
       .profileLocalActions{grid-template-columns:repeat(2, minmax(0,1fr));gap:6px}
       .profileSyncActions{margin-top:6px}
       .smallbtn{font-size:12px;padding:10px 8px}
@@ -752,7 +755,7 @@
 
   <div class="wrap">
     <div class="card">
-      <h1>Friday Frisbee register</h1>
+      <h1>Friday Frisbee Signup</h1>
 
       <div class="bar" aria-label="Status pills (swipe)">
         <span id="countPill" class="pill">Loading...</span>
@@ -1279,9 +1282,23 @@
     }
 
     function getGoogleButtonWidth(){
-      const width = Math.floor(googleSignInButton?.getBoundingClientRect?.().width || 0);
-      const fallback = window.innerWidth <= 520 ? 148 : 180;
-      return Math.max(140, Math.min(220, width || fallback));
+      const slot = googleSignInButton?.parentElement;
+      const slotWidth = Math.floor(slot?.getBoundingClientRect?.().width || 0);
+      const fallback = window.innerWidth <= 520 ? 190 : 198;
+      return Math.max(160, Math.min(210, slotWidth || fallback));
+    }
+
+    function renderGoogleButton(){
+      if (!window.google?.accounts?.id || !googleSignInButton) return;
+      googleSignInButton.innerHTML = "";
+      window.google.accounts.id.renderButton(googleSignInButton, {
+        theme: "outline",
+        size: "medium",
+        shape: "pill",
+        text: "signin_with",
+        locale: "en",
+        width: getGoogleButtonWidth()
+      });
     }
 
     function getProfileFormData(){
@@ -1595,15 +1612,7 @@
           auto_select: false,
           cancel_on_tap_outside: true
         });
-        googleSignInButton.innerHTML = "";
-        window.google.accounts.id.renderButton(googleSignInButton, {
-          theme: "outline",
-          size: "medium",
-          shape: "pill",
-          text: "signin",
-          locale: "en",
-          width: getGoogleButtonWidth()
-        });
+        renderGoogleButton();
         updateGoogleAuthUi();
         return;
       }
@@ -1615,6 +1624,12 @@
 
       setTimeout(() => initializeGoogleIdentity(attemptsLeft - 1), 250);
     }
+
+    window.addEventListener("resize", () => {
+      if (!getGoogleSession() && window.google?.accounts?.id && googleSignInButton) {
+        renderGoogleButton();
+      }
+    });
 
     function requireGoogleSession(){
       const session = getGoogleSession();
@@ -3670,7 +3685,7 @@
       anaWeekBadge.textContent = "—";
       setAnalyticsCardsVisible(false);
       try{
-        const data = await safeGetJson(ENDPOINT + "?action=analytics");
+        const data = await safeGetJson(ENDPOINT + "?action=analytics", { attempts:[10000, 15000, 22000], cacheBust:true });
         if(!data || !data.ok) throw new Error((data && data.error) || "analytics failed");
 
         const rawTrend = Array.isArray(data.trend) ? data.trend : [];
@@ -3737,11 +3752,7 @@
             plugins:{
               legend:{
                 position:"bottom",
-                labels:{
-                  boxWidth:10,
-                  padding:10,
-                  font:{ size:12 }
-                }
+                labels:{ boxWidth:10, padding:10, font:{ size:12 } }
               },
               tooltip:{
                 callbacks:{
@@ -3765,12 +3776,7 @@
             labels: ["Male","Female"],
             datasets: [{ label: "Avg", data: [st.maleAvg ?? 0, st.femaleAvg ?? 0] }]
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend:{display:false} },
-            scales: { y: { min:0, max:5 } }
-          }
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend:{display:false} }, scales: { y: { min:0, max:5 } } }
         });
 
         destroyChart("percent");
@@ -3778,24 +3784,15 @@
           type: "bar",
           data: {
             labels: ["Avg","Std","Balance","Min","P25","Median","P75","Max"],
-            datasets: [{
-              label: "Value",
-              data: [st.avg, st.std, st.balance, st.min, st.p25, st.median, st.p75, st.max]
-            }]
+            datasets: [{ label: "Value", data: [st.avg, st.std, st.balance, st.min, st.p25, st.median, st.p75, st.max] }]
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend:{display:false} },
-            scales: { y: { min:0, max:5 } }
-          }
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend:{display:false} }, scales: { y: { min:0, max:5 } } }
         });
 
         destroyChart("trend1");
         const weeks = trend.map(x=>x.week);
         const avgArr = trend.map(x=>x.avg);
         const stdArr = trend.map(x=>x.std);
-
         CH.trend1 = new Chart(document.getElementById("c_trend1"), {
           type: "line",
           data: {
@@ -3808,62 +3805,32 @@
           options: {
             responsive:true,
             maintainAspectRatio:false,
-            plugins:{
-              legend:{
-                position:"top",
-                align:"start",
-                labels:{
-                  usePointStyle:true,
-                  boxWidth:10,
-                  padding:12
-                }
-              }
-            },
+            plugins:{ legend:{ position:"top", align:"start", labels:{ usePointStyle:true, boxWidth:10, padding:12 } } },
             elements:{ point:{ radius:4 }, line:{ borderWidth:2 } },
-            scales:{
-              x:{ ticks:{ maxRotation:0, autoSkip:true } },
-              y:{ min:0, max:5, ticks:{ stepSize:1 } }
-            }
+            scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ min:0, max:5, ticks:{ stepSize:1 } } }
           }
         });
 
         destroyChart("trend2");
         const eliteArr = trend.map(x=> (x.eliteFrac ?? 0) * 100);
-
         CH.trend2 = new Chart(document.getElementById("c_trend2"), {
           type: "line",
-          data: {
-            labels: weeks,
-            datasets: [{ label:"Elite%", data: eliteArr, tension:0.25, pointRadius:4 }]
-          },
+          data: { labels: weeks, datasets: [{ label:"Elite%", data: eliteArr, tension:0.25, pointRadius:4 }] },
           options: {
             responsive:true,
             maintainAspectRatio:false,
-            plugins:{
-              legend:{
-                position:"top",
-                align:"start",
-                labels:{ usePointStyle:true, boxWidth:10, padding:12 }
-              }
-            },
+            plugins:{ legend:{ position:"top", align:"start", labels:{ usePointStyle:true, boxWidth:10, padding:12 } } },
             elements:{ point:{ radius:4 }, line:{ borderWidth:2 } },
-            scales:{
-              x:{ ticks:{ maxRotation:0, autoSkip:true } },
-              y:{
-                min:0, max:100,
-                ticks:{ callback:(v)=>v+"%" }
-              }
-            }
+            scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ min:0, max:100, ticks:{ callback:(v)=>v+"%" } } }
           }
         });
 
-        anaStatus.textContent = "Updated ✅";
-        if (filteredTrend.length !== rawTrend.length) {
-          anaStatus.textContent = "Updated - weeks without games were skipped.";
-        }
+        anaStatus.textContent = filteredTrend.length !== rawTrend.length
+          ? "Updated - weeks without games were skipped."
+          : "Updated ✅";
         analyticsLoadedOnce = true;
-
       }catch(e){
+        console.error("Analytics load failed:", e);
         setAnalyticsCardsVisible(false);
         anaStatus.textContent = "Analytics unavailable right now. Open this section again later.";
       } finally {
