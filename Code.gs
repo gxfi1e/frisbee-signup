@@ -2186,8 +2186,8 @@ function buildScoreAnalyticsV3() {
   }
 
   const { headers, byWeek, weeks } = archiveInfo;
-  const idxGender = findHeaderIndex(headers, ["Gender"]);
-  const idxScore = findHeaderIndex(headers, ["Score"]);
+  const idxGender = findHeaderIndex_(headers, ["Gender"]);
+  const idxScore = findHeaderIndex_(headers, ["Score"]);
 
   if (idxGender < 0 || idxScore < 0) {
     Logger.log("Missing required columns: Gender / Score");
@@ -2459,15 +2459,15 @@ function clearTeamsAll_All(){
 }
 
 // ================= API ANALYTICS =================
-function analytics(){
-  const archiveInfo = getArchiveInfo();
+function analytics_(){
+  const archiveInfo = getArchiveInfo_();
   if (!archiveInfo || !archiveInfo.weeks.length) {
     return json_({ ok:false, error:"No archive data" });
   }
 
   const { headers, byWeek, weeks } = archiveInfo;
-  const idxGender = findHeaderIndex(headers, ["Gender"]);
-  const idxScore = findHeaderIndex(headers, ["Score"]);
+  const idxGender = findHeaderIndex_(headers, ["Gender"]);
+  const idxScore = findHeaderIndex_(headers, ["Score"]);
 
   if (idxGender < 0 || idxScore < 0) {
     return json_({ ok:false, error:"Missing Gender/Score" });
@@ -2522,4 +2522,8 @@ function analytics(){
     },
     trend
   });
+}
+
+function analytics(){
+  return analytics_();
 }

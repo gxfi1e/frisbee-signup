@@ -181,10 +181,10 @@
       margin-bottom:12px;
     }
     .profileTopBar{
-      display:flex;
-      gap:8px;
+      display:grid;
+      grid-template-columns:minmax(0, 1fr) minmax(200px, 220px);
+      gap:10px;
       align-items:center;
-      justify-content:space-between;
       margin-bottom:6px;
     }
     .profileLabel{
@@ -197,24 +197,24 @@
       display:flex;
       align-items:center;
       justify-content:flex-end;
-      flex:0 0 198px;
-      width:198px;
-      max-width:60%;
-      min-width:160px;
-      overflow:hidden;
+      width:100%;
+      max-width:220px;
+      min-width:0;
+      justify-self:end;
     }
     .profileGoogleButton,
     .profileGoogleToggle{
       min-height:42px;
       width:100%;
+      min-width:0;
       display:flex;
       align-items:center;
       justify-content:center;
-      overflow:hidden;
+      box-sizing:border-box;
     }
     .profileGoogleButton:empty{display:none}
-    .profileGoogleButton > div{width:100%;max-width:100%;overflow:hidden}
-    .profileGoogleButton iframe{max-width:100% !important;}
+    .profileGoogleButton > div{width:100%;max-width:100%}
+    .profileGoogleButton iframe{width:100% !important;max-width:100% !important;}
     .profileLocalActions{
       display:grid;
       grid-template-columns:repeat(2, minmax(0, 1fr));
@@ -224,8 +224,10 @@
     .profileSyncActions{
       margin-top:8px;
     }
+    .profileLocalActions .smallbtn,
     .profileSyncActions .smallbtn{
       width:100%;
+      min-height:42px;
       justify-content:center;
     }
     .profileGoogleState{
@@ -631,8 +633,17 @@
       label{margin:8px 0 6px;font-size:15px}
       input,select{padding:11px;font-size:15px}
       .hint{margin:6px 0 6px;padding:6px 10px;font-size:12px}
-      .profileGoogleSlot{flex-basis:190px;width:190px;max-width:62%;}
-      .profileLocalActions{grid-template-columns:repeat(2, minmax(0,1fr));gap:6px}
+      .profileTopBar{
+        grid-template-columns:1fr;
+        gap:8px;
+        align-items:stretch;
+      }
+      .profileGoogleSlot{
+        width:100%;
+        max-width:none;
+        justify-self:stretch;
+      }
+      .profileLocalActions{grid-template-columns:repeat(2, minmax(0,1fr));gap:8px}
       .profileSyncActions{margin-top:6px}
       .smallbtn{font-size:12px;padding:10px 8px}
       .profileCheck{
@@ -1283,9 +1294,12 @@
 
     function getGoogleButtonWidth(){
       const slot = googleSignInButton?.parentElement;
-      const slotWidth = Math.floor(slot?.getBoundingClientRect?.().width || 0);
-      const fallback = window.innerWidth <= 520 ? 190 : 198;
-      return Math.max(160, Math.min(210, slotWidth || fallback));
+      const slotWidth = Math.floor(slot?.clientWidth || slot?.getBoundingClientRect?.().width || 0);
+      const isMobile = window.innerWidth <= 768;
+      const fallback = isMobile ? 260 : 220;
+      const maxWidth = isMobile ? 320 : 220;
+      const safeWidth = slotWidth > 8 ? slotWidth - 2 : 0;
+      return Math.max(180, Math.min(maxWidth, safeWidth || fallback));
     }
 
     function renderGoogleButton(){
