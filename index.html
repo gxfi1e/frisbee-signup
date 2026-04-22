@@ -651,7 +651,7 @@
       .profileTopBar{
       display:grid;
       grid-template-columns:minmax(0,1fr) 228px;
-      gap:8px;
+      gap:7px;
       align-items:center;
       }
 
@@ -672,7 +672,7 @@
     overflow:visible;
     }
       .profileLocalActions{grid-template-columns:repeat(2, minmax(0,1fr));gap:8px}
-      .profileSyncActions{margin-top:6px}
+      .profileSyncActions{margin-top:5px}
       .smallbtn{font-size:12px;padding:10px 8px}
       .profileCheck{
         align-items:flex-start;
@@ -846,7 +846,7 @@
               <input
                 id="profileEmail"
                 type="email"
-                placeholder="yourname@email.com"
+                placeholder="your email"
                 autocomplete="email"
               />
             </div>
@@ -880,7 +880,7 @@
               <input
                 id="name"
                 required
-                placeholder="e.g., Maojin Gong"
+                placeholder="Full name"
                 autocomplete="name"
               />
             </div>
@@ -895,20 +895,17 @@
             </div>
           </div>
 
-          <p class="hint">
-            Please rate yourself at pick-up game intensity (not training). If you are unsure between two levels, choose the lower one.
-          </p>
 
           <div class="row">
             <div>
               <label for="throwing">Throwing *</label>
               <select id="throwing" required>
                 <option value="" selected disabled>Select</option>
-                <option value="1">1 — Even short open throws are often inaccurate; frequent turnovers</option>
-                <option value="2">2 — Short backhand OK; forehand or pressure causes many mistakes</option>
-                <option value="3">3 — Backhand + forehand usable in games (short–mid); long throws inconsistent</option>
-                <option value="4">4 — Game-stable passer: low turnovers under mark pressure; can reliably complete open hucks or break throws when needed</option>
-                <option value="5">5 — Offensive driver: consistently breaks the mark and delivers accurate hucks at game speed (even under pressure) with controlled risk</option>
+                <option value="1">Even short open throws are often inaccurate; frequent turnovers</option>
+                <option value="2">Short backhand OK; forehand or pressure causes many mistakes</option>
+                <option value="3">Backhand + forehand usable in games (short–mid); long throws inconsistent</option>
+                <option value="4">Game-stable passer: low turnovers under mark pressure; can reliably complete open hucks or break throws when needed</option>
+                <option value="5">Offensive driver: consistently breaks the mark and delivers accurate hucks at game speed (even under pressure) with controlled risk</option>
               </select>
             </div>
 
@@ -916,11 +913,11 @@
               <label for="catch">Catch *</label>
               <select id="catch" required>
                 <option value="" selected disabled>Select</option>
-                <option value="1">1 — Drops many easy, uncontested catches</option>
-                <option value="2">2 — Catches when wide open; struggles on the run or with imperfect throws</option>
-                <option value="3">3 — Usually catches cleanly in games (open or light pressure)</option>
-                <option value="4">4 — Reliable under pressure: catches on the run with a defender close; rarely drops important discs</option>
-                <option value="5">5 — Playmaker in the air: strong in contested catches, confident on sky or layout plays, wins many 50–50 discs (not just occasionally)</option>
+                <option value="1">Drops many easy, uncontested catches</option>
+                <option value="2">Catches when wide open; struggles on the run or with imperfect throws</option>
+                <option value="3">Usually catches cleanly in games (open or light pressure)</option>
+                <option value="4">Reliable under pressure: catches on the run with a defender close; rarely drops important discs</option>
+                <option value="5">Playmaker in the air: strong in contested catches, confident on sky or layout plays, wins many 50–50 discs (not just occasionally)</option>
               </select>
             </div>
 
@@ -928,11 +925,11 @@
               <label for="fitness">Fitness *</label>
               <select id="fitness" required>
                 <option value="" selected disabled>Select</option>
-                <option value="1">1 — Struggles to finish a point; needs long rest</option>
-                <option value="2">2 — Can play, but performance drops fast; frequent breaks needed</option>
-                <option value="3">3 — Can play most points with normal rest; steady pace</option>
-                <option value="4">4 — Repeated sprints + quick recovery; can take multiple hard points in a row</option>
-                <option value="5">5 — High speed + stamina all session; still sharp late in games</option>
+                <option value="1">Struggles to finish a point; needs long rest</option>
+                <option value="2">Can play, but performance drops fast; frequent breaks needed</option>
+                <option value="3">Can play most points with normal rest; steady pace</option>
+                <option value="4">Repeated sprints + quick recovery; can take multiple hard points in a row</option>
+                <option value="5">High speed + stamina all session; still sharp late in games</option>
               </select>
             </div>
 
@@ -940,11 +937,11 @@
               <label for="experience">Experience *</label>
               <select id="experience" required>
                 <option value="" selected disabled>Select</option>
-                <option value="1">1 — New: still learning rules and basic positioning</option>
-                <option value="2">2 — Played a few times; knows basic rules and simple cuts</option>
-                <option value="3">3 — Regular pickup: understands basic offense/defense and marking</option>
-                <option value="4">4 — Organized games: understands team systems (stack, force, help defense) and makes good decisions</option>
-                <option value="5">5 — Competitive level: reads the field well, adapts under pressure, and leads play on offense/defense</option>
+                <option value="1">New: still learning rules and basic positioning</option>
+                <option value="2">Played a few times; knows basic rules and simple cuts</option>
+                <option value="3">Regular pickup: understands basic offense/defense and marking</option>
+                <option value="4">Organized games: understands team systems (stack, force, help defense) and makes good decisions</option>
+                <option value="5">Competitive level: reads the field well, adapts under pressure, and leads play on offense/defense</option>
               </select>
             </div>
 
