@@ -166,7 +166,7 @@ function normalizeEmail_(email){
 }
 
 function isValidEmail(email){
-  return /^ (\s@)+@ (\s@)+. (\s@)+$/.test(normalizeEmail(email));
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail_(email));
 }
 
 function getSheetDataRows_(sh){
@@ -367,35 +367,42 @@ function getRegistrationStatusSafe(){
   };
 }
 
-// Compatibility aliases for projects that still reference plain helper names.
-function getMainSheetSafe(){ return getMainSheetSafe(); }
-function sheet(){ return sheet(); }
-function ensureMainSheetSchema(sh){ return ensureMainSheetSchema(sh); }
-function installScoreFormula(){ return installScoreFormula(); }
-function resetScoreFormula(){ return resetScoreFormula(); }
-function isValidEmail(email){ return isValidEmail(email); }
-function getMainLastDataRow(sh){ return getMainLastDataRow(sh); }
-function getMainInputRows(sh){ return getMainInputRows(sh); }
-function getAllRows(){ return getAllRows(); }
-function activeCount(){ return activeCount(); }
-function getWeekKey(){ return getWeekKey(); }
-function isAfterCutoff(){ return isAfterCutoff(); }
-function getRegistrationStatus(){ return getRegistrationStatus(); }
-function getRegistrationStatusSafe(){ return getRegistrationStatusSafe(); }
+// Compatibility aliases for mixed plain/underscore call sites.
+function getMainSheetSafe_(){ return getMainSheetSafe(); }
+function sheet_(){ return sheet(); }
+function ensureMainSheetSchema(sh){ return ensureMainSheetSchema_(sh); }
+function installScoreFormula_(){ return installScoreFormula(); }
+function resetScoreFormula_(){ return resetScoreFormula(); }
+function normalizeEmail(email){ return normalizeEmail_(email); }
+function getSheetDataRows(sh){ return getSheetDataRows_(sh); }
+function getMainLastDataRow_(sh){ return getMainLastDataRow(sh); }
+function getMainInputRows_(sh){ return getMainInputRows(sh); }
+function getAllRows_(){ return getAllRows(); }
+function activeRows(rows){ return activeRows_(rows); }
+function activeCount_(){ return activeCount(); }
+function getRelevantFridayDate(refDate){ return getRelevantFridayDate_(refDate); }
+function getWeekKey_(){ return getWeekKey(); }
+function isAfterCutoff_(){ return isAfterCutoff(); }
+function getCutoffTime(){ return getCutoffTime_(); }
+function getRegistrationStatus_(){ return getRegistrationStatus(); }
+function getRegistrationStatusSafe_(){ return getRegistrationStatusSafe(); }
 function getRegistrationStatusCompat(){ return getRegistrationStatusSafe(); }
-function profilesSheet(){ return profilesSheet(); }
-function findProfileRowIndexByEmail(email){ return findProfileRowIndexByEmail(email); }
-function findProfileRowIndexByGoogleSub(googleSub){ return findProfileRowIndexByGoogleSub(googleSub); }
-function profileRecordFromRow(row){ return profileRecordFromRow(row); }
-function readProfileByEmail(email){ return readProfileByEmail(email); }
-function readProfileByGoogleSub(googleSub){ return readProfileByGoogleSub(googleSub); }
-function findProfileRowIndexByIdentity(identity, emailFallback){ return findProfileRowIndexByIdentity(identity, emailFallback); }
-function buildProfileRowValues(profile, existingRow, identity){ return buildProfileRowValues(profile, existingRow, identity); }
-function upsertProfileByGoogleIdentity(profile, identity){ return upsertProfileByGoogleIdentity(profile, identity); }
-function publicProfilePayload(profile){ return publicProfilePayload(profile); }
-function parsePostData(e){ return parsePostData(e); }
-function players(){ return players(); }
-function getTeamsWithAuto(){ return getTeamsWithAuto(); }
+function profilesSheet(){ return profilesSheet_(); }
+function findProfileRowIndexByEmail_(email){ return findProfileRowIndexByEmail(email); }
+function findProfileRowIndexByGoogleSub_(googleSub){ return findProfileRowIndexByGoogleSub(googleSub); }
+function profileRecordFromRow_(row){ return profileRecordFromRow(row); }
+function publicProfilePayload(profile){ return publicProfilePayload_(profile); }
+function parsePostData_(e){ return parsePostData(e); }
+function getMainInputRowsSafe_(sh){ return getMainInputRowsSafe(sh); }
+function activeCountSafe_(sh){ return activeCountSafe(sh); }
+function findActiveRowByNameSafe_(rows, name){ return findActiveRowByNameSafe(rows, name); }
+function players_(){ return players(); }
+function buildPublicTeams(teams){ return buildPublicTeams_(teams); }
+function makePublicTeamsPayload_(full){ return makePublicTeamsPayload(full); }
+function getTeamsWithAuto_(){ return getTeamsWithAuto(); }
+function ensureTeamsGenerated(){ return ensureTeamsGenerated_(); }
+function json(o){ return json_(o); }
+function safeNum(v){ return safeNum_(v); }
 function analytics(){ return analytics_(); }
 
 // ================= PROFILE CLOUD LAYER =================
@@ -405,7 +412,7 @@ function findProfileRowIndexByEmail(email){
   const normalized = normalizeEmail(email);
 
   for (let i = rows.length - 1; i >= 0; i--) {
-    if (normalizeEmail_(rowsi) === normalized) {
+    if (normalizeEmail_(rows[i][PROFILE_COL.email]) === normalized) {
       return i + 2;
     }
   }
@@ -420,7 +427,7 @@ function findProfileRowIndexByGoogleSub(googleSub){
   if (!normalizedSub) return 0;
 
   for (let i = rows.length - 1; i >= 0; i--) {
-    if (String(rowsi || "").trim() === normalizedSub) {
+    if (String(rows[i][PROFILE_COL.googleSub] || "").trim() === normalizedSub) {
       return i + 2;
     }
   }
@@ -1042,7 +1049,7 @@ function getTeams_(){
 
   for (let i = vals.length - 1; i >= 0; i--) {
     const existingKey = Utilities.formatDate(
-      new Date(valsi),
+      new Date(vals[i][0]),
       Session.getScriptTimeZone(),
       "yyyy-MM-dd"
     );
@@ -1780,7 +1787,7 @@ function avg_(a){
 
 function std(a){
   if (!a.length) return 0;
-  const m = avg(a);
+  const m = avg_(a);
   return Math.sqrt(avg_(a.map(x => (x - m) ** 2)));
 }
 
@@ -1825,7 +1832,7 @@ function computeArchiveStats_(rows, idxGender, idxScore){
     else bins["4.0-5.0"]++;
   });
 
-  const A = avg(scores);
+  const A = avg_(scores);
   const S = std(scores);
 
   return {
@@ -1839,12 +1846,12 @@ function computeArchiveStats_(rows, idxGender, idxScore){
     std: Number(S.toFixed(2)),
     balance: Number((S / A).toFixed(2)),
     min: Number(scores[0].toFixed(2)),
-    p25: Number(percentileSorted(scores, 0.25).toFixed(2)),
-    median: Number(percentileSorted(scores, 0.50).toFixed(2)),
-    p75: Number(percentileSorted(scores, 0.75).toFixed(2)),
+    p25: Number(percentileSorted_(scores, 0.25).toFixed(2)),
+    median: Number(percentileSorted_(scores, 0.50).toFixed(2)),
+    p75: Number(percentileSorted_(scores, 0.75).toFixed(2)),
     max: Number(scores[scores.length - 1].toFixed(2)),
     eliteFrac: Number((levels.Elite / scores.length).toFixed(4)),
-    maleAvg: male.length ? Number(avg(male).toFixed(2)) : null,
+    maleAvg: male.length ? Number(avg_(male).toFixed(2)) : null,
     femaleAvg: female.length ? Number(avg_(female).toFixed(2)) : null
   };
 }
@@ -2425,7 +2432,7 @@ function clearTeamsCacheThisWeek(){
   const vals = sh.getRange(2, 1, lastRow - 1, 1).getValues();
 
   for (let i = vals.length - 1; i >= 0; i--) {
-    const existingKey = weekKeyText_(valsi);
+    const existingKey = weekKeyText_(vals[i][0]);
     if (existingKey === key) {
       sh.deleteRow(i + 2);
       Logger.log("Deleted Teams cache row for weekKey=" + key);

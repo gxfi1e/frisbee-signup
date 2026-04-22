@@ -181,14 +181,16 @@
       margin-bottom:12px;
     }
     .profileTopBar{
-      display:grid;
-      grid-template-columns:minmax(0, 1fr) minmax(200px, 220px);
+      display:flex;
       gap:10px;
       align-items:center;
+      justify-content:space-between;
+      flex-wrap:nowrap;
       margin-bottom:6px;
     }
     .profileLabel{
       margin:0;
+      flex:0 0 auto;
     }
     .profileTopRow{
       display:block;
@@ -197,20 +199,33 @@
       display:flex;
       align-items:center;
       justify-content:flex-end;
-      width:100%;
-      max-width:220px;
+      flex:1 1 auto;
       min-width:0;
-      justify-self:end;
+      overflow:visible;
     }
-    .profileGoogleButton,
+    .profileGoogleButton{
+      flex:0 1 250px;
+      width:100%;
+      min-width:0;
+      max-width:250px;
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      box-sizing:border-box;
+      overflow:visible;
+    }
     .profileGoogleToggle{
       min-height:42px;
-      width:100%;
-      min-width:0;
+      width:auto;
+      min-width:108px;
+      max-width:100%;
+      margin-left:auto;
       display:flex;
       align-items:center;
       justify-content:center;
       box-sizing:border-box;
+      overflow:visible;
     }
     .profileGoogleButton:empty{display:none}
     .profileGoogleButton > div{width:100%;max-width:100%}
@@ -634,14 +649,16 @@
       input,select{padding:11px;font-size:15px}
       .hint{margin:6px 0 6px;padding:6px 10px;font-size:12px}
       .profileTopBar{
-        grid-template-columns:1fr;
         gap:8px;
-        align-items:stretch;
+        align-items:center;
       }
       .profileGoogleSlot{
-        width:100%;
-        max-width:none;
-        justify-self:stretch;
+        flex:1 1 auto;
+        min-width:0;
+      }
+      .profileGoogleButton{
+        flex-basis:230px;
+        max-width:230px;
       }
       .profileLocalActions{grid-template-columns:repeat(2, minmax(0,1fr));gap:8px}
       .profileSyncActions{margin-top:6px}
@@ -1296,10 +1313,10 @@
       const slot = googleSignInButton?.parentElement;
       const slotWidth = Math.floor(slot?.clientWidth || slot?.getBoundingClientRect?.().width || 0);
       const isMobile = window.innerWidth <= 768;
-      const fallback = isMobile ? 260 : 220;
-      const maxWidth = isMobile ? 320 : 220;
-      const safeWidth = slotWidth > 8 ? slotWidth - 2 : 0;
-      return Math.max(180, Math.min(maxWidth, safeWidth || fallback));
+      const fallback = isMobile ? 220 : 220;
+      const maxWidth = isMobile ? 230 : 220;
+      const safeWidth = slotWidth > 18 ? slotWidth - 10 : 0;
+      return Math.max(160, Math.min(maxWidth, safeWidth || fallback));
     }
 
     function renderGoogleButton(){
@@ -1627,6 +1644,11 @@
           cancel_on_tap_outside: true
         });
         renderGoogleButton();
+        setTimeout(() => {
+          if (!getGoogleSession() && window.google?.accounts?.id && googleSignInButton) {
+            renderGoogleButton();
+          }
+        }, 120);
         updateGoogleAuthUi();
         return;
       }
@@ -3851,6 +3873,170 @@
         analyticsLoading = false;
       }
     }
+
+    loadAnalytics = async function(){
+      if(analyticsLoading) return;
+      analyticsLoading = true;
+
+      anaStatus.textContent = "Loading...";
+      latestSummary.textContent = "";
+      anaWeekBadge.textContent = "-";
+      setAnalyticsCardsVisible(false);
+      try{
+        const data = await safeGetJson(ENDPOINT + "?action=analytics", { attempts:[10000, 15000, 22000], cacheBust:true });
+        if(!data || !data.ok) throw new Error((data && data.error) || "analytics failed");
+
+        const rawTrend = Array.isArray(data.trend) ? data.trend : [];
+        const filteredTrend = rawTrend.filter(hasTrendWeekData);
+        const latestHasData = hasCompletedWeekStats(data.latest);
+        const st = latestHasData ? data.latest : null;
+        const fallbackWeek = filteredTrend.length
+          ? filteredTrend[filteredTrend.length - 1].week
+          : data.latestWeek;
+        const wk = fallbackWeek || data.latestWeek || "-";
+
+        if (!st) {
+          anaWeekBadge.textContent = wk;
+          latestSummary.textContent = "No completed game week is available yet.";
+          if (latestCard) latestCard.hidden = false;
+          setAnalyticsChartsVisible(false);
+          anaStatus.textContent = "Updated - weeks without games were skipped.";
+          analyticsLoadedOnce = true;
+          return;
+        }
+
+        const trend = filteredTrend.length
+          ? filteredTrend
+          : [{
+              week: wk,
+              avg: Number(st.avg) || 0,
+              std: Number(st.std) || 0,
+              eliteFrac: Number(st.eliteFrac) || 0
+            }];
+
+        anaWeekBadge.textContent = wk;
+        latestSummary.textContent =
+          `Players: ${st.n} | Avg: ${st.avg} | Std: ${st.std} | Elite: ${pct(st.eliteFrac)}`;
+        setAnalyticsCardsVisible(true);
+
+        destroyChart("hist");
+        const bins = st.bins || {};
+        CH.hist = new Chart(document.getElementById("c_hist"), {
+          type: "bar",
+          data: {
+            labels: Object.keys(bins),
+            datasets: [{ label: "Count", data: Object.values(bins) }]
+          },
+          options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{ legend:{display:false} },
+            scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 } } }
+          }
+        });
+
+        destroyChart("levels");
+        const lvlLabels = ["Beginner","Intermediate","Advanced","Elite"];
+        const levels = st.levels || {};
+        CH.levels = new Chart(document.getElementById("c_levels"), {
+          type: "pie",
+          data: {
+            labels: lvlLabels,
+            datasets: [{ data: lvlLabels.map(k => levels[k] || 0) }]
+          },
+          options: {
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{
+              legend:{
+                position:"bottom",
+                labels:{ boxWidth:10, padding:10, font:{ size:12 } }
+              },
+              tooltip:{
+                callbacks:{
+                  label(ctx){
+                    const ds = ctx.dataset;
+                    const total = ds.data.reduce((a,b)=>a+b,0) || 1;
+                    const v = ctx.parsed;
+                    const p = (v/total)*100;
+                    return `${ctx.label}: ${p.toFixed(1)}% (${v})`;
+                  }
+                }
+              }
+            }
+          }
+        });
+
+        destroyChart("gender");
+        CH.gender = new Chart(document.getElementById("c_gender"), {
+          type: "bar",
+          data: {
+            labels: ["Male","Female"],
+            datasets: [{ label: "Avg", data: [st.maleAvg ?? 0, st.femaleAvg ?? 0] }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend:{display:false} }, scales: { y: { min:0, max:5 } } }
+        });
+
+        destroyChart("percent");
+        CH.percent = new Chart(document.getElementById("c_percent"), {
+          type: "bar",
+          data: {
+            labels: ["Avg","Std","Balance","Min","P25","Median","P75","Max"],
+            datasets: [{ label: "Value", data: [st.avg, st.std, st.balance, st.min, st.p25, st.median, st.p75, st.max] }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend:{display:false} }, scales: { y: { min:0, max:5 } } }
+        });
+
+        destroyChart("trend1");
+        const weeks = trend.map(x=>x.week);
+        const avgArr = trend.map(x=>x.avg);
+        const stdArr = trend.map(x=>x.std);
+        CH.trend1 = new Chart(document.getElementById("c_trend1"), {
+          type: "line",
+          data: {
+            labels: weeks,
+            datasets: [
+              { label:"Avg", data: avgArr, tension:0.25, pointRadius:4 },
+              { label:"Std", data: stdArr, tension:0.25, pointRadius:4 }
+            ]
+          },
+          options: {
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{ legend:{ position:"top", align:"start", labels:{ usePointStyle:true, boxWidth:10, padding:12 } } },
+            elements:{ point:{ radius:4 }, line:{ borderWidth:2 } },
+            scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ min:0, max:5, ticks:{ stepSize:1 } } }
+          }
+        });
+
+        destroyChart("trend2");
+        const eliteArr = trend.map(x=> (x.eliteFrac ?? 0) * 100);
+        CH.trend2 = new Chart(document.getElementById("c_trend2"), {
+          type: "line",
+          data: { labels: weeks, datasets: [{ label:"Elite%", data: eliteArr, tension:0.25, pointRadius:4 }] },
+          options: {
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{ legend:{ position:"top", align:"start", labels:{ usePointStyle:true, boxWidth:10, padding:12 } } },
+            elements:{ point:{ radius:4 }, line:{ borderWidth:2 } },
+            scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ min:0, max:100, ticks:{ callback:(v)=>v+"%" } } }
+          }
+        });
+
+        anaStatus.textContent = filteredTrend.length !== rawTrend.length
+          ? "Updated - weeks without games were skipped."
+          : "Updated.";
+        analyticsLoadedOnce = true;
+      }catch(e){
+        console.error("Analytics load failed:", e);
+        setAnalyticsCardsVisible(false);
+        anaStatus.textContent = e?.message
+          ? `Analytics unavailable: ${e.message}`
+          : "Analytics unavailable right now. Open this section again later.";
+      } finally {
+        analyticsLoading = false;
+      }
+    };
 
     analyticsDetails.addEventListener("toggle", () => {
       if(analyticsDetails.open && !analyticsLoading){
