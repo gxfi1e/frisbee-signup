@@ -835,7 +835,6 @@
         white-space:nowrap;
         overflow:visible;
       }
-      #scrollHint{display:none !important}
       #scrollHint button{display:none}
     }
   </style>
@@ -4172,6 +4171,10 @@
     const scrollHint = document.getElementById("scrollHint");
     const scrollHintBtn = document.getElementById("scrollHintBtn");
     const belowSections = document.getElementById("belowSections");
+    const scrollHintDesktopText = scrollHint?.querySelector(".desktopOnly");
+    if (scrollHintDesktopText) {
+      scrollHintDesktopText.textContent = "↓ More below: Registered players · Teams · Analytics";
+    }
 
     function isNearBottom(){
       const scrollY = window.scrollY || document.documentElement.scrollTop;
