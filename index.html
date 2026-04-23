@@ -177,7 +177,12 @@
       line-height:1.35;
     }
     .hint + .row{margin-top:4px}
+    #form{
+      display:flex;
+      flex-direction:column;
+    }
     .profileBox{
+      order:43;
       margin-bottom:12px;
     }
     .profileTopBar{
@@ -267,6 +272,23 @@
     .profileStatus{
       margin-top:8px;
       margin-bottom:0;
+    }
+    #form > .row,
+    #form > .hint{
+      order:10;
+    }
+    #btn{order:40}
+    #status{order:41}
+    #regTools{order:42}
+    #form > .footer{order:50}
+    .profileTopRow,
+    .profileLocalActions,
+    .profileSyncActions,
+    .profileCheck{
+      display:none !important;
+    }
+    .profileBox{
+      margin-top:10px;
     }
 
     button{
@@ -649,28 +671,32 @@
       input,select{padding:11px;font-size:15px}
       .hint{margin:6px 0 6px;padding:6px 10px;font-size:12px}
       .profileTopBar{
-      display:grid;
-      grid-template-columns:minmax(0,1fr) 228px;
-      gap:7px;
-      align-items:center;
+        display:flex;
+        gap:8px;
+        align-items:center;
+        flex-wrap:wrap;
+      }
+      .profileLabel{
+        flex:1 1 100%;
       }
 
-    .profileGoogleSlot{
-    display:flex;
-    justify-content:flex-end;
-    align-items:center;
-    min-width:0;
-    overflow:visible;
-    }
+      .profileGoogleSlot{
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        flex:1 1 100%;
+        min-width:0;
+        overflow:visible;
+      }
 
-    .profileGoogleButton{
-    flex:0 0 228px;
-    width:228px;
-    max-width:228px;
-    margin-left:auto;
-    margin-right:0;
-    overflow:visible;
-    }
+      .profileGoogleButton{
+        flex:0 1 220px;
+        width:220px;
+        max-width:220px;
+        margin-left:0;
+        margin-right:0;
+        overflow:visible;
+      }
       .profileLocalActions{grid-template-columns:repeat(2, minmax(0,1fr));gap:8px}
       .profileSyncActions{margin-top:5px}
       .smallbtn{font-size:12px;padding:10px 8px}
@@ -836,7 +862,7 @@
         <form id="form">
           <div class="box profileBox">
             <div class="profileTopBar">
-              <label for="profileEmail" class="profileLabel"> Email</label>
+              <label for="profileEmail" class="profileLabel">Profile sync</label>
               <div class="profileGoogleSlot">
                 <div id="googleSignInButton" class="profileGoogleButton"></div>
                 <button id="googleSignOutBtn" class="smallbtn secondary profileGoogleToggle" type="button" style="display:none;">Log out</button>
@@ -857,7 +883,7 @@
             </div>
 
             <div id="googleAuthState" class="hint profileGoogleState">
-              Google sign-in is optional. Same browser restore uses the email above. Sign in with Google if you also want cloud save/load across devices.
+              Google sign-in is optional. This browser saves your profile automatically after signup. Sign in with Google if you also want cloud save/load across devices.
             </div>
 
             <div class="profileSyncActions">
@@ -870,7 +896,7 @@
             </label>
 
             <div id="profileStatus" class="hint profileStatus">
-              Same browser restore uses the email above.
+              This browser will auto-fill your saved profile next time after your first successful signup.
             </div>
           </div>
 
@@ -1199,6 +1225,7 @@
     const LS_REGID = "frisbee_last_regid";
     const LS_PROFILE_PREFIX = "frisbee_profile_v1:";
     const LS_LAST_PROFILE_EMAIL = "frisbee_profile_last_email";
+    const LS_AUTO_PROFILE = "frisbee_profile_auto_v2";
     const LS_PROFILE_AUTO_RESTORE = "frisbee_profile_auto_restore_v1";
     const SS_GOOGLE_SESSION = "frisbee_google_session_v1";
     const LS_STATUS_CACHE = "frisbee_status_cache_v1";
@@ -1322,7 +1349,7 @@
       const slotWidth = Math.floor(slot?.clientWidth || slot?.getBoundingClientRect?.().width || 0);
       const isMobile = window.innerWidth <= 768;
       const fallback = isMobile ? 220 : 220;
-      const maxWidth = isMobile ? 230 : 220;
+      const maxWidth = isMobile ? 220 : 220;
       const safeWidth = slotWidth > 18 ? slotWidth - 10 : 0;
       return Math.max(160, Math.min(maxWidth, safeWidth || fallback));
     }
@@ -1399,16 +1426,16 @@
 
     function readProfileFromDevice(email){
       const normalized = normalizeEmail(email);
-      if (!normalized) return null;
-
-      const raw = storageGet(profileStorageKey(normalized));
+      const raw = normalized
+        ? (storageGet(profileStorageKey(normalized)) || storageGet(LS_AUTO_PROFILE))
+        : storageGet(LS_AUTO_PROFILE);
       if (!raw) return null;
 
       try{
         const parsed = JSON.parse(raw);
         return profileRecordFromSource({
           ...parsed,
-          email: normalized
+          email: normalized || parsed.email || ""
         });
       }catch(_){
         return null;
@@ -1423,49 +1450,41 @@
         email: options.emailOverride || options.profile?.email || profileEmail?.value
       });
 
-      if (!profile.email) {
-        if (!silent) {
-          setProfileStatus("Enter an email if you want this device to remember your profile.");
-        }
-        return false;
+      const okAuto = storageSet(LS_AUTO_PROFILE, JSON.stringify(profile));
+      let okEmail = true;
+      if (profile.email) {
+        const key = profileStorageKey(profile.email);
+        okEmail = key ? storageSet(key, JSON.stringify(profile)) : false;
+        storageSet(LS_LAST_PROFILE_EMAIL, profile.email);
       }
-
-      const key = profileStorageKey(profile.email);
-      if (!key) return false;
-
-      const ok1 = storageSet(key, JSON.stringify(profile));
-      const ok2 = storageSet(LS_LAST_PROFILE_EMAIL, profile.email);
 
       if (!silent) {
         setProfileStatus(
-          (ok1 && ok2)
+          (okAuto && okEmail)
             ? "Profile saved on this browser."
             : "Profile submitted, but local save is unavailable in this browser."
         );
       }
-      return ok1 && ok2;
+      return okAuto && okEmail;
     }
 
     function loadProfileFromDevice(email, options = {}){
       const silent = !!options.silent;
       const normalized = normalizeEmail(email);
 
-      if (!normalized) {
-        if (!silent) setProfileStatus("Enter your email first.");
-        return false;
-      }
-
-      const raw = storageGet(profileStorageKey(normalized));
+      const raw = normalized
+        ? (storageGet(profileStorageKey(normalized)) || storageGet(LS_AUTO_PROFILE))
+        : storageGet(LS_AUTO_PROFILE);
       if (!raw) {
-        if (!silent) setProfileStatus("No saved profile found on this browser for that email.");
+        if (!silent) setProfileStatus("No saved profile found on this browser yet.");
         return false;
       }
 
       try{
         const profile = JSON.parse(raw);
-        profileEmail.value = normalized;
+        if (normalized || profile.email) profileEmail.value = normalized || normalizeEmail(profile.email);
         fillProfileForm(profile);
-        storageSet(LS_LAST_PROFILE_EMAIL, normalized);
+        if (normalized || profile.email) storageSet(LS_LAST_PROFILE_EMAIL, normalized || normalizeEmail(profile.email));
         if (!silent) setProfileStatus("Saved profile loaded from this browser.");
         return true;
       }catch(_){
@@ -1580,7 +1599,7 @@
       const session = getGoogleSession();
 
       if (session) {
-        setGoogleAuthMessage(`Signed in as ${session.email}. Cloud sync is ready.`);
+        setGoogleAuthMessage(`Signed in as ${session.email}. Future submissions will also sync your profile to cloud.`);
         if (googleSignInButton) googleSignInButton.style.display = "none";
         if (googleSignOutBtn) {
           googleSignOutBtn.style.display = "inline-flex";
@@ -1591,7 +1610,7 @@
           syncProfileBtn.style.display = "inline-flex";
         }
       } else {
-        setGoogleAuthMessage("Google sign-in is optional. Same browser restore uses the email above. Sign in with Google if you also want cloud save/load across devices.");
+        setGoogleAuthMessage("Google sign-in is optional. This browser saves your profile automatically after signup. Sign in with Google if you also want cloud save/load across devices.");
         if (googleSignInButton) googleSignInButton.style.display = "";
         if (googleSignOutBtn) googleSignOutBtn.style.display = "none";
         if (syncProfileBtn) {
@@ -1620,17 +1639,35 @@
       updateGoogleAuthUi();
 
       try{
-        const restored = await loadBestProfileForEmail(normalizeEmail(payload.email), {
-          silent:true,
-          allowCloudFallback:true
+        const currentProfile = profileRecordFromSource({
+          ...getProfileFormData(),
+          email: normalizeEmail(payload.email)
         });
 
-        if (restored.loaded && restored.source === "cloud") {
-          setProfileStatus("Cloud profile loaded and saved on this browser.");
-        } else if (restored.loaded && restored.source === "local") {
-          setProfileStatus("Local profile loaded from this browser.");
+        if (isProfileRecordComplete(currentProfile)) {
+          saveProfileToDevice({
+            silent:true,
+            emailOverride: normalizeEmail(payload.email),
+            profile: currentProfile
+          });
+          await saveProfileToCloud(currentProfile, {
+            session: getGoogleSession(),
+            emailOverride: normalizeEmail(payload.email)
+          });
+          setProfileStatus("Signed in with Google. Your browser profile was synced to cloud.");
         } else {
-          setProfileStatus("Signed in with Google. This browser will sync your profile after submit.");
+          const restored = await loadBestProfileForEmail(normalizeEmail(payload.email), {
+            silent:true,
+            allowCloudFallback:true
+          });
+
+          if (restored.loaded && restored.source === "cloud") {
+            setProfileStatus("Cloud profile loaded and saved on this browser.");
+          } else if (restored.loaded && restored.source === "local") {
+            setProfileStatus("Local profile loaded from this browser.");
+          } else {
+            setProfileStatus("Signed in with Google. Your profile will sync after your next successful submit.");
+          }
         }
       }catch(err){
         setProfileStatus(err?.message || "Signed in with Google, but profile restore was unavailable.");
@@ -1796,7 +1833,7 @@
         setProfileStatus(
           session?.idToken
             ? "No saved profile was found on this browser for that email. Cloud fallback only works for the signed-in Google email."
-            : "No saved profile was found on this browser for that email. Google sign-in is optional and only needed for cloud save/load across devices."
+            : "No saved profile was found on this browser yet. Google sign-in is optional and only needed for cloud save/load across devices."
         );
       }
       return { loaded:false, source:"none" };
@@ -3170,13 +3207,12 @@
     })();
 
     (function initProfileRestore(){
-      saveProfileOpt.checked = getAutoRestoreEnabled();
       const lastEmail = getLastSavedProfileEmail();
-      if (saveProfileOpt.checked && lastEmail && !normalizeEmail(profileEmail.value)) {
+      if (lastEmail && !normalizeEmail(profileEmail.value)) {
         profileEmail.value = lastEmail;
       }
-      if (saveProfileOpt.checked && lastEmail && isProfileFormEmpty()) {
-        if (loadProfileFromDevice(lastEmail, { silent:true })) {
+      if (isProfileFormEmpty()) {
+        if (loadProfileFromDevice(lastEmail, { silent:true }) || loadProfileFromDevice("", { silent:true })) {
           setProfileStatus("Loaded your last saved profile from this browser.");
         }
       }
@@ -3274,7 +3310,7 @@
     profileEmail.addEventListener("change", async () => {
       const email = normalizeEmail(profileEmail.value);
       if (!email) {
-        setProfileStatus("Same browser restore uses the email above.");
+        setProfileStatus("This browser saves your profile automatically after successful signup.");
         return;
       }
 
@@ -3358,13 +3394,11 @@
 
           saveLastReg(payload.name, result.data.regId);
           let cloudSaved = false;
-          if (profileEmailValue) {
-            saveProfileToDevice({
-              silent:true,
-              emailOverride: profileEmailValue,
-              profile: profileRecord
-            });
-          }
+          saveProfileToDevice({
+            silent:true,
+            emailOverride: profileEmailValue,
+            profile: profileRecord
+          });
           if (activeGoogleSession?.idToken) {
             try{
               await saveProfileToCloud(profileRecord, { session: activeGoogleSession, emailOverride: profileEmailValue });
@@ -3378,23 +3412,18 @@
           }
           regTools.style.display = "flex";
           form.reset();
-          if (profileEmailValue) {
-            profileEmail.value = profileEmailValue;
-            loadProfileFromDevice(profileEmailValue, { silent:true });
-          }
-          saveProfileOpt.checked = getAutoRestoreEnabled();
+          profileEmail.value = profileEmailValue;
+          loadProfileFromDevice(profileEmailValue, { silent:true });
           if (cloudSaved && profileEmailValue) {
             setProfileStatus("Profile updated on this browser and synced to Google cloud.");
           } else if (cloudSaved) {
             setProfileStatus("Google cloud profile updated.");
-          } else if (profileEmailValue) {
+          } else {
             setProfileStatus(
               activeGoogleSession?.idToken
                 ? "Profile updated on this browser. Google cloud sync needs a fresh sign-in on this browser."
-                : "Profile updated on this browser. Sign in with Google if you also want cloud save/load across devices."
+                : "Profile saved on this browser. Sign in with Google if you also want cloud save/load across devices."
             );
-          } else {
-            setProfileStatus("Registration submitted. Add an email if you want this browser to remember your profile next time.");
           }
         } else if (result.data && result.data.ok === false) {
           setStatusMessage(statusEl, result.data.error || "Registration failed.", "bad");
