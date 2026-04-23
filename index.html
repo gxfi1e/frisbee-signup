@@ -182,7 +182,7 @@
       flex-direction:column;
     }
     .profileBox{
-      order:43;
+      order:44;
       margin-bottom:12px;
     }
     .profileTopBar{
@@ -277,9 +277,10 @@
     #form > .hint{
       order:10;
     }
-    #btn{order:40}
-    #status{order:41}
-    #regTools{order:42}
+    #submitActions{order:40}
+    #cancelPanel{order:41}
+    #status{order:42}
+    #regTools{order:43}
     #form > .footer{order:50}
     .profileTopRow,
     .profileLocalActions,
@@ -305,6 +306,42 @@
     }
     button.secondary{background:#444}
     button:disabled{opacity:.55;cursor:not-allowed}
+
+    .submitActions{
+      display:grid;
+      grid-template-columns:minmax(0, 1.7fr) minmax(150px, .9fr);
+      gap:8px;
+      align-items:stretch;
+      margin-top:16px;
+    }
+    .submitActions button{
+      margin-top:0;
+      min-height:48px;
+    }
+    .cancelOpenBtn{
+      background:#fff;
+      color:#444;
+      border:1px solid #d8d8d8;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.5);
+    }
+    .cancelOpenBtn:hover{
+      background:#f7f7f7;
+      border-color:#c9c9c9;
+    }
+    .cancelPanel[hidden]{display:none !important}
+    .cancelPanel{
+      margin-top:10px;
+    }
+    .cancelPanelTitle{
+      font-weight:900;
+      margin-bottom:4px;
+    }
+    .cancelPanelHint{
+      color:#666;
+      font-size:12px;
+      line-height:1.35;
+      margin-bottom:8px;
+    }
 
     .status{margin-top:12px;font-size:14px}
     .okText{color:#0a7a2f}
@@ -704,6 +741,16 @@
         align-items:flex-start;
         line-height:1.35;
       }
+      .submitActions{
+        grid-template-columns:minmax(0, 1.15fr) minmax(120px, .85fr);
+        gap:8px;
+      }
+      .submitActions button{
+        padding:12px 10px;
+        font-size:14px;
+        line-height:1.2;
+        white-space:normal;
+      }
       .gameLine2{
         gap:5px 8px;
         align-items:flex-start;
@@ -993,7 +1040,12 @@
             </div>
           </div>
 
-          <button id="btn" type="submit">Submit</button>
+          <div id="submitActions" class="submitActions">
+            <button id="btn" type="submit">Submit</button>
+            <button id="cancelOpenBtn" class="cancelOpenBtn" type="button" aria-expanded="false" aria-controls="cancelPanel">
+              Cancel registration
+            </button>
+          </div>
           <div class="footer">
             After you submit, a <code>RegID</code> will be generated and saved on this device.
             Keep it for cancellation. Please use your full name to avoid duplicate signups.
@@ -1004,22 +1056,19 @@
             <button id="copyRegBtn" class="smallbtn secondary" type="button">Copy RegID</button>
             <span id="regSavedNote" class="hint" style="margin:0;"></span>
           </div>
-        </form>
 
-        <div class="hr"></div>
-
-        <details>
-          <summary><b>Cancel registration</b> (cost: buy Maojin a coffee ☕)</summary>
-          <div style="margin-top:10px;">
+          <div id="cancelPanel" class="box cancelPanel" hidden>
+            <div class="cancelPanelTitle">Cancel registration</div>
+            <div class="cancelPanelHint">Enter the same name and RegID used for signup.</div>
             <label for="cancelName">Name / Nickname *</label>
             <input id="cancelName" placeholder="must match your signup name" />
             <label for="cancelId">RegID *</label>
             <input id="cancelId" placeholder="e.g., FRI-20260212-ABCDEF12" />
-            <button id="cancelBtn" type="button">Cancel my registration</button>
+            <button id="cancelBtn" class="secondary" type="button">Cancel my registration</button>
             <div id="cancelStatus" class="status"></div>
             <div class="hint">Tip: your last RegID is saved on this device.</div>
           </div>
-        </details>
+        </form>
 
         <div class="hr"></div>
       </div>
@@ -1194,6 +1243,8 @@
     const copyRegBtn = document.getElementById("copyRegBtn");
     const regSavedNote = document.getElementById("regSavedNote");
 
+    const cancelOpenBtn = document.getElementById("cancelOpenBtn");
+    const cancelPanel = document.getElementById("cancelPanel");
     const cancelBtn = document.getElementById("cancelBtn");
     const cancelStatus = document.getElementById("cancelStatus");
     const cancelName = document.getElementById("cancelName");
@@ -3468,6 +3519,19 @@
         btn.textContent = "Submit";
       }
     });
+
+    if (cancelOpenBtn && cancelPanel) {
+      cancelOpenBtn.addEventListener("click", () => {
+        const opening = cancelPanel.hidden;
+        cancelPanel.hidden = !opening;
+        cancelOpenBtn.setAttribute("aria-expanded", String(opening));
+        if (opening) {
+          cancelStatus.textContent = "";
+          cancelStatus.className = "status";
+          setTimeout(() => cancelName?.focus(), 0);
+        }
+      });
+    }
 
     cancelBtn.addEventListener("click", async () => {
       cancelStatus.textContent = "";
