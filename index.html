@@ -2019,8 +2019,9 @@
         monthWindowLabel: targetDate ? getMonthWindowLabel(targetDate) : "",
         regularPercentile: 60,
         cancelPercentile: 85,
-        regularCaps: { pm25: 45, pm10: 200 },
-        cancelCaps: { pm25: 65, pm10: 330 },
+        requiredMatches: 2,
+        regularCaps: { pm25: 60, pm10: 250 },
+        cancelCaps: { pm25: 100, pm10: 350 },
         pm25Samples: [],
         pm10Samples: []
       };
@@ -2052,6 +2053,31 @@
       return baseline;
     }
 
+    function countPmRuleMatches(pm25, pm10, scorePercentile, baseline){
+      const base = baseline || defaultPmBaseline();
+      const pm25Value = Number(pm25);
+      const pm10Value = Number(pm10);
+      const scoreValue = Number(scorePercentile);
+
+      const regularMatches = [
+        Number.isFinite(pm25Value) && pm25Value <= base.regularCaps.pm25,
+        Number.isFinite(pm10Value) && pm10Value <= base.regularCaps.pm10,
+        Number.isFinite(scoreValue) && scoreValue <= base.regularPercentile
+      ].filter(Boolean).length;
+
+      const cancelMatches = [
+        Number.isFinite(pm25Value) && pm25Value > base.cancelCaps.pm25,
+        Number.isFinite(pm10Value) && pm10Value > base.cancelCaps.pm10,
+        Number.isFinite(scoreValue) && scoreValue > base.cancelPercentile
+      ].filter(Boolean).length;
+
+      return {
+        regularMatches,
+        cancelMatches,
+        requiredMatches: Number(base.requiredMatches) || 2
+      };
+    }
+
     function classifyPmPoint(pm25, pm10, baseline){
       const base = baseline || defaultPmBaseline();
       const pm25Value = Number(pm25);
@@ -2062,20 +2088,14 @@
         ...[pm25Pct, pm10Pct].filter(Number.isFinite),
         -Infinity
       );
+      const ruleMatches = countPmRuleMatches(pm25Value, pm10Value, score, base);
 
-      const cancelled =
-        (Number.isFinite(pm25Value) && pm25Value > base.cancelCaps.pm25) ||
-        (Number.isFinite(pm10Value) && pm10Value > base.cancelCaps.pm10) ||
-        (Number.isFinite(score) && score > base.cancelPercentile);
-      const regular =
-        !cancelled &&
-        (!Number.isFinite(pm25Value) || pm25Value <= base.regularCaps.pm25) &&
-        (!Number.isFinite(pm10Value) || pm10Value <= base.regularCaps.pm10) &&
-        (!Number.isFinite(score) || score <= base.regularPercentile);
+      const cancelled = ruleMatches.cancelMatches >= ruleMatches.requiredMatches;
+      const regular = !cancelled && ruleMatches.regularMatches >= ruleMatches.requiredMatches;
 
-      if (cancelled) return { label: "High", cls: "unhealthy", score };
-      if (regular) return { label: "Regular", cls: "good", score };
-      return { label: "Modified", cls: "usg", score };
+      if (cancelled) return { label: "High", cls: "unhealthy", score, ...ruleMatches };
+      if (regular) return { label: "Regular", cls: "good", score, ...ruleMatches };
+      return { label: "Modified", cls: "usg", score, ...ruleMatches };
     }
 
     function pmNotHigher(currentValue, previousValue){
@@ -2130,15 +2150,10 @@
       const sevenPm = sortedPoints.find(p => Number(p.hour) === 19);
       const eightPm = sortedPoints.find(p => Number(p.hour) === 20);
       const delayedPoints = sortedPoints.filter(p => Number(p.hour) >= 20 && Number(p.hour) <= 22);
+      const ruleMatches = countPmRuleMatches(maxPm25, maxPm10, scorePercentile, baseline);
 
-      const cancelled =
-        (Number.isFinite(maxPm25) && maxPm25 > baseline.cancelCaps.pm25) ||
-        (Number.isFinite(maxPm10) && maxPm10 > baseline.cancelCaps.pm10) ||
-        (Number.isFinite(scorePercentile) && scorePercentile > baseline.cancelPercentile);
-      const normal =
-        (!Number.isFinite(maxPm25) || maxPm25 <= baseline.regularCaps.pm25) &&
-        (!Number.isFinite(maxPm10) || maxPm10 <= baseline.regularCaps.pm10) &&
-        (!Number.isFinite(scorePercentile) || scorePercentile <= baseline.regularPercentile);
+      const cancelled = ruleMatches.cancelMatches >= ruleMatches.requiredMatches;
+      const normal = !cancelled && ruleMatches.regularMatches >= ruleMatches.requiredMatches;
       const modified = !cancelled && !normal;
 
       const canUseDelayedRescue =
@@ -2153,9 +2168,13 @@
         const delayedPm10Values = delayedPoints.map(p => Number(p.pm10)).filter(Number.isFinite);
         const delayedMaxPm25 = delayedPm25Values.length ? Math.max(...delayedPm25Values) : NaN;
         const delayedMaxPm10 = delayedPm10Values.length ? Math.max(...delayedPm10Values) : NaN;
-        const delayedUnderCancelCaps =
-          (!Number.isFinite(delayedMaxPm25) || delayedMaxPm25 <= baseline.cancelCaps.pm25) &&
-          (!Number.isFinite(delayedMaxPm10) || delayedMaxPm10 <= baseline.cancelCaps.pm10);
+        const delayedPm25Percentile = percentileRank(baseline.pm25Samples, delayedMaxPm25);
+        const delayedPm10Percentile = percentileRank(baseline.pm10Samples, delayedMaxPm10);
+        const delayedValidPercentiles = [delayedPm25Percentile, delayedPm10Percentile].filter(Number.isFinite);
+        const delayedScorePercentile = delayedValidPercentiles.length ? Math.max(...delayedValidPercentiles) : NaN;
+        const delayedRuleMatches = countPmRuleMatches(delayedMaxPm25, delayedMaxPm10, delayedScorePercentile, baseline);
+        const delayedBelowCancelRule =
+          delayedRuleMatches.cancelMatches < delayedRuleMatches.requiredMatches;
         const strongDropAt8 =
           pmNotHigher(eightPm.pm25, sevenPm.pm25) &&
           pmNotHigher(eightPm.pm10, sevenPm.pm10) &&
@@ -2171,7 +2190,7 @@
           );
         });
 
-        if (strongDropAt8 && staysImprovingAfter8 && delayedUnderCancelCaps) {
+        if (strongDropAt8 && staysImprovingAfter8 && delayedBelowCancelRule) {
           return {
             mode: "modified",
             blocksRegistration: false,
@@ -3161,7 +3180,9 @@
       const rulePrefix = airQualityPolicy.sourceKind === "current" ? "Live rule" : "Forecast rule";
       const sourceLabel = airQualityPolicy.sourceLabel || "Open-Meteo forecast";
       const baseline = airQualityPolicy.baseline || defaultPmBaseline();
+      const requiredMatches = Number(baseline.requiredMatches) || 2;
       const cancelRuleItems = [
+        `${requiredMatches} of 3 conditions`,
         `Rank > ${baseline.cancelPercentile}th pct`,
         `PM2.5 > ${baseline.cancelCaps.pm25}`,
         `PM10 > ${baseline.cancelCaps.pm10} ug/m3`
