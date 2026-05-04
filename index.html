@@ -608,6 +608,37 @@
       color:#a12626;
     }
 
+    .announcementBoard[hidden]{display:none !important}
+    .announcementBoard{
+      margin-top:10px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid #e7e9ef;
+      background:#f7f9fc;
+      color:#324054;
+    }
+    .announcementBoard.warn{
+      background:#fff8e8;
+      border-color:#f2dfac;
+      color:#8a5a00;
+    }
+    .announcementBoard.bad{
+      background:#fff1f1;
+      border-color:#f3cccc;
+      color:#a12626;
+    }
+    .announcementTitle{
+      font-size:14px;
+      font-weight:800;
+      line-height:1.25;
+      margin-bottom:4px;
+    }
+    .announcementText{
+      font-size:12px;
+      line-height:1.5;
+      white-space:pre-wrap;
+    }
+
     .desktopOnly{display:block}
     .mobileOnly{display:none}
 
@@ -902,6 +933,11 @@
         <div class="gameLine1" id="gameInfoLine1">Loading game info…</div>
         <div class="gameLine2" id="gameInfoLine2"></div>
         <div id="gameNotice" class="gameNotice" hidden></div>
+      </div>
+
+      <div id="announcementBoard" class="announcementBoard" hidden>
+        <div id="announcementTitle" class="announcementTitle"></div>
+        <div id="announcementText" class="announcementText"></div>
       </div>
 
       <div id="signupArea">
@@ -1252,6 +1288,9 @@
     const gameInfoLine1 = document.getElementById("gameInfoLine1");
     const gameInfoLine2 = document.getElementById("gameInfoLine2");
     const gameNotice = document.getElementById("gameNotice");
+    const announcementBoard = document.getElementById("announcementBoard");
+    const announcementTitle = document.getElementById("announcementTitle");
+    const announcementText = document.getElementById("announcementText");
     const fourTeamMin = document.getElementById("fourTeamMin");
 
     const refreshTeamsBtn = document.getElementById("refreshTeamsBtn");
@@ -2063,6 +2102,54 @@
       return "";
     }
 
+    function isRegistrationEnabledByConfig(){
+      return CFG.registrationEnabled !== false;
+    }
+
+    function getAnnouncementConfig(){
+      const nested = CFG.announcement && typeof CFG.announcement === "object" ? CFG.announcement : {};
+      const title = firstText(nested.title, CFG.announcementTitle);
+      const text = firstText(nested.text, CFG.announcementText);
+      let enabled = nested.enabled;
+      if (enabled === undefined) enabled = CFG.announcementEnabled;
+      if (enabled === undefined) enabled = !!(title || text);
+
+      return {
+        enabled: !!enabled,
+        tone: firstText(nested.tone, CFG.announcementTone, "warn").toLowerCase(),
+        title,
+        text
+      };
+    }
+
+    function getRegistrationOffAnnouncement(){
+      return {
+        enabled: true,
+        tone: "warn",
+        title: firstText(CFG.registrationOffTitle, "Registration is off this Friday"),
+        text: firstText(
+          CFG.registrationOffText,
+          "This Friday has no open registration. Please check the announcement before coming."
+        )
+      };
+    }
+
+    function getEffectiveAnnouncement(){
+      if (!isRegistrationEnabledByConfig()) {
+        const offAnnouncement = getRegistrationOffAnnouncement();
+        const configured = getAnnouncementConfig();
+        return configured.enabled
+          ? {
+              ...offAnnouncement,
+              tone: configured.tone || offAnnouncement.tone,
+              title: configured.title || offAnnouncement.title,
+              text: configured.text || offAnnouncement.text
+            }
+          : offAnnouncement;
+      }
+      return getAnnouncementConfig();
+    }
+
     function defaultPmBaseline(targetDate = null){
       return {
         sampleCount: 0,
@@ -2350,9 +2437,30 @@
       gameNotice.className = `gameNotice ${airQualityPolicy.noticeTone}`.trim();
     }
 
+    function renderAnnouncementBoard(){
+      if (!announcementBoard || !announcementTitle || !announcementText) return;
+
+      const announcement = getEffectiveAnnouncement();
+      const hasContent = announcement.enabled && (announcement.title || announcement.text);
+
+      if (!hasContent) {
+        announcementBoard.hidden = true;
+        announcementBoard.className = "announcementBoard";
+        announcementTitle.textContent = "";
+        announcementText.textContent = "";
+        return;
+      }
+
+      announcementBoard.hidden = false;
+      announcementBoard.className = `announcementBoard ${announcement.tone}`.trim();
+      announcementTitle.textContent = announcement.title || "Announcement";
+      announcementText.textContent = announcement.text || "";
+    }
+
     function applyAirQualityPolicy(){
       renderGameInfo();
       renderGameNotice();
+      renderAnnouncementBoard();
       if (latestStatusData) {
         setPills(latestStatusData);
       }
@@ -3083,7 +3191,7 @@
       if (!signupArea) return;
 
       const afterCutoff = isAfterCutoffFromIso(data?.cutoffIso);
-      const shouldHide = afterCutoff || airQualityPolicy.blocksRegistration;
+      const shouldHide = afterCutoff || airQualityPolicy.blocksRegistration || !isRegistrationEnabledByConfig();
       signupArea.style.display = shouldHide ? "none" : "";
 
       const sh = document.getElementById("scrollHint");
@@ -3121,8 +3229,12 @@
 
     function setPills(data) {
       countPill.textContent = `${data.count} / ${data.max} registered`;
+      const registrationDisabledByConfig = !isRegistrationEnabledByConfig();
 
-      if (airQualityPolicy.mode === "cancelled") {
+      if (registrationDisabledByConfig) {
+        statusPill.textContent = "OFF";
+        statusPill.className = "pill warn";
+      } else if (airQualityPolicy.mode === "cancelled") {
         statusPill.textContent = "CANCELLED";
         statusPill.className = "pill bad";
       } else if (airQualityPolicy.mode === "modified" && data.open && !data.isFull) {
@@ -3139,9 +3251,12 @@
         statusPill.className = "pill bad";
       }
 
-      timeLeftPill.textContent = timeLeftText(data.cutoffIso);
+      timeLeftPill.textContent = registrationDisabledByConfig ? "This Friday off" : timeLeftText(data.cutoffIso);
 
-      if (airQualityPolicy.blocksRegistration) {
+      if (registrationDisabledByConfig) {
+        btn.disabled = true;
+        btn.textContent = "Registration off";
+      } else if (airQualityPolicy.blocksRegistration) {
         btn.disabled = true;
         btn.textContent = "Registration unavailable";
       } else if (data.isFull) {
@@ -3174,6 +3289,20 @@
           setPills(fallback);
           applySignupVisibility(fallback);
           return fallback;
+        }
+
+        if (!isRegistrationEnabledByConfig()) {
+          const offFallback = normalizeStatus({
+            ok: true,
+            count: 0,
+            max: Number(CFG.maxPlayers) || 30,
+            open: false,
+            cutoffIso: ""
+          });
+          latestStatusData = offFallback;
+          setPills(offFallback);
+          applySignupVisibility(offFallback);
+          return offFallback;
         }
 
         latestStatusData = null;
@@ -3405,6 +3534,16 @@
       statusEl.className = "status";
       regTools.style.display = "none";
       regSavedNote.textContent = "";
+
+      if (!isRegistrationEnabledByConfig()) {
+        setStatusMessage(
+          statusEl,
+          firstText(CFG.registrationOffText, "Registration is turned off in config for this Friday."),
+          "warn"
+        );
+        applySignupVisibility(latestStatusData);
+        return;
+      }
 
       const payload = {
         action: "register",
@@ -3762,10 +3901,22 @@
       latestStatusData = bootStatus;
       setPills(bootStatus);
       applySignupVisibility(bootStatus);
+    } else if (!isRegistrationEnabledByConfig()) {
+      latestStatusData = normalizeStatus({
+        ok: true,
+        count: 0,
+        max: Number(CFG.maxPlayers) || 30,
+        open: false,
+        cutoffIso: ""
+      });
+      setPills(latestStatusData);
+      applySignupVisibility(latestStatusData);
     }
 
-    renderGameInfo();
-    refresh();
+      renderGameInfo();
+      renderAnnouncementBoard();
+      applySignupVisibility(latestStatusData);
+      refresh();
     setInterval(refresh, 60 * 1000);
     loadAqi();
     setInterval(loadAqi, 30 * 60 * 1000);

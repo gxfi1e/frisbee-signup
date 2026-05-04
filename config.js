@@ -7,5 +7,14 @@ window.SIGNUP_CONFIG = {
   locationText: "KAUST Stadium",
   googleMapsLink: "https://maps.app.goo.gl/FRdURVCfe1TDdVug7",
 
-  teamsMinForFour: 24
+  teamsMinForFour: 24,
+
+  registrationEnabled: true,
+  registrationOffTitle: "Registration is off this Friday",
+  registrationOffText: "",
+
+  announcementEnabled: false,
+  announcementTone: "warn",
+  announcementTitle: "",
+  announcementText: ""
 };
