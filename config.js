@@ -9,12 +9,12 @@ window.SIGNUP_CONFIG = {
 
   teamsMinForFour: 24,
 
-  registrationEnabled: false,
+  registrationEnabled: True,
   registrationOffTitle: "Registration is off this Friday",
   registrationOffText: "",
 
-  announcementEnabled: true,
+  announcementEnabled: False,
   announcementTone: "warn",
-  announcementTitle: "No Friday night Frisbee this Friday",
-  announcementText: "Since we have the 2nd Edition KAUST TOURNAMENT THIS Friday (9am - 6pm)"
+  announcementTitle: "No Friday night Frisbee this week",
+  announcementText: ""
 };
