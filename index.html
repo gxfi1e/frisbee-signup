@@ -2106,6 +2106,37 @@
       return CFG.registrationEnabled !== false;
     }
 
+    function getMinimumPlayersToPlay(){
+      const n = Number(CFG.minimumPlayersToPlay);
+      return Number.isFinite(n) && n > 0 ? Math.floor(n) : 12;
+    }
+
+    function isCancelledForLowPlayers(data){
+      if (!data) return false;
+      return isAfterCutoffFromIso(data?.cutoffIso) && Number(data?.count) < getMinimumPlayersToPlay();
+    }
+
+    function getEffectiveGameState(data = latestStatusData){
+      if (!isRegistrationEnabledByConfig()) {
+        return {
+          kind: "config-off"
+        };
+      }
+
+      if (isCancelledForLowPlayers(data)) {
+        return {
+          kind: "low-players",
+          count: Number(data?.count) || 0,
+          minimum: getMinimumPlayersToPlay()
+        };
+      }
+
+      return {
+        kind: "air",
+        policy: airQualityPolicy
+      };
+    }
+
     function getAnnouncementConfig(){
       const nested = CFG.announcement && typeof CFG.announcement === "object" ? CFG.announcement : {};
       const title = firstText(nested.title, CFG.announcementTitle);
@@ -2424,6 +2455,15 @@
 
     function renderGameNotice(){
       if (!gameNotice) return;
+
+      const effective = getEffectiveGameState();
+      if (effective.kind === "low-players") {
+        gameNotice.hidden = false;
+        gameNotice.textContent =
+          `Registration is closed and only ${effective.count} players signed up. At least ${effective.minimum} players are needed, so the Friday game is cancelled.`;
+        gameNotice.className = "gameNotice bad";
+        return;
+      }
 
       if (!airQualityPolicy.noticeText) {
         gameNotice.hidden = true;
@@ -3252,10 +3292,14 @@
     function setPills(data) {
       countPill.textContent = `${data.count} / ${data.max} registered`;
       const registrationDisabledByConfig = !isRegistrationEnabledByConfig();
+      const lowPlayersCancelled = isCancelledForLowPlayers(data);
 
       if (registrationDisabledByConfig) {
         statusPill.textContent = "OFF";
         statusPill.className = "pill warn";
+      } else if (lowPlayersCancelled) {
+        statusPill.textContent = "CANCELLED";
+        statusPill.className = "pill bad";
       } else if (airQualityPolicy.mode === "cancelled") {
         statusPill.textContent = "CANCELLED";
         statusPill.className = "pill bad";
@@ -3273,11 +3317,18 @@
         statusPill.className = "pill bad";
       }
 
-      timeLeftPill.textContent = registrationDisabledByConfig ? "This Friday off" : timeLeftText(data.cutoffIso);
+      timeLeftPill.textContent = registrationDisabledByConfig
+        ? "This Friday off"
+        : lowPlayersCancelled
+          ? "Not enough players"
+          : timeLeftText(data.cutoffIso);
 
       if (registrationDisabledByConfig) {
         btn.disabled = true;
         btn.textContent = "Registration off";
+      } else if (lowPlayersCancelled) {
+        btn.disabled = true;
+        btn.textContent = "Game cancelled";
       } else if (airQualityPolicy.blocksRegistration) {
         btn.disabled = true;
         btn.textContent = "Registration unavailable";
@@ -3379,6 +3430,20 @@
 
     function renderGameInfo() {
       const loc = `<a href="${CFG.googleMapsLink}" target="_blank" rel="noopener noreferrer">${CFG.locationText}</a>`;
+      const effective = getEffectiveGameState();
+
+      if (effective.kind === "low-players") {
+        gameInfoLine1.innerHTML = `Friday game cancelled · ${loc}`;
+        gameInfoLine2.innerHTML = `
+          <span>Registered players: ${escapeHtml(effective.count)}</span>
+          <span>Minimum needed: ${escapeHtml(effective.minimum)}</span>
+          <span>Cancelled due to not enough players</span>
+        `;
+        tzLine.textContent = `Registration closes: Fri 3:00 PM | Jeddah local time`;
+        fourTeamMin.textContent = CFG.teamsMinForFour;
+        return;
+      }
+
       const rulePrefix = airQualityPolicy.sourceKind === "current" ? "Live rule" : "Forecast rule";
       const sourceLabel = airQualityPolicy.sourceLabel || "Open-Meteo forecast";
       const baseline = airQualityPolicy.baseline || defaultPmBaseline();
@@ -3821,6 +3886,14 @@
     async function fetchAndRenderTeams({ auto = false } = {}) {
       teamsOutput.innerHTML = "";
 
+      if (isCancelledForLowPlayers(latestStatusData)) {
+        teamsStatus.textContent = `Game cancelled: only ${Number(latestStatusData?.count) || 0} players registered. Minimum needed is ${getMinimumPlayersToPlay()}.`;
+        teamsStatus.className = "status warnText";
+        setTeamsBtnBeforeCutoff();
+        hideTeamsBtn();
+        return false;
+      }
+
       if (!auto) {
         teamsStatus.textContent = "";
         teamsStatus.className = "status";
@@ -3905,6 +3978,13 @@
 
       if (!st || !st.ok) {
         setTeamsBtnBeforeCutoff();
+        return;
+      }
+
+      if (isCancelledForLowPlayers(st)) {
+        teamsStatus.textContent = `Game cancelled: only ${Number(st?.count) || 0} players registered. Minimum needed is ${getMinimumPlayersToPlay()}.`;
+        teamsStatus.className = "status warnText";
+        hideTeamsBtn();
         return;
       }
 
