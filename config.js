@@ -9,12 +9,12 @@ window.SIGNUP_CONFIG = {
 
   teamsMinForFour: 24,
 
-  registrationEnabled: True,
+  registrationEnabled: true,
   registrationOffTitle: "Registration is off this Friday",
   registrationOffText: "",
 
-  announcementEnabled: False,
+  announcementEnabled: false,
   announcementTone: "warn",
-  announcementTitle: "No Friday night Frisbee this week",
+  announcementTitle: "",
   announcementText: ""
 };
