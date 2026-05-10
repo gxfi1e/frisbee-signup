@@ -3062,8 +3062,30 @@
       for(const ms of attempts){
         try{
           const res = await fetchWithTimeout(fetchUrl, ms, fetchOptions);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return await res.json();
+          const text = await res.text();
+          const serverError = extractServerErrorText(text);
+
+          if (!res.ok) {
+            throw new Error(serverError || `HTTP ${res.status}`);
+          }
+
+          if (!text) {
+            throw new Error("Empty response from server");
+          }
+
+          try{
+            return JSON.parse(text);
+          }catch(parseErr){
+            const compact = text.trim();
+            const looksLikeHtml = compact.startsWith("<!doctype") || compact.startsWith("<html") || compact.startsWith("<");
+            if (looksLikeHtml) {
+              throw new Error(
+                serverError ||
+                "Server returned HTML instead of JSON. This browser may have stale site data or blocked cross-site access."
+              );
+            }
+            throw new Error("Server returned invalid JSON.");
+          }
         }catch(e){
           lastErr = e;
         }
@@ -3309,7 +3331,8 @@
         countPill.textContent = "Status unavailable";
         statusPill.textContent = "UNKNOWN";
         statusPill.className = "pill";
-        timeLeftPill.textContent = String(err?.message || "").slice(0, 120);
+        timeLeftPill.textContent = "";
+        console.error("Status refresh failed:", err);
         applySignupVisibility(null);
         return null;
       }
