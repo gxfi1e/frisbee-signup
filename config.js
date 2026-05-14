@@ -4,7 +4,7 @@ window.SIGNUP_CONFIG = {
   timezoneLabel: "Asia/Riyadh",
 
   gameTimeText: "Friday 7-10PM",
-  locationText: "KAUST Pitch 1 and 2",
+  locationText: "KAUST Pitch 2 ",
   googleMapsLink: "https://maps.app.goo.gl/Ks8yKLg6PSvxWUJh7",
 
   teamsMinForFour: 24,
