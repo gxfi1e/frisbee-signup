@@ -8,7 +8,7 @@ window.SIGNUP_CONFIG = {
   googleMapsLink: "https://maps.app.goo.gl/Ks8yKLg6PSvxWUJh7",
 
   teamsMinForFour: 24,
-  minimumPlayersToPlay: 12,
+  minimumPlayersToPlay: 10,
 
   registrationEnabled: true,
   registrationOffTitle: "Registration is off this Friday",
