@@ -4,11 +4,11 @@ window.SIGNUP_CONFIG = {
   timezoneLabel: "Asia/Riyadh",
 
   gameTimeText: "Friday 7-10PM",
-  locationText: "KAUST Pitch 2 ",
-  googleMapsLink: "https://maps.app.goo.gl/Ks8yKLg6PSvxWUJh7",
+  locationText: "KAUST Stadiums 🏟 ",
+  googleMapsLink: "https://maps.app.goo.gl/EMWe4tmD6z9rHBqU7",
 
   teamsMinForFour: 24,
-  minimumPlayersToPlay: 10,
+  minimumPlayersToPlay: 12,
 
   registrationEnabled: true,
   registrationOffTitle: "Registration is off this Friday",
