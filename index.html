@@ -1325,9 +1325,12 @@
     const LS_STATUS_CACHE = "frisbee_status_cache_v1";
     const LS_PLAYERS_CACHE = "frisbee_players_cache_v1";
     const LS_ANALYTICS_CACHE = "frisbee_analytics_cache_v1";
+    const LS_AQI_POLICY_CACHE = "frisbee_aqi_policy_cache_v1";
     const STATUS_CACHE_MAX_AGE_MS = 20 * 60 * 1000;
+    const STATUS_STALE_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
     const PLAYERS_CACHE_MAX_AGE_MS = 5 * 60 * 1000;
     const ANALYTICS_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+    const AQI_POLICY_CACHE_MAX_AGE_MS = 2 * 60 * 60 * 1000;
 
     function storageGet(key){
       try{
@@ -1355,17 +1358,30 @@
       }
     }
 
-    function readCachedObject(key, maxAgeMs){
+    function readCachedEnvelope(key){
       try{
         const raw = storageGet(key);
         if (!raw) return null;
         const parsed = JSON.parse(raw);
         const savedAt = Number(parsed?.savedAt) || 0;
-        if (!savedAt || (Date.now() - savedAt) > maxAgeMs) return null;
-        return parsed?.data ?? null;
+        if (!savedAt) return null;
+        return {
+          savedAt,
+          data: parsed?.data ?? null
+        };
       }catch(_){
         return null;
       }
+    }
+
+    function readCachedObject(key, maxAgeMs){
+      const cached = readCachedEnvelope(key);
+      const ageLimit = Number(maxAgeMs);
+      if (!cached) return null;
+      if (Number.isFinite(ageLimit) && ageLimit >= 0 && (Date.now() - cached.savedAt) > ageLimit) {
+        return null;
+      }
+      return cached.data;
     }
 
     function writeCachedObject(key, data){
@@ -1966,14 +1982,38 @@
       return `${url}${sep}_=${Date.now()}`;
     }
 
-    function readCachedStatus(){
-      const cached = readCachedObject(LS_STATUS_CACHE, STATUS_CACHE_MAX_AGE_MS);
+    function getCurrentSignupDateKey(){
+      return ymdLocalRiyadh(nextRelevantFridayRiyadh());
+    }
+
+    function getRiyadhDateKey(value){
+      const date = value instanceof Date ? value : new Date(value);
+      if (Number.isNaN(date.getTime())) return "";
+      try{
+        return ymdLocalRiyadh(new Date(
+          date.toLocaleString("en-US", { timeZone: "Asia/Riyadh" })
+        ));
+      }catch(_){
+        return "";
+      }
+    }
+
+    function isStatusForCurrentSignupWindow(data){
+      return getRiyadhDateKey(data?.cutoffIso) === getCurrentSignupDateKey();
+    }
+
+    function readCachedStatus(options = {}){
+      const cached = readCachedObject(
+        LS_STATUS_CACHE,
+        options.maxAgeMs ?? STATUS_CACHE_MAX_AGE_MS
+      );
       const normalized = normalizeStatus(cached || null);
       const cutoffOk = !!normalized?.cutoffIso && !Number.isNaN(new Date(normalized.cutoffIso).getTime());
       const countOk = Number.isFinite(Number(normalized?.count)) && Number(normalized.count) >= 0;
       const maxOk = Number.isFinite(Number(normalized?.max)) && Number(normalized.max) > 0;
+      const signupWindowOk = cutoffOk && isStatusForCurrentSignupWindow(normalized);
 
-      if (normalized?.ok && cutoffOk && countOk && maxOk) {
+      if (normalized?.ok && cutoffOk && countOk && maxOk && signupWindowOk) {
         return normalized;
       }
 
@@ -1984,7 +2024,7 @@
     function writeCachedStatus(data){
       const normalized = normalizeStatus(data);
       const cutoffOk = !!normalized?.cutoffIso && !Number.isNaN(new Date(normalized.cutoffIso).getTime());
-      if (normalized?.ok && cutoffOk) {
+      if (normalized?.ok && cutoffOk && isStatusForCurrentSignupWindow(normalized)) {
         writeCachedObject(LS_STATUS_CACHE, normalized);
       }
     }
@@ -1993,7 +2033,9 @@
     let aqiGeo = null;
     let aqiPanelOpen = false;
     let latestStatusData = null;
-    let airQualityPolicy = defaultAirPolicy();
+    const bootAirPolicy = readCachedAirPolicy();
+    let airQualityPolicy = bootAirPolicy || defaultAirPolicy();
+    let airQualityDecisionReady = !!bootAirPolicy;
 
     aqiToggleSummary.addEventListener("click", () => {
       setAqiPanelOpen(!aqiPanelOpen);
@@ -2330,6 +2372,84 @@
         scorePercentile: NaN,
         baseline: defaultPmBaseline()
       };
+    }
+
+    function finiteNumberOrNull(value){
+      const n = Number(value);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function numberOrFallback(value, fallback){
+      const n = Number(value);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    function baselineForAirPolicyCache(baseline){
+      const fallback = defaultPmBaseline();
+      const source = baseline || {};
+      return {
+        sampleCount: numberOrFallback(source.sampleCount, fallback.sampleCount),
+        monthWindowLabel: firstText(source.monthWindowLabel, fallback.monthWindowLabel),
+        regularPercentile: numberOrFallback(source.regularPercentile, fallback.regularPercentile),
+        cancelPercentile: numberOrFallback(source.cancelPercentile, fallback.cancelPercentile),
+        requiredMatches: numberOrFallback(source.requiredMatches, fallback.requiredMatches),
+        regularCaps: {
+          pm25: numberOrFallback(source.regularCaps?.pm25, fallback.regularCaps.pm25),
+          pm10: numberOrFallback(source.regularCaps?.pm10, fallback.regularCaps.pm10)
+        },
+        cancelCaps: {
+          pm25: numberOrFallback(source.cancelCaps?.pm25, fallback.cancelCaps.pm25),
+          pm10: numberOrFallback(source.cancelCaps?.pm10, fallback.cancelCaps.pm10)
+        },
+        pm25Samples: [],
+        pm10Samples: []
+      };
+    }
+
+    function cacheableAirPolicy(policy){
+      const source = policy || defaultAirPolicy();
+      const mode = firstText(source.mode, "normal").toLowerCase();
+      const safeMode = ["normal", "modified", "cancelled"].includes(mode) ? mode : "normal";
+      return {
+        mode: safeMode,
+        blocksRegistration: !!source.blocksRegistration,
+        noticeTone: firstText(source.noticeTone),
+        noticeText: firstText(source.noticeText),
+        gameLine1: firstText(source.gameLine1),
+        gameLine2: firstText(source.gameLine2),
+        sourceKind: firstText(source.sourceKind),
+        sourceLabel: firstText(source.sourceLabel),
+        maxPm25: finiteNumberOrNull(source.maxPm25),
+        maxPm10: finiteNumberOrNull(source.maxPm10),
+        pm25Percentile: finiteNumberOrNull(source.pm25Percentile),
+        pm10Percentile: finiteNumberOrNull(source.pm10Percentile),
+        scorePercentile: finiteNumberOrNull(source.scorePercentile),
+        rescueWindow: !!source.rescueWindow,
+        baseline: baselineForAirPolicyCache(source.baseline)
+      };
+    }
+
+    function restoreCachedAirPolicy(policy){
+      if (!policy || typeof policy !== "object") return null;
+      return {
+        ...defaultAirPolicy(),
+        ...cacheableAirPolicy(policy),
+        baseline: baselineForAirPolicyCache(policy.baseline)
+      };
+    }
+
+    function readCachedAirPolicy(){
+      const cached = readCachedObject(LS_AQI_POLICY_CACHE, AQI_POLICY_CACHE_MAX_AGE_MS);
+      if (!cached || cached.targetDate !== getCurrentSignupDateKey()) return null;
+      return restoreCachedAirPolicy(cached.policy);
+    }
+
+    function writeCachedAirPolicy(policy){
+      const cacheable = cacheableAirPolicy(policy);
+      writeCachedObject(LS_AQI_POLICY_CACHE, {
+        targetDate: getCurrentSignupDateKey(),
+        policy: cacheable
+      });
     }
 
     function evaluateAirQualityPolicy(points, options = {}){
@@ -3030,16 +3150,22 @@
     }
 
     async function loadAqi(){
+      const previousPolicy = airQualityPolicy;
+      const hadDecision = airQualityDecisionReady;
+
       try{
-        aqiModeBadge.textContent = "Loading...";
-        aqiSummaryInline.textContent = "Loading PM forecast...";
-        aqiSourceLine.textContent = "Decision source: loading...";
+        aqiModeBadge.textContent = hadDecision ? "Updating..." : "Loading...";
+        aqiSummaryInline.textContent = hadDecision ? "Updating PM forecast..." : "Loading PM forecast...";
+        aqiSourceLine.textContent = hadDecision ? "Decision source: updating..." : "Decision source: loading...";
         aqiToggleSummary.textContent = "Hourly PM";
         setAqiPanelOpen(false);
         aqiDetail.innerHTML = "";
         destroyAqiChart();
         aqiTrendChartCanvas.style.display = "none";
-        airQualityPolicy = defaultAirPolicy();
+        if (!hadDecision) {
+          airQualityPolicy = defaultAirPolicy();
+          airQualityDecisionReady = false;
+        }
 
         const geo = await getThuwalGeo();
         const targetFriday = nextRelevantFridayRiyadh();
@@ -3070,6 +3196,7 @@
 
         const selected = chooseAirQualityDecision(forecastPolicy, localReading, baseline);
         airQualityPolicy = selected.policy;
+        airQualityDecisionReady = true;
         if (hasForecastHourlyWindow) {
           renderAqiFridayWindow(forecast.fridayDateStr, forecast.fridayWindowValid, baseline, selected.policy);
         } else if (forecast?.daily?.length) {
@@ -3084,6 +3211,9 @@
           localReading,
           baseline
         });
+        if (selected.decisionBasis !== "none") {
+          writeCachedAirPolicy(airQualityPolicy);
+        }
         applyAirQualityPolicy();
 
       } catch (e) {
@@ -3095,7 +3225,17 @@
         aqiSourceLine.textContent = "Decision source: no live local source available.";
         aqiToggleSummary.textContent = "Hourly PM";
         aqiDetail.innerHTML = "";
-        airQualityPolicy = defaultAirPolicy();
+        const cachedPolicy = readCachedAirPolicy();
+        if (cachedPolicy) {
+          airQualityPolicy = cachedPolicy;
+          airQualityDecisionReady = true;
+        } else if (hadDecision && previousPolicy) {
+          airQualityPolicy = previousPolicy;
+          airQualityDecisionReady = true;
+        } else {
+          airQualityPolicy = defaultAirPolicy();
+          airQualityDecisionReady = true;
+        }
         applyAirQualityPolicy();
       }
     }
@@ -3124,7 +3264,6 @@
         ? options.attempts
         : [6000, 9000];
       let lastErr = null;
-      const fetchUrl = options.cacheBust ? appendCacheBust(url) : url;
       const fetchOptions = {
         method:"GET",
         cache:"no-store",
@@ -3134,6 +3273,7 @@
 
       for(const ms of attempts){
         try{
+          const fetchUrl = options.cacheBust ? appendCacheBust(url) : url;
           const res = await fetchWithTimeout(fetchUrl, ms, fetchOptions);
           const text = await res.text();
           const serverError = extractServerErrorText(text);
@@ -3320,9 +3460,28 @@
       return `${minutes}m left`;
     }
 
+    let statusRefreshSeq = 0;
+    let statusRetryTimer = null;
+    let statusRefreshPromise = null;
+
+    function clearStatusRetry(){
+      if (statusRetryTimer) {
+        clearTimeout(statusRetryTimer);
+        statusRetryTimer = null;
+      }
+    }
+
+    function scheduleStatusRetry(delayMs = 15000){
+      clearStatusRetry();
+      statusRetryTimer = setTimeout(() => {
+        statusRetryTimer = null;
+        refresh({ fromRetry: true });
+      }, delayMs);
+    }
+
     async function getStatus() {
       const raw = await safeGetJson(ENDPOINT + "?action=status", {
-        attempts:[1200, 2400, 4200],
+        attempts:[3500, 7000, 12000],
         cacheBust:true
       });
       return normalizeStatus(raw);
@@ -3331,12 +3490,21 @@
     function setPills(data) {
       const hasUsableCutoff = !!data?.cutoffIso && !Number.isNaN(new Date(data.cutoffIso).getTime());
       if (!data || !hasUsableCutoff) {
-        countPill.textContent = `0 / ${getConfiguredMaxPlayers()} registered`;
-        statusPill.textContent = "UNKNOWN";
-        statusPill.className = "pill";
-        timeLeftPill.textContent = "";
-        btn.disabled = true;
-        btn.textContent = "Checking status...";
+        if (!isRegistrationEnabledByConfig()) {
+          countPill.textContent = `0 / ${getConfiguredMaxPlayers()} registered`;
+          statusPill.textContent = "OFF";
+          statusPill.className = "pill warn";
+          timeLeftPill.textContent = "This Friday off";
+          btn.disabled = true;
+          btn.textContent = "Registration off";
+        } else {
+          countPill.textContent = "Checking status...";
+          statusPill.textContent = "RETRYING";
+          statusPill.className = "pill warn";
+          timeLeftPill.textContent = "";
+          btn.disabled = true;
+          btn.textContent = "Checking status...";
+        }
         return;
       }
 
@@ -3350,6 +3518,9 @@
       } else if (lowPlayersCancelled) {
         statusPill.textContent = "CANCELLED";
         statusPill.className = "pill bad";
+      } else if (!airQualityDecisionReady && data.open && !data.isFull) {
+        statusPill.textContent = "CHECKING AIR";
+        statusPill.className = "pill warn";
       } else if (airQualityPolicy.mode === "cancelled") {
         statusPill.textContent = "CANCELLED";
         statusPill.className = "pill bad";
@@ -3379,6 +3550,9 @@
       } else if (lowPlayersCancelled) {
         btn.disabled = true;
         btn.textContent = "Game cancelled";
+      } else if (!airQualityDecisionReady && data.open && !data.isFull) {
+        btn.disabled = true;
+        btn.textContent = "Checking air...";
       } else if (airQualityPolicy.blocksRegistration) {
         btn.disabled = true;
         btn.textContent = "Registration unavailable";
@@ -3394,23 +3568,45 @@
       }
     }
 
-    async function refresh() {
+    async function refresh(options = {}) {
+      if (statusRefreshPromise && !options.force) return statusRefreshPromise;
+
+      const work = refreshStatusOnce(options);
+      statusRefreshPromise = work;
+
+      try{
+        return await work;
+      } finally {
+        if (statusRefreshPromise === work) statusRefreshPromise = null;
+      }
+    }
+
+    async function refreshStatusOnce(_options = {}) {
+      const seq = ++statusRefreshSeq;
       try {
         const data = await getStatus();
+        if (seq !== statusRefreshSeq) return latestStatusData;
         if (data.ok === false) throw new Error(data.error || "status not ok");
 
         latestStatusData = data;
         writeCachedStatus(data);
+        clearStatusRetry();
         setPills(data);
         applySignupVisibility(data);
 
         return data;
       } catch (err) {
-        const fallback = latestStatusData || readCachedStatus();
+        if (seq !== statusRefreshSeq) return latestStatusData;
+
+        const fallback = latestStatusData || readCachedStatus({
+          maxAgeMs: STATUS_STALE_CACHE_MAX_AGE_MS
+        });
         if (fallback) {
           latestStatusData = fallback;
           setPills(fallback);
           applySignupVisibility(fallback);
+          scheduleStatusRetry(15000);
+          console.warn("Status refresh failed, showing saved status:", err);
           return fallback;
         }
 
@@ -3425,22 +3621,24 @@
           latestStatusData = offFallback;
           setPills(offFallback);
           applySignupVisibility(offFallback);
+          scheduleStatusRetry(30000);
           return offFallback;
         }
 
         latestStatusData = null;
-        countPill.textContent = "Status unavailable";
-        statusPill.textContent = "UNKNOWN";
-        statusPill.className = "pill";
+        countPill.textContent = "Checking status...";
+        statusPill.textContent = "RETRYING";
+        statusPill.className = "pill warn";
         timeLeftPill.textContent = "";
         console.error("Status refresh failed:", err);
         applySignupVisibility(null);
+        scheduleStatusRetry(5000);
         return null;
       }
     }
 
     async function refreshVisibleSections(){
-      await refresh();
+      await refresh({ force: true });
       await refreshPlayers(true);
     }
 
@@ -4138,7 +4336,9 @@
       if (loaded) hideTeamsBtn();
     }
 
-    const bootStatus = readCachedStatus();
+    const bootStatus = readCachedStatus({
+      maxAgeMs: STATUS_STALE_CACHE_MAX_AGE_MS
+    });
     if (bootStatus) {
       latestStatusData = bootStatus;
       setPills(bootStatus);
