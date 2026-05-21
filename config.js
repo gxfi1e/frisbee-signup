@@ -7,6 +7,7 @@ window.SIGNUP_CONFIG = {
   locationText: "KAUST Stadiums 🏟 ",
   googleMapsLink: "https://maps.app.goo.gl/EMWe4tmD6z9rHBqU7",
 
+  maxPlayers: 32,
   teamsMinForFour: 24,
   minimumPlayersToPlay: 12,
 

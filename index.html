@@ -1218,6 +1218,11 @@
     };
     const ENDPOINT = CFG.endpoint || "";
 
+    function getConfiguredMaxPlayers(){
+      const n = Number(CFG.maxPlayers);
+      return Number.isFinite(n) && n > 0 ? n : 32;
+    }
+
     const overlay = document.getElementById("overlay");
     const overlayMsg = document.getElementById("overlayMsg");
 
@@ -3231,8 +3236,10 @@
     }
 
     function normalizeStatus(data){
-      const count = Number(data?.count) || 0;
-      const max = Number(data?.max) || 0;
+      const rawCount = Number(data?.count);
+      const rawMax = Number(data?.max);
+      const count = Number.isFinite(rawCount) && rawCount >= 0 ? rawCount : 0;
+      const max = Number.isFinite(rawMax) && rawMax > 0 ? rawMax : getConfiguredMaxPlayers();
       const isFull = max > 0 && count >= max;
       const hasCount = data && Object.prototype.hasOwnProperty.call(data, "count");
       const hasMax = data && Object.prototype.hasOwnProperty.call(data, "max");
@@ -3244,7 +3251,11 @@
           ? /^(true|1|open)$/i.test(openRaw.trim())
           : !!openRaw;
       const inferredOpen = parsedOpen || (!hasOpen && hasCutoff && !isAfterCutoffFromIso(data.cutoffIso));
-      const usable = !!data && (hasCount || hasMax || hasOpen || hasCutoff);
+      const usable = !!data && (
+        hasCutoff ||
+        (hasCount && hasMax) ||
+        (hasMax && hasOpen)
+      );
       const open = inferredOpen && !isFull;
       return {
         ...data,
@@ -3382,7 +3393,7 @@
           const offFallback = normalizeStatus({
             ok: true,
             count: 0,
-            max: Number(CFG.maxPlayers) || 30,
+            max: getConfiguredMaxPlayers(),
             open: false,
             cutoffIso: ""
           });
@@ -4089,7 +4100,7 @@
       latestStatusData = normalizeStatus({
         ok: true,
         count: 0,
-        max: Number(CFG.maxPlayers) || 30,
+        max: getConfiguredMaxPlayers(),
         open: false,
         cutoffIso: ""
       });
