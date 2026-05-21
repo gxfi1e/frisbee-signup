@@ -1349,7 +1349,6 @@
     function storageRemove(key){
       try{
         if (window.localStorage) localStorage.removeItem(key);
-        if (!silent) playersStatus.textContent = cached ? "Updated." : "Loaded.";
         return true;
       }catch(_){
         return false;
@@ -3904,6 +3903,12 @@
 
     let lastPlayersText = "";
 
+    function setPlayersExpanded(expanded){
+      playersArea.style.display = expanded ? "block" : "none";
+      togglePlayersBtn.textContent = expanded ? "Hide" : "Show";
+      if (!expanded) playersStatus.textContent = "";
+    }
+
     function renderPlayersData(data){
       const safeStats = data?.stats || {};
       const safePlayers = Array.isArray(data?.players) ? data.players : [];
@@ -3912,10 +3917,18 @@
       genderStats.textContent = `Male: ${Number(safeStats.male) || 0}   Female: ${Number(safeStats.female) || 0}`;
       prefStats.textContent = `Handler: ${Number(safeStats.handler) || 0}   Cutter: ${Number(safeStats.cutter) || 0}`;
 
+/*
       const lines = safePlayers.map((p, idx) => ({
         idx: idx + 1,
-        name: p.name,
+        name: p?.name || `Player ${idx + 1}`,
         gender: p.gender || "—"
+        gender: p?.gender || "-"
+      }));
+*/
+      const lines = safePlayers.map((p, idx) => ({
+        idx: idx + 1,
+        name: p?.name || `Player ${idx + 1}`,
+        gender: p?.gender || "-"
       }));
 
       playersList.innerHTML = lines.map(x => `
@@ -3929,10 +3942,11 @@
       copyPlayersBtn.disabled = !lastPlayersText;
     }
 
-    async function refreshPlayers(silent=false){
+    async function refreshPlayers(silent=false, autoExpand=false){
       const cached = readCachedPlayers();
       if (cached) {
         renderPlayersData(cached);
+        if (autoExpand) setPlayersExpanded(true);
         if (!silent) playersStatus.textContent = "Loaded saved list.";
       } else {
         copyPlayersBtn.disabled = true;
@@ -3941,19 +3955,23 @@
 
       try{
         const data = await safeGetJson(ENDPOINT + "?action=players", {
-          attempts:[2200, 4200],
+          attempts:[1800, 3200],
           cacheBust:true
         });
         if (!data.ok) throw new Error(data.error || "players not ok");
 
         renderPlayersData(data);
         writeCachedPlayers(data);
+        if (autoExpand) setPlayersExpanded(true);
+        if (!silent) playersStatus.textContent = cached ? "Updated." : "Loaded.";
 
         if (!silent) playersStatus.textContent = cached ? "Updated ✅" : "Loaded ✅";
+        if (!silent) playersStatus.textContent = cached ? "Updated." : "Loaded.";
         return true;
 
       } catch(e){
         if (cached) {
+          if (autoExpand) setPlayersExpanded(true);
           if (!silent) playersStatus.textContent = "Showing saved list. Refresh later.";
           return true;
         }
@@ -3965,19 +3983,22 @@
     togglePlayersBtn.addEventListener("click", async ()=>{
       const open = playersArea.style.display !== "none";
       if (open){
-        playersArea.style.display = "none";
-        togglePlayersBtn.textContent = "Show";
-        playersStatus.textContent = "";
+        setPlayersExpanded(false);
         return;
       }
-      playersArea.style.display = "block";
-      togglePlayersBtn.textContent = "Hide";
+      setPlayersExpanded(true);
       await refreshPlayers(false);
     });
 
     copyPlayersBtn.addEventListener("click", async ()=>{
       if (!lastPlayersText) return;
       const ok = await copyText(lastPlayersText);
+      if (ok) {
+        playersStatus.textContent = "Copied.";
+      } else {
+        playersStatus.textContent = "Copy failed.";
+      }
+      return;
       playersStatus.textContent = ok ? "Copied ✅" : "Copy failed ❌";
     });
 
@@ -4141,10 +4162,10 @@
     setInterval(refresh, 60 * 1000);
     loadAqi();
     setInterval(loadAqi, 30 * 60 * 1000);
-    setTimeout(() => {
-      warmPlayersCache();
+    setTimeout(async () => {
+      await refreshPlayers(true, true);
       warmAnalyticsCache();
-    }, 2500);
+    }, 1200);
 
     autoTeamsByCutoff();
     setInterval(autoTeamsByCutoff, 45000);
