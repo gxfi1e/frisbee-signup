@@ -1318,7 +1318,11 @@
     const LS_PROFILE_AUTO_RESTORE = "frisbee_profile_auto_restore_v1";
     const SS_GOOGLE_SESSION = "frisbee_google_session_v1";
     const LS_STATUS_CACHE = "frisbee_status_cache_v1";
+    const LS_PLAYERS_CACHE = "frisbee_players_cache_v1";
+    const LS_ANALYTICS_CACHE = "frisbee_analytics_cache_v1";
     const STATUS_CACHE_MAX_AGE_MS = 20 * 60 * 1000;
+    const PLAYERS_CACHE_MAX_AGE_MS = 5 * 60 * 1000;
+    const ANALYTICS_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 
     function storageGet(key){
       try{
@@ -1340,7 +1344,32 @@
     function storageRemove(key){
       try{
         if (window.localStorage) localStorage.removeItem(key);
+        if (!silent) playersStatus.textContent = cached ? "Updated." : "Loaded.";
         return true;
+      }catch(_){
+        return false;
+      }
+    }
+
+    function readCachedObject(key, maxAgeMs){
+      try{
+        const raw = storageGet(key);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        const savedAt = Number(parsed?.savedAt) || 0;
+        if (!savedAt || (Date.now() - savedAt) > maxAgeMs) return null;
+        return parsed?.data ?? null;
+      }catch(_){
+        return null;
+      }
+    }
+
+    function writeCachedObject(key, data){
+      try{
+        return storageSet(key, JSON.stringify({
+          savedAt: Date.now(),
+          data
+        }));
       }catch(_){
         return false;
       }
@@ -1934,26 +1963,11 @@
     }
 
     function readCachedStatus(){
-      try{
-        const raw = storageGet(LS_STATUS_CACHE);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        const savedAt = Number(parsed?.savedAt) || 0;
-        if (!savedAt || (Date.now() - savedAt) > STATUS_CACHE_MAX_AGE_MS) return null;
-        return normalizeStatus(parsed?.data || null);
-      }catch(_){
-        return null;
-      }
+      return normalizeStatus(readCachedObject(LS_STATUS_CACHE, STATUS_CACHE_MAX_AGE_MS) || null);
     }
 
     function writeCachedStatus(data){
-      try{
-        storageSet(LS_STATUS_CACHE, JSON.stringify({
-          savedAt: Date.now(),
-          data
-        }));
-      }catch(_){
-      }
+      writeCachedObject(LS_STATUS_CACHE, data);
     }
 
     let aqiChart = null;
@@ -3283,7 +3297,7 @@
 
     async function getStatus() {
       const raw = await safeGetJson(ENDPOINT + "?action=status", {
-        attempts:[2500, 5000, 9000],
+        attempts:[1200, 2400, 4200],
         cacheBust:true
       });
       return normalizeStatus(raw);
@@ -3392,6 +3406,52 @@
     async function refreshVisibleSections(){
       await refresh();
       await refreshPlayers(true);
+    }
+
+    function readCachedPlayers(){
+      const data = readCachedObject(LS_PLAYERS_CACHE, PLAYERS_CACHE_MAX_AGE_MS);
+      return (data && data.ok && Array.isArray(data.players)) ? data : null;
+    }
+
+    function writeCachedPlayers(data){
+      if (data && data.ok && Array.isArray(data.players)) {
+        writeCachedObject(LS_PLAYERS_CACHE, data);
+      }
+    }
+
+    function readCachedAnalytics(){
+      const data = readCachedObject(LS_ANALYTICS_CACHE, ANALYTICS_CACHE_MAX_AGE_MS);
+      return (data && data.ok && data.latest) ? data : null;
+    }
+
+    function writeCachedAnalytics(data){
+      if (data && data.ok && data.latest) {
+        writeCachedObject(LS_ANALYTICS_CACHE, data);
+      }
+    }
+
+    async function warmPlayersCache(){
+      if (readCachedPlayers()) return;
+      try{
+        const data = await safeGetJson(ENDPOINT + "?action=players", {
+          attempts:[2000, 3500],
+          cacheBust:true
+        });
+        if (data?.ok) writeCachedPlayers(data);
+      }catch(_){
+      }
+    }
+
+    async function warmAnalyticsCache(){
+      if (readCachedAnalytics()) return;
+      try{
+        const data = await safeGetJson(ENDPOINT + "?action=analytics", {
+          attempts:[3500, 6000, 9000],
+          cacheBust:true
+        });
+        if (data?.ok) writeCachedAnalytics(data);
+      }catch(_){
+      }
     }
 
     function saveLastReg(name, regId) {
@@ -3807,38 +3867,59 @@
 
     let lastPlayersText = "";
 
+    function renderPlayersData(data){
+      const safeStats = data?.stats || {};
+      const safePlayers = Array.isArray(data?.players) ? data.players : [];
+
+      playersBadge.textContent = `${Number(data?.count) || safePlayers.length} players`;
+      genderStats.textContent = `Male: ${Number(safeStats.male) || 0}   Female: ${Number(safeStats.female) || 0}`;
+      prefStats.textContent = `Handler: ${Number(safeStats.handler) || 0}   Cutter: ${Number(safeStats.cutter) || 0}`;
+
+      const lines = safePlayers.map((p, idx) => ({
+        idx: idx + 1,
+        name: p.name,
+        gender: p.gender || "—"
+      }));
+
+      playersList.innerHTML = lines.map(x => `
+        <div class="playerLine">
+          <div><b>${x.idx}. ${escapeHtml(x.name)}</b></div>
+          <div class="playerMeta">${escapeHtml(x.gender)}</div>
+        </div>
+      `).join("");
+
+      lastPlayersText = lines.map(x => `${x.idx}. ${x.name} (${x.gender})`).join("\n");
+      copyPlayersBtn.disabled = !lastPlayersText;
+    }
+
     async function refreshPlayers(silent=false){
-      if (!silent) playersStatus.textContent = "Loading…";
-      copyPlayersBtn.disabled = true;
+      const cached = readCachedPlayers();
+      if (cached) {
+        renderPlayersData(cached);
+        if (!silent) playersStatus.textContent = "Loaded saved list.";
+      } else {
+        copyPlayersBtn.disabled = true;
+        if (!silent) playersStatus.textContent = "Loading...";
+      }
 
       try{
-        const data = await safeGetJson(ENDPOINT + "?action=players");
+        const data = await safeGetJson(ENDPOINT + "?action=players", {
+          attempts:[2200, 4200],
+          cacheBust:true
+        });
         if (!data.ok) throw new Error(data.error || "players not ok");
 
-        playersBadge.textContent = `${data.count} players`;
-        genderStats.textContent = `Male: ${data.stats.male}   Female: ${data.stats.female}`;
-        prefStats.textContent = `Handler: ${data.stats.handler}   Cutter: ${data.stats.cutter}`;
+        renderPlayersData(data);
+        writeCachedPlayers(data);
 
-        const lines = data.players.map((p, idx) => ({
-          idx: idx+1,
-          name: p.name,
-          gender: p.gender || "—"
-        }));
-
-        playersList.innerHTML = lines.map(x => `
-          <div class="playerLine">
-            <div><b>${x.idx}. ${escapeHtml(x.name)}</b></div>
-            <div class="playerMeta">${escapeHtml(x.gender)}</div>
-          </div>
-        `).join("");
-
-        lastPlayersText = lines.map(x => `${x.idx}. ${x.name} (${x.gender})`).join("\n");
-        copyPlayersBtn.disabled = !lastPlayersText;
-
-        if (!silent) playersStatus.textContent = "Updated ✅";
+        if (!silent) playersStatus.textContent = cached ? "Updated ✅" : "Loaded ✅";
         return true;
 
       } catch(e){
+        if (cached) {
+          if (!silent) playersStatus.textContent = "Showing saved list. Refresh later.";
+          return true;
+        }
         if (!silent) playersStatus.textContent = "Slow / failed. Tap Show again.";
         return false;
       }
@@ -4023,6 +4104,10 @@
     setInterval(refresh, 60 * 1000);
     loadAqi();
     setInterval(loadAqi, 30 * 60 * 1000);
+    setTimeout(() => {
+      warmPlayersCache();
+      warmAnalyticsCache();
+    }, 2500);
 
     autoTeamsByCutoff();
     setInterval(autoTeamsByCutoff, 45000);
@@ -4087,7 +4172,7 @@
       );
     }
 
-    async function loadAnalytics(){
+    async function loadAnalyticsLegacy(){
       if(analyticsLoading) return;
       analyticsLoading = true;
 
@@ -4249,165 +4334,202 @@
       }
     }
 
-    loadAnalytics = async function(){
-      if(analyticsLoading) return;
-      analyticsLoading = true;
+    function renderAnalyticsPayload(data){
+      const rawTrend = Array.isArray(data?.trend) ? data.trend : [];
+      const filteredTrend = rawTrend.filter(hasTrendWeekData);
+      const latestHasData = hasCompletedWeekStats(data?.latest);
+      const st = latestHasData ? data.latest : null;
+      const fallbackWeek = filteredTrend.length
+        ? filteredTrend[filteredTrend.length - 1].week
+        : data?.latestWeek;
+      const wk = fallbackWeek || data?.latestWeek || "-";
 
-      anaStatus.textContent = "Loading...";
-      latestSummary.textContent = "";
-      anaWeekBadge.textContent = "-";
-      setAnalyticsCardsVisible(false);
-      try{
-        const data = await safeGetJson(ENDPOINT + "?action=analytics", { attempts:[10000, 15000, 22000], cacheBust:true });
-        if(!data || !data.ok) throw new Error((data && data.error) || "analytics failed");
+      anaWeekBadge.textContent = wk;
 
-        const rawTrend = Array.isArray(data.trend) ? data.trend : [];
-        const filteredTrend = rawTrend.filter(hasTrendWeekData);
-        const latestHasData = hasCompletedWeekStats(data.latest);
-        const st = latestHasData ? data.latest : null;
-        const fallbackWeek = filteredTrend.length
-          ? filteredTrend[filteredTrend.length - 1].week
-          : data.latestWeek;
-        const wk = fallbackWeek || data.latestWeek || "-";
+      if (!st) {
+        latestSummary.textContent = "No completed game week is available yet.";
+        if (latestCard) latestCard.hidden = false;
+        setAnalyticsChartsVisible(false);
+        return {
+          hasRenderableData: false,
+          skippedWeeks: filteredTrend.length !== rawTrend.length
+        };
+      }
 
-        if (!st) {
-          anaWeekBadge.textContent = wk;
-          latestSummary.textContent = "No completed game week is available yet.";
-          if (latestCard) latestCard.hidden = false;
-          setAnalyticsChartsVisible(false);
-          anaStatus.textContent = "Updated - weeks without games were skipped.";
-          analyticsLoadedOnce = true;
-          return;
+      const trend = filteredTrend.length
+        ? filteredTrend
+        : [{
+            week: wk,
+            avg: Number(st.avg) || 0,
+            std: Number(st.std) || 0,
+            eliteFrac: Number(st.eliteFrac) || 0
+          }];
+
+      latestSummary.textContent =
+        `Players: ${st.n} | Avg: ${st.avg} | Std: ${st.std} | Elite: ${pct(st.eliteFrac)}`;
+      setAnalyticsCardsVisible(true);
+
+      destroyChart("hist");
+      const bins = st.bins || {};
+      CH.hist = new Chart(document.getElementById("c_hist"), {
+        type: "bar",
+        data: {
+          labels: Object.keys(bins),
+          datasets: [{ label: "Count", data: Object.values(bins) }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{ legend:{display:false} },
+          scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 } } }
         }
+      });
 
-        const trend = filteredTrend.length
-          ? filteredTrend
-          : [{
-              week: wk,
-              avg: Number(st.avg) || 0,
-              std: Number(st.std) || 0,
-              eliteFrac: Number(st.eliteFrac) || 0
-            }];
-
-        anaWeekBadge.textContent = wk;
-        latestSummary.textContent =
-          `Players: ${st.n} | Avg: ${st.avg} | Std: ${st.std} | Elite: ${pct(st.eliteFrac)}`;
-        setAnalyticsCardsVisible(true);
-
-        destroyChart("hist");
-        const bins = st.bins || {};
-        CH.hist = new Chart(document.getElementById("c_hist"), {
-          type: "bar",
-          data: {
-            labels: Object.keys(bins),
-            datasets: [{ label: "Count", data: Object.values(bins) }]
-          },
-          options:{
-            responsive:true,
-            maintainAspectRatio:false,
-            plugins:{ legend:{display:false} },
-            scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 } } }
-          }
-        });
-
-        destroyChart("levels");
-        const lvlLabels = ["Beginner","Intermediate","Advanced","Elite"];
-        const levels = st.levels || {};
-        CH.levels = new Chart(document.getElementById("c_levels"), {
-          type: "pie",
-          data: {
-            labels: lvlLabels,
-            datasets: [{ data: lvlLabels.map(k => levels[k] || 0) }]
-          },
-          options: {
-            responsive:true,
-            maintainAspectRatio:false,
-            plugins:{
-              legend:{
-                position:"bottom",
-                labels:{ boxWidth:10, padding:10, font:{ size:12 } }
-              },
-              tooltip:{
-                callbacks:{
-                  label(ctx){
-                    const ds = ctx.dataset;
-                    const total = ds.data.reduce((a,b)=>a+b,0) || 1;
-                    const v = ctx.parsed;
-                    const p = (v/total)*100;
-                    return `${ctx.label}: ${p.toFixed(1)}% (${v})`;
-                  }
+      destroyChart("levels");
+      const lvlLabels = ["Beginner","Intermediate","Advanced","Elite"];
+      const levels = st.levels || {};
+      CH.levels = new Chart(document.getElementById("c_levels"), {
+        type: "pie",
+        data: {
+          labels: lvlLabels,
+          datasets: [{ data: lvlLabels.map(k => levels[k] || 0) }]
+        },
+        options: {
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{
+            legend:{
+              position:"bottom",
+              labels:{ boxWidth:10, padding:10, font:{ size:12 } }
+            },
+            tooltip:{
+              callbacks:{
+                label(ctx){
+                  const ds = ctx.dataset;
+                  const total = ds.data.reduce((a,b)=>a+b,0) || 1;
+                  const v = ctx.parsed;
+                  const p = (v/total)*100;
+                  return `${ctx.label}: ${p.toFixed(1)}% (${v})`;
                 }
               }
             }
           }
-        });
+        }
+      });
 
-        destroyChart("gender");
-        CH.gender = new Chart(document.getElementById("c_gender"), {
-          type: "bar",
-          data: {
-            labels: ["Male","Female"],
-            datasets: [{ label: "Avg", data: [st.maleAvg ?? 0, st.femaleAvg ?? 0] }]
-          },
-          options: { responsive: true, maintainAspectRatio: false, plugins: { legend:{display:false} }, scales: { y: { min:0, max:5 } } }
-        });
+      destroyChart("gender");
+      CH.gender = new Chart(document.getElementById("c_gender"), {
+        type: "bar",
+        data: {
+          labels: ["Male","Female"],
+          datasets: [{ label: "Avg", data: [st.maleAvg ?? 0, st.femaleAvg ?? 0] }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend:{display:false} },
+          scales: { y: { min:0, max:5 } }
+        }
+      });
 
-        destroyChart("percent");
-        CH.percent = new Chart(document.getElementById("c_percent"), {
-          type: "bar",
-          data: {
-            labels: ["Avg","Std","Balance","Min","P25","Median","P75","Max"],
-            datasets: [{ label: "Value", data: [st.avg, st.std, st.balance, st.min, st.p25, st.median, st.p75, st.max] }]
-          },
-          options: { responsive: true, maintainAspectRatio: false, plugins: { legend:{display:false} }, scales: { y: { min:0, max:5 } } }
-        });
+      destroyChart("percent");
+      CH.percent = new Chart(document.getElementById("c_percent"), {
+        type: "bar",
+        data: {
+          labels: ["Avg","Std","Balance","Min","P25","Median","P75","Max"],
+          datasets: [{ label: "Value", data: [st.avg, st.std, st.balance, st.min, st.p25, st.median, st.p75, st.max] }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend:{display:false} },
+          scales: { y: { min:0, max:5 } }
+        }
+      });
 
-        destroyChart("trend1");
-        const weeks = trend.map(x=>x.week);
-        const avgArr = trend.map(x=>x.avg);
-        const stdArr = trend.map(x=>x.std);
-        CH.trend1 = new Chart(document.getElementById("c_trend1"), {
-          type: "line",
-          data: {
-            labels: weeks,
-            datasets: [
-              { label:"Avg", data: avgArr, tension:0.25, pointRadius:4 },
-              { label:"Std", data: stdArr, tension:0.25, pointRadius:4 }
-            ]
-          },
-          options: {
-            responsive:true,
-            maintainAspectRatio:false,
-            plugins:{ legend:{ position:"top", align:"start", labels:{ usePointStyle:true, boxWidth:10, padding:12 } } },
-            elements:{ point:{ radius:4 }, line:{ borderWidth:2 } },
-            scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ min:0, max:5, ticks:{ stepSize:1 } } }
-          }
-        });
+      destroyChart("trend1");
+      const weeks = trend.map(x=>x.week);
+      const avgArr = trend.map(x=>x.avg);
+      const stdArr = trend.map(x=>x.std);
+      CH.trend1 = new Chart(document.getElementById("c_trend1"), {
+        type: "line",
+        data: {
+          labels: weeks,
+          datasets: [
+            { label:"Avg", data: avgArr, tension:0.25, pointRadius:4 },
+            { label:"Std", data: stdArr, tension:0.25, pointRadius:4 }
+          ]
+        },
+        options: {
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{ legend:{ position:"top", align:"start", labels:{ usePointStyle:true, boxWidth:10, padding:12 } } },
+          elements:{ point:{ radius:4 }, line:{ borderWidth:2 } },
+          scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ min:0, max:5, ticks:{ stepSize:1 } } }
+        }
+      });
 
-        destroyChart("trend2");
-        const eliteArr = trend.map(x=> (x.eliteFrac ?? 0) * 100);
-        CH.trend2 = new Chart(document.getElementById("c_trend2"), {
-          type: "line",
-          data: { labels: weeks, datasets: [{ label:"Elite%", data: eliteArr, tension:0.25, pointRadius:4 }] },
-          options: {
-            responsive:true,
-            maintainAspectRatio:false,
-            plugins:{ legend:{ position:"top", align:"start", labels:{ usePointStyle:true, boxWidth:10, padding:12 } } },
-            elements:{ point:{ radius:4 }, line:{ borderWidth:2 } },
-            scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ min:0, max:100, ticks:{ callback:(v)=>v+"%" } } }
-          }
-        });
+      destroyChart("trend2");
+      const eliteArr = trend.map(x=> (x.eliteFrac ?? 0) * 100);
+      CH.trend2 = new Chart(document.getElementById("c_trend2"), {
+        type: "line",
+        data: { labels: weeks, datasets: [{ label:"Elite%", data: eliteArr, tension:0.25, pointRadius:4 }] },
+        options: {
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{ legend:{ position:"top", align:"start", labels:{ usePointStyle:true, boxWidth:10, padding:12 } } },
+          elements:{ point:{ radius:4 }, line:{ borderWidth:2 } },
+          scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ min:0, max:100, ticks:{ callback:(v)=>v+"%" } } }
+        }
+      });
 
-        anaStatus.textContent = filteredTrend.length !== rawTrend.length
+      return {
+        hasRenderableData: true,
+        skippedWeeks: filteredTrend.length !== rawTrend.length
+      };
+    }
+
+    loadAnalytics = async function(){
+      if(analyticsLoading) return;
+      analyticsLoading = true;
+
+      const cached = readCachedAnalytics();
+      if (cached) {
+        const cachedRender = renderAnalyticsPayload(cached);
+        anaStatus.textContent = cachedRender.skippedWeeks
+          ? "Loaded saved analytics. Weeks without games were skipped."
+          : "Loaded saved analytics.";
+      } else {
+        anaStatus.textContent = "Loading...";
+        latestSummary.textContent = "";
+        anaWeekBadge.textContent = "-";
+        setAnalyticsCardsVisible(false);
+      }
+
+      try{
+        const data = await safeGetJson(ENDPOINT + "?action=analytics", {
+          attempts:[4500, 8000, 12000],
+          cacheBust:true
+        });
+        if(!data || !data.ok) throw new Error((data && data.error) || "analytics failed");
+
+        writeCachedAnalytics(data);
+        const result = renderAnalyticsPayload(data);
+        anaStatus.textContent = result.skippedWeeks
           ? "Updated - weeks without games were skipped."
           : "Updated.";
         analyticsLoadedOnce = true;
       }catch(e){
         console.error("Analytics load failed:", e);
-        setAnalyticsCardsVisible(false);
-        anaStatus.textContent = e?.message
-          ? `Analytics unavailable: ${e.message}`
-          : "Analytics unavailable right now. Open this section again later.";
+        if (cached) {
+          anaStatus.textContent = "Showing saved analytics. Refresh later.";
+          analyticsLoadedOnce = true;
+        } else {
+          setAnalyticsCardsVisible(false);
+          anaStatus.textContent = e?.message
+            ? `Analytics unavailable: ${e.message}`
+            : "Analytics unavailable right now. Open this section again later.";
+        }
       } finally {
         analyticsLoading = false;
       }
