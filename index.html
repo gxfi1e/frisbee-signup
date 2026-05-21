@@ -1968,11 +1968,26 @@
     }
 
     function readCachedStatus(){
-      return normalizeStatus(readCachedObject(LS_STATUS_CACHE, STATUS_CACHE_MAX_AGE_MS) || null);
+      const cached = readCachedObject(LS_STATUS_CACHE, STATUS_CACHE_MAX_AGE_MS);
+      const normalized = normalizeStatus(cached || null);
+      const cutoffOk = !!normalized?.cutoffIso && !Number.isNaN(new Date(normalized.cutoffIso).getTime());
+      const countOk = Number.isFinite(Number(normalized?.count)) && Number(normalized.count) >= 0;
+      const maxOk = Number.isFinite(Number(normalized?.max)) && Number(normalized.max) > 0;
+
+      if (normalized?.ok && cutoffOk && countOk && maxOk) {
+        return normalized;
+      }
+
+      storageRemove(LS_STATUS_CACHE);
+      return null;
     }
 
     function writeCachedStatus(data){
-      writeCachedObject(LS_STATUS_CACHE, data);
+      const normalized = normalizeStatus(data);
+      const cutoffOk = !!normalized?.cutoffIso && !Number.isNaN(new Date(normalized.cutoffIso).getTime());
+      if (normalized?.ok && cutoffOk) {
+        writeCachedObject(LS_STATUS_CACHE, normalized);
+      }
     }
 
     let aqiChart = null;
@@ -3315,6 +3330,17 @@
     }
 
     function setPills(data) {
+      const hasUsableCutoff = !!data?.cutoffIso && !Number.isNaN(new Date(data.cutoffIso).getTime());
+      if (!data || !hasUsableCutoff) {
+        countPill.textContent = `0 / ${getConfiguredMaxPlayers()} registered`;
+        statusPill.textContent = "UNKNOWN";
+        statusPill.className = "pill";
+        timeLeftPill.textContent = "";
+        btn.disabled = true;
+        btn.textContent = "Checking status...";
+        return;
+      }
+
       countPill.textContent = `${data.count} / ${data.max} registered`;
       const registrationDisabledByConfig = !isRegistrationEnabledByConfig();
       const lowPlayersCancelled = isCancelledForLowPlayers(data);
