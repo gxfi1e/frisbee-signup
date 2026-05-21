@@ -1329,6 +1329,7 @@
     const STATUS_CACHE_MAX_AGE_MS = 20 * 60 * 1000;
     const STATUS_STALE_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
     const PLAYERS_CACHE_MAX_AGE_MS = 5 * 60 * 1000;
+    const PLAYERS_STALE_CACHE_MAX_AGE_MS = 30 * 60 * 1000;
     const ANALYTICS_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
     const AQI_POLICY_CACHE_MAX_AGE_MS = 2 * 60 * 60 * 1000;
 
@@ -3639,11 +3640,14 @@
 
     async function refreshVisibleSections(){
       await refresh({ force: true });
-      await refreshPlayers(true);
+      await refreshPlayersFast(true, false, { force: true });
     }
 
-    function readCachedPlayers(){
-      const data = readCachedObject(LS_PLAYERS_CACHE, PLAYERS_CACHE_MAX_AGE_MS);
+    function readCachedPlayers(options = {}){
+      const data = readCachedObject(
+        LS_PLAYERS_CACHE,
+        options.maxAgeMs ?? PLAYERS_CACHE_MAX_AGE_MS
+      );
       return (data && data.ok && Array.isArray(data.players)) ? data : null;
     }
 
@@ -3661,18 +3665,6 @@
     function writeCachedAnalytics(data){
       if (data && data.ok && data.latest) {
         writeCachedObject(LS_ANALYTICS_CACHE, data);
-      }
-    }
-
-    async function warmPlayersCache(){
-      if (readCachedPlayers()) return;
-      try{
-        const data = await safeGetJson(ENDPOINT + "?action=players", {
-          attempts:[2000, 3500],
-          cacheBust:true
-        });
-        if (data?.ok) writeCachedPlayers(data);
-      }catch(_){
       }
     }
 
@@ -4100,11 +4092,21 @@
     });
 
     let lastPlayersText = "";
+    let playersRefreshPromise = null;
+    let playersRetryTimer = null;
+    let playersLoadSeq = 0;
 
     function setPlayersExpanded(expanded){
       playersArea.style.display = expanded ? "block" : "none";
       togglePlayersBtn.textContent = expanded ? "Hide" : "Show";
       if (!expanded) playersStatus.textContent = "";
+    }
+
+    function setPlayersLoadingMessage(text){
+      const current = playersList.textContent.trim();
+      if (!current || /^Loading/i.test(current) || /^Players are still loading/i.test(current)) {
+        playersList.textContent = text;
+      }
     }
 
     function renderPlayersData(data){
@@ -4129,12 +4131,12 @@
         gender: p?.gender || "-"
       }));
 
-      playersList.innerHTML = lines.map(x => `
+      playersList.innerHTML = lines.length ? lines.map(x => `
         <div class="playerLine">
           <div><b>${x.idx}. ${escapeHtml(x.name)}</b></div>
           <div class="playerMeta">${escapeHtml(x.gender)}</div>
         </div>
-      `).join("");
+      `).join("") : `<div class="playerMeta" style="margin-top:10px;">No registered players yet.</div>`;
 
       lastPlayersText = lines.map(x => `${x.idx}. ${x.name} (${x.gender})`).join("\n");
       copyPlayersBtn.disabled = !lastPlayersText;
@@ -4153,7 +4155,7 @@
 
       try{
         const data = await safeGetJson(ENDPOINT + "?action=players", {
-          attempts:[1800, 3200],
+          attempts:[4500, 9000, 15000],
           cacheBust:true
         });
         if (!data.ok) throw new Error(data.error || "players not ok");
@@ -4173,7 +4175,98 @@
           if (!silent) playersStatus.textContent = "Showing saved list. Refresh later.";
           return true;
         }
-        if (!silent) playersStatus.textContent = "Slow / failed. Tap Show again.";
+        if (!silent) playersStatus.textContent = "Still loading in background.";
+        return false;
+      }
+    }
+
+    function schedulePlayersRetry(delayMs = 15000){
+      if (playersRetryTimer) clearTimeout(playersRetryTimer);
+      playersRetryTimer = setTimeout(() => {
+        playersRetryTimer = null;
+        loadPlayersData({ render: true }).catch(() => {});
+      }, delayMs);
+    }
+
+    async function fetchPlayersData(){
+      const data = await safeGetJson(ENDPOINT + "?action=players", {
+        attempts:[4500, 9000, 15000],
+        cacheBust:true
+      });
+      if (!data.ok) throw new Error(data.error || "players not ok");
+      return data;
+    }
+
+    async function loadPlayersData(options = {}){
+      if (playersRefreshPromise && !options.force) return playersRefreshPromise;
+
+      const seq = ++playersLoadSeq;
+      const work = (async () => {
+        const data = await fetchPlayersData();
+        if (seq === playersLoadSeq) {
+          writeCachedPlayers(data);
+          if (options.render !== false) renderPlayersData(data);
+        }
+        if (playersRetryTimer) {
+          clearTimeout(playersRetryTimer);
+          playersRetryTimer = null;
+        }
+        return data;
+      })();
+
+      playersRefreshPromise = work;
+      try{
+        return await work;
+      } finally {
+        if (playersRefreshPromise === work) playersRefreshPromise = null;
+      }
+    }
+
+    async function preloadPlayers(options = {}){
+      const cached = readCachedPlayers({ maxAgeMs: PLAYERS_STALE_CACHE_MAX_AGE_MS });
+      if (cached) {
+        renderPlayersData(cached);
+        if (options.autoExpand) setPlayersExpanded(true);
+      }
+
+      try{
+        const data = await loadPlayersData({ render: true });
+        if (options.autoExpand) setPlayersExpanded(true);
+        return data;
+      }catch(e){
+        if (!cached) schedulePlayersRetry(15000);
+        return null;
+      }
+    }
+
+    async function refreshPlayersFast(silent=false, autoExpand=false, options = {}){
+      const cached = readCachedPlayers({ maxAgeMs: PLAYERS_STALE_CACHE_MAX_AGE_MS });
+      if (cached) {
+        renderPlayersData(cached);
+        if (autoExpand) setPlayersExpanded(true);
+        if (!silent) playersStatus.textContent = "Loaded saved list.";
+      } else {
+        copyPlayersBtn.disabled = true;
+        setPlayersLoadingMessage("Loading players...");
+        if (!silent) playersStatus.textContent = playersRefreshPromise ? "Loading in background..." : "Loading players...";
+      }
+
+      try{
+        await loadPlayersData({ force: !!options.force, render: true });
+        if (autoExpand) setPlayersExpanded(true);
+        if (!silent) playersStatus.textContent = cached ? "Updated." : "Loaded.";
+        return true;
+
+      } catch(e){
+        if (cached) {
+          if (autoExpand) setPlayersExpanded(true);
+          if (!silent) playersStatus.textContent = "Showing saved list. Refresh later.";
+          schedulePlayersRetry(15000);
+          return true;
+        }
+        playersList.textContent = "Players are still loading. This section will update automatically.";
+        schedulePlayersRetry(8000);
+        if (!silent) playersStatus.textContent = "Still loading in background.";
         return false;
       }
     }
@@ -4185,7 +4278,7 @@
         return;
       }
       setPlayersExpanded(true);
-      await refreshPlayers(false);
+      await refreshPlayersFast(false);
     });
 
     copyPlayersBtn.addEventListener("click", async ()=>{
@@ -4311,7 +4404,7 @@
       setTeamsBtnBeforeCutoff();
 
       const st = latestStatusData || await refresh();
-      await refreshPlayers(true);
+      await refreshPlayersFast(true);
 
       if (!st || !st.ok) {
         setTeamsBtnBeforeCutoff();
@@ -4362,10 +4455,8 @@
     setInterval(refresh, 60 * 1000);
     loadAqi();
     setInterval(loadAqi, 30 * 60 * 1000);
-    setTimeout(async () => {
-      await refreshPlayers(true, true);
-      warmAnalyticsCache();
-    }, 1200);
+    preloadPlayers({ autoExpand: true });
+    setTimeout(warmAnalyticsCache, 1200);
 
     autoTeamsByCutoff();
     setInterval(autoTeamsByCutoff, 45000);
