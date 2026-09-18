@@ -1,4 +1,5 @@
-window.SIGNUP_CONFIG = {
+const signupConfig = {
+  apiEndpoint: "/api/signup",
   endpoint: "https://script.google.com/macros/s/AKfycbzSNVgtOrjKp95rRlqOjb3v_IaKpCE4UREg0lK_ytMFe7FNdL7vIEYCdS77cXQXRFDe/exec",
   timezoneLabel: "Asia/Riyadh",
 
@@ -19,3 +20,6 @@ window.SIGNUP_CONFIG = {
   announcementTitle: "",
   announcementText: ""
 };
+
+if (typeof window !== "undefined") window.SIGNUP_CONFIG = signupConfig;
+if (typeof module !== "undefined") module.exports = signupConfig;

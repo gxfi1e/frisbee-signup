@@ -850,7 +850,7 @@
               <div class="profileLabel">Saved profile</div>
             </div>
             <div id="profileStatus" class="hint profileStatus" role="status">
-              Your profile is saved on this browser after successful signup.
+              Your profile is saved on this browser when you submit.
             </div>
             <div class="profileLocalActions">
               <button id="loadProfileBtn" class="smallbtn secondary" type="button">Load saved profile</button>
@@ -1095,7 +1095,7 @@
       teamsMinForFour: 24,
       ...(window.SIGNUP_CONFIG || {})
     };
-    const ENDPOINT = CFG.endpoint || "";
+    const ENDPOINT = CFG.apiEndpoint || "/api/signup";
 
     function getConfiguredMaxPlayers(){
       const n = Number(CFG.maxPlayers);
@@ -2533,30 +2533,12 @@
       throw lastErr || new Error("GET failed");
     }
 
-    function decodeHtmlEntities(text){
-      const el = document.createElement("textarea");
-      el.innerHTML = String(text || "");
-      return el.value;
-    }
-
     function extractServerErrorText(text){
-      const raw = String(text || "");
-      if (!raw) return "";
-
-      const refMatch = raw.match(/ReferenceError:[^<\n]*/i);
-      if (refMatch) return decodeHtmlEntities(refMatch[0]).trim();
-
-      const typeMatch = raw.match(/TypeError:[^<\n]*/i);
-      if (typeMatch) return decodeHtmlEntities(typeMatch[0]).trim();
-
-      const syntaxMatch = raw.match(/SyntaxError:[^<\n]*/i);
-      if (syntaxMatch) return decodeHtmlEntities(syntaxMatch[0]).trim();
-
-      const divMatch = raw.match(/<div[^>]*>([\s\S]*?)<\/div>/i);
-      if (divMatch && divMatch[1]) {
-        return decodeHtmlEntities(divMatch[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).trim();
+      const raw = String(text || "").trim();
+      // Page branding (e.g. Google Drive / 云端硬盘) is not an API error.
+      if (/^</.test(raw)) {
+        return "The registration service returned a web page instead of a confirmation. Check the registered players list before submitting again.";
       }
-
       return "";
     }
 
@@ -2566,7 +2548,9 @@
           method: "POST",
           headers: { "Content-Type":"text/plain;charset=utf-8" },
           body: JSON.stringify(bodyObj),
-          redirect: "follow"
+          redirect: "follow",
+          cache: "no-store",
+          credentials: "omit"
         });
 
         let data = null;
@@ -2575,10 +2559,14 @@
         }
         const serverError = extractServerErrorText(text);
 
+        if (data?.uncertain === true) {
+          return { confirmed:false, data:null, uncertain:true, error:data.error || "Registration confirmation is unavailable. Check the registered players list before submitting again." };
+        }
         if(!res.ok){
           return {
             confirmed:false,
             data,
+            uncertain:!data,
             error:data?.error || serverError || `HTTP ${res.status}`
           };
         }
@@ -2682,7 +2670,7 @@
 
     async function getStatus() {
       const raw = await safeGetJson(ENDPOINT + "?action=status", {
-        attempts:[1200, 2400, 4200],
+        attempts:[30000],
         cacheBust:true
       });
       return normalizeStatus(raw);
@@ -2849,7 +2837,7 @@
       if (readCachedPlayers()) return;
       try{
         const data = await safeGetJson(ENDPOINT + "?action=players", {
-          attempts:[2000, 3500],
+          attempts:[30000],
           cacheBust:true
         });
         if (data?.ok) writeCachedPlayers(data);
@@ -2861,7 +2849,7 @@
       if (readCachedAnalytics()) return;
       try{
         const data = await safeGetJson(ENDPOINT + "?action=analytics", {
-          attempts:[3500, 6000, 9000],
+          attempts:[30000],
           cacheBust:true
         });
         if (data?.ok) writeCachedAnalytics(data);
@@ -3055,8 +3043,19 @@
       try {
         showOverlay("Submitting registration…");
         const profileRecord = profileRecordFromSource(payload);
+        // Save independently of the server receipt: a lost response must not
+        // discard the profile or imply that the registration was rejected.
+        const profileSaved = saveProfileToDevice(profileRecord);
+        setProfileStatus(profileSaved
+          ? "Profile saved on this browser. Waiting for registration confirmation."
+          : "This browser could not save your profile. Keep this page open until registration is confirmed.");
 
         const result = await postJsonStrict(ENDPOINT, payload);
+        if (!result.confirmed) {
+          setProfileStatus(profileSaved
+            ? "Profile saved on this browser. Registration has not been confirmed; check the players list before submitting again."
+            : "This browser could not save your profile. Registration has not been confirmed; check the players list before submitting again.");
+        }
 
         if (result.confirmed && result.data?.ok && result.data?.regId) {
           const label = result.data.updated ? "Updated" : "Submitted";
@@ -3064,7 +3063,6 @@
           statusEl.className = "status okText";
 
           saveLastReg(payload.name, result.data.regId);
-          const profileSaved = saveProfileToDevice(profileRecord);
           regTools.style.display = "flex";
           // Keep the entered profile and cancellation credentials intact.
           setProfileStatus(profileSaved
@@ -3206,7 +3204,7 @@
 
       try{
         const data = await safeGetJson(ENDPOINT + "?action=players", {
-          attempts:[1800, 3200],
+          attempts:[30000],
           cacheBust:true
         });
         if (!data.ok) throw new Error(data.error || "players not ok");
@@ -3293,7 +3291,7 @@
       }
 
       try {
-        const data = await safeGetJson(ENDPOINT + "?action=teams");
+        const data = await safeGetJson(ENDPOINT + "?action=teams", { attempts:[30000] });
 
         if (!data || !data.ok) {
           if (!auto) {
@@ -3490,7 +3488,7 @@
       anaWeekBadge.textContent = "—";
       setAnalyticsCardsVisible(false);
       try{
-        const data = await safeGetJson(ENDPOINT + "?action=analytics", { attempts:[10000, 15000, 22000], cacheBust:true });
+        const data = await safeGetJson(ENDPOINT + "?action=analytics", { attempts:[30000], cacheBust:true });
         if(!data || !data.ok) throw new Error((data && data.error) || "analytics failed");
 
         const rawTrend = Array.isArray(data.trend) ? data.trend : [];
@@ -3817,7 +3815,7 @@
 
       try{
         const data = await safeGetJson(ENDPOINT + "?action=analytics", {
-          attempts:[4500, 8000, 12000],
+          attempts:[30000],
           cacheBust:true
         });
         if(!data || !data.ok) throw new Error((data && data.error) || "analytics failed");
