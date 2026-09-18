@@ -9,7 +9,6 @@
   <title>KAUST Happy Frisbee Signup</title>
   <script src="./config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://accounts.google.com/gsi/client?hl=en" async defer></script>
 
   <style>
     .spinner{
@@ -185,75 +184,14 @@
       order:44;
       margin-bottom:12px;
     }
-    .profileTopBar{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      justify-content:space-between;
-      flex-wrap:nowrap;
-      margin-bottom:6px;
-    }
-    .profileLabel{
-      margin:0;
-      flex:0 0 auto;
-    }
-    .profileTopRow{
-      display:block;
-    }
-    .profileGoogleSlot{
-      display:flex;
-      align-items:center;
-      justify-content:flex-end;
-      flex:1 1 auto;
-      min-width:0;
-      overflow:visible;
-    }
-    .profileGoogleButton{
-      flex:0 1 250px;
-      width:100%;
-      min-width:0;
-      max-width:250px;
-      margin-left:auto;
-      display:flex;
-      align-items:center;
-      justify-content:flex-end;
-      box-sizing:border-box;
-      overflow:visible;
-    }
-    .profileGoogleToggle{
-      min-height:42px;
-      width:auto;
-      min-width:108px;
-      max-width:100%;
-      margin-left:auto;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      box-sizing:border-box;
-      overflow:visible;
-    }
-    .profileGoogleButton:empty{display:none}
-    .profileGoogleButton > div{width:100%;max-width:100%}
-    .profileGoogleButton iframe{width:100% !important;max-width:100% !important;}
+    .profileLabel{margin:0;font-weight:600}
     .profileLocalActions{
       display:grid;
       grid-template-columns:repeat(2, minmax(0, 1fr));
       gap:8px;
       margin-top:8px;
     }
-    .profileSyncActions{
-      margin-top:8px;
-    }
-    .profileLocalActions .smallbtn,
-    .profileSyncActions .smallbtn{
-      width:100%;
-      min-height:42px;
-      justify-content:center;
-    }
-    .profileGoogleState{
-      margin-top:8px;
-      margin-bottom:0;
-    }
+    .profileLocalActions .smallbtn{width:100%;margin-top:0;min-height:42px}
 
     .analyticsCard[hidden]{display:none !important}
     .profileCheck{
@@ -282,12 +220,6 @@
     #status{order:42}
     #regTools{order:43}
     #form > .footer{order:50}
-    .profileTopRow,
-    .profileLocalActions,
-    .profileSyncActions,
-    .profileCheck{
-      display:none !important;
-    }
     .profileBox{
       margin-top:10px;
     }
@@ -738,35 +670,6 @@
       label{margin:8px 0 6px;font-size:15px}
       input,select{padding:11px;font-size:15px}
       .hint{margin:6px 0 6px;padding:6px 10px;font-size:12px}
-      .profileTopBar{
-        display:flex;
-        gap:8px;
-        align-items:center;
-        flex-wrap:wrap;
-      }
-      .profileLabel{
-        flex:1 1 100%;
-      }
-
-      .profileGoogleSlot{
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        flex:1 1 100%;
-        min-width:0;
-        overflow:visible;
-      }
-
-      .profileGoogleButton{
-        flex:0 1 230px;
-        width:230px;
-        max-width:230px;
-        margin-left:0;
-        margin-right:0;
-        overflow:visible;
-      }
-      .profileLocalActions{grid-template-columns:repeat(2, minmax(0,1fr));gap:8px}
-      .profileSyncActions{margin-top:5px}
       .smallbtn{font-size:12px;padding:10px 8px}
       .profileCheck{
         align-items:flex-start;
@@ -943,43 +846,20 @@
       <div id="signupArea">
         <form id="form">
           <div class="box profileBox">
-            <div class="profileTopBar">
-              <label for="profileEmail" class="profileLabel">Profile sync</label>
-              <div class="profileGoogleSlot">
-                <div id="googleSignInButton" class="profileGoogleButton"></div>
-                <button id="googleSignOutBtn" class="smallbtn secondary profileGoogleToggle" type="button" style="display:none;">Log out</button>
-              </div>
+            <div>
+              <div class="profileLabel">Saved profile</div>
             </div>
-            <div class="profileTopRow">
-              <input
-                id="profileEmail"
-                type="email"
-                placeholder="your email"
-                autocomplete="email"
-              />
+            <div id="profileStatus" class="hint profileStatus" role="status">
+              Your profile is saved on this browser after successful signup.
             </div>
-
             <div class="profileLocalActions">
-              <button id="loadProfileBtn" class="smallbtn secondary" type="button">Load profile</button>
-              <button id="clearProfileBtn" class="smallbtn secondary" type="button">Clear local</button>
+              <button id="loadProfileBtn" class="smallbtn secondary" type="button">Load saved profile</button>
+              <button id="clearProfileBtn" class="smallbtn secondary" type="button">Clear saved profile</button>
             </div>
-
-            <div id="googleAuthState" class="hint profileGoogleState">
-              Google sign-in is optional. This browser saves your profile automatically after signup. Sign in with Google if you also want cloud save/load across devices.
-            </div>
-
-            <div class="profileSyncActions">
-              <button id="syncProfileBtn" class="smallbtn secondary" type="button" disabled>Sync profile</button>
-            </div>
-
             <label class="profileCheck" for="saveProfileOpt">
               <input id="saveProfileOpt" type="checkbox" checked />
-              <span>Auto-load this browser’s saved profile next time</span>
+              <span>Auto-fill my saved profile next time</span>
             </label>
-
-            <div id="profileStatus" class="hint profileStatus">
-              This browser will auto-fill your saved profile next time after your first successful signup.
-            </div>
           </div>
 
           <div class="row">
@@ -1076,7 +956,7 @@
           </div>
 
           <div id="submitActions" class="submitActions">
-            <button id="btn" type="submit">Submit</button>
+            <button id="btn" type="submit" disabled>Checking status...</button>
             <button id="cancelOpenBtn" class="cancelOpenBtn" type="button" aria-expanded="false" aria-controls="cancelPanel">
               Cancel registration
             </button>
@@ -1208,7 +1088,6 @@
   <script>
     const CFG = {
       endpoint: "",
-      googleClientId: "",
       timezoneLabel: "Asia/Riyadh",
       gameTimeText: "Friday 7-10PM",
       locationText: "KAUST Stadium",
@@ -1269,13 +1148,8 @@
     const form = document.getElementById("form");
     const btn = document.getElementById("btn");
     const statusEl = document.getElementById("status");
-    const profileEmail = document.getElementById("profileEmail");
     const loadProfileBtn = document.getElementById("loadProfileBtn");
     const clearProfileBtn = document.getElementById("clearProfileBtn");
-    const googleAuthState = document.getElementById("googleAuthState");
-    const googleSignInButton = document.getElementById("googleSignInButton");
-    const syncProfileBtn = document.getElementById("syncProfileBtn");
-    const googleSignOutBtn = document.getElementById("googleSignOutBtn");
     const saveProfileOpt = document.getElementById("saveProfileOpt");
     const profileStatus = document.getElementById("profileStatus");
 
@@ -1317,21 +1191,14 @@
 
     const LS_NAME = "frisbee_last_name";
     const LS_REGID = "frisbee_last_regid";
-    const LS_PROFILE_PREFIX = "frisbee_profile_v1:";
-    const LS_LAST_PROFILE_EMAIL = "frisbee_profile_last_email";
     const LS_AUTO_PROFILE = "frisbee_profile_auto_v2";
     const LS_PROFILE_AUTO_RESTORE = "frisbee_profile_auto_restore_v1";
-    const SS_GOOGLE_SESSION = "frisbee_google_session_v1";
     const LS_STATUS_CACHE = "frisbee_status_cache_v1";
     const LS_PLAYERS_CACHE = "frisbee_players_cache_v1";
     const LS_ANALYTICS_CACHE = "frisbee_analytics_cache_v1";
-    const LS_AQI_POLICY_CACHE = "frisbee_aqi_policy_cache_v1";
     const STATUS_CACHE_MAX_AGE_MS = 20 * 60 * 1000;
-    const STATUS_STALE_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
     const PLAYERS_CACHE_MAX_AGE_MS = 5 * 60 * 1000;
-    const PLAYERS_STALE_CACHE_MAX_AGE_MS = 30 * 60 * 1000;
     const ANALYTICS_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
-    const AQI_POLICY_CACHE_MAX_AGE_MS = 2 * 60 * 60 * 1000;
 
     function storageGet(key){
       try{
@@ -1343,7 +1210,8 @@
 
     function storageSet(key, value){
       try{
-        if (window.localStorage) localStorage.setItem(key, value);
+        if (!window.localStorage) return false;
+        localStorage.setItem(key, value);
         return true;
       }catch(_){
         return false;
@@ -1352,37 +1220,25 @@
 
     function storageRemove(key){
       try{
-        if (window.localStorage) localStorage.removeItem(key);
+        if (!window.localStorage) return false;
+        localStorage.removeItem(key);
         return true;
       }catch(_){
         return false;
       }
     }
 
-    function readCachedEnvelope(key){
+    function readCachedObject(key, maxAgeMs){
       try{
         const raw = storageGet(key);
         if (!raw) return null;
         const parsed = JSON.parse(raw);
         const savedAt = Number(parsed?.savedAt) || 0;
-        if (!savedAt) return null;
-        return {
-          savedAt,
-          data: parsed?.data ?? null
-        };
+        if (!savedAt || (Date.now() - savedAt) > maxAgeMs) return null;
+        return parsed?.data ?? null;
       }catch(_){
         return null;
       }
-    }
-
-    function readCachedObject(key, maxAgeMs){
-      const cached = readCachedEnvelope(key);
-      const ageLimit = Number(maxAgeMs);
-      if (!cached) return null;
-      if (Number.isFinite(ageLimit) && ageLimit >= 0 && (Date.now() - cached.savedAt) > ageLimit) {
-        return null;
-      }
-      return cached.data;
     }
 
     function writeCachedObject(key, data){
@@ -1396,586 +1252,72 @@
       }
     }
 
-    function sessionGet(key){
-      try{
-        return window.sessionStorage ? (sessionStorage.getItem(key) || "") : "";
-      }catch(_){
-        return "";
-      }
-    }
-
-    function sessionSet(key, value){
-      try{
-        if (window.sessionStorage) sessionStorage.setItem(key, value);
-        return true;
-      }catch(_){
-        return false;
-      }
-    }
-
-    function sessionRemove(key){
-      try{
-        if (window.sessionStorage) sessionStorage.removeItem(key);
-        return true;
-      }catch(_){
-        return false;
-      }
-    }
-
-    function normalizeEmail(email){
-      return String(email || "").trim().toLowerCase();
-    }
-
-    function profileStorageKey(email){
-      const normalized = normalizeEmail(email);
-      return normalized ? `${LS_PROFILE_PREFIX}${normalized}` : "";
-    }
-
     function setProfileStatus(text){
-      if (!profileStatus) return;
-      profileStatus.textContent = text;
-    }
-
-    function setGoogleAuthMessage(text){
-      if (!googleAuthState) return;
-      googleAuthState.textContent = text;
+      if (profileStatus) profileStatus.textContent = text;
     }
 
     function getAutoRestoreEnabled(){
-      const raw = storageGet(LS_PROFILE_AUTO_RESTORE);
-      return raw === "" ? true : raw === "1";
+      return storageGet(LS_PROFILE_AUTO_RESTORE) !== "0";
     }
 
     function setAutoRestoreEnabled(enabled){
-      storageSet(LS_PROFILE_AUTO_RESTORE, enabled ? "1" : "0");
+      return storageSet(LS_PROFILE_AUTO_RESTORE, enabled ? "1" : "0");
     }
 
-    function getLastSavedProfileEmail(){
-      return normalizeEmail(storageGet(LS_LAST_PROFILE_EMAIL));
-    }
-
-    function isProfileFormEmpty(){
-      return ![
-        document.getElementById("name").value,
-        document.getElementById("gender").value,
-        document.getElementById("throwing").value,
-        document.getElementById("catch").value,
-        document.getElementById("fitness").value,
-        document.getElementById("experience").value,
-        document.getElementById("pref").value,
-        document.getElementById("pd").value
-      ].some(v => String(v || "").trim());
-    }
-
-    function emailMatchesGoogleSession(email, session = null){
-      const active = session || getGoogleSession();
-      return !!(active?.email && normalizeEmail(email) === normalizeEmail(active.email));
-    }
-
-    function shouldTryCloudFallback(email, session = null){
-      const active = session || getGoogleSession();
-      const normalized = normalizeEmail(email);
-      if (!active?.idToken) return false;
-      return !normalized || emailMatchesGoogleSession(normalized, active);
-    }
-
-    function getPreferredRestoreEmail(){
-      return normalizeEmail(profileEmail?.value) || getLastSavedProfileEmail() || normalizeEmail(getGoogleSession()?.email);
-    }
-
-    function getGoogleButtonWidth(){
-      const slot = googleSignInButton?.parentElement;
-      const slotWidth = Math.floor(slot?.clientWidth || slot?.getBoundingClientRect?.().width || 0);
-      const isMobile = window.innerWidth <= 768;
-      const fallback = isMobile ? 220 : 220;
-      const maxWidth = isMobile ? 220 : 220;
-      const safeWidth = slotWidth > 18 ? slotWidth - 10 : 0;
-      return Math.max(160, Math.min(maxWidth, safeWidth || fallback));
-    }
-
-    function renderGoogleButton(){
-      if (!window.google?.accounts?.id || !googleSignInButton) return;
-      googleSignInButton.innerHTML = "";
-      window.google.accounts.id.renderButton(googleSignInButton, {
-        theme: "outline",
-        size: "medium",
-        shape: "pill",
-        text: "signin_with",
-        locale: "en",
-        width: getGoogleButtonWidth()
-      });
-    }
-
-    function getProfileFormData(){
-      return {
-        email: normalizeEmail(profileEmail?.value),
-        name: document.getElementById("name").value.trim(),
-        gender: document.getElementById("gender").value,
-        throwing: document.getElementById("throwing").value,
-        catch: document.getElementById("catch").value,
-        fitness: document.getElementById("fitness").value,
-        experience: document.getElementById("experience").value,
-        preference: document.getElementById("pref").value,
-        practice: document.getElementById("pd").value,
-        savedAt: new Date().toISOString()
-      };
-    }
-
-    function fillProfileForm(profile){
-      if (!profile) return;
-      document.getElementById("name").value = profile.name || "";
-      document.getElementById("gender").value = profile.gender || "";
-      document.getElementById("throwing").value = profile.throwing || "";
-      document.getElementById("catch").value = profile.catch || "";
-      document.getElementById("fitness").value = profile.fitness || "";
-      document.getElementById("experience").value = profile.experience || "";
-      document.getElementById("pref").value = profile.preference || "";
-      document.getElementById("pd").value = profile.practice || "";
-    }
+    const PROFILE_FIELDS = {
+      name:"name", gender:"gender", throwing:"throwing", catch:"catch",
+      fitness:"fitness", experience:"experience", preference:"pref", practice:"pd"
+    };
 
     function profileRecordFromSource(source = {}){
-      return {
-        email: normalizeEmail(source.email || profileEmail?.value),
-        name: String(source.name || "").trim(),
-        gender: String(source.gender || ""),
-        throwing: String(source.throwing || ""),
-        catch: String(source.catch || ""),
-        fitness: String(source.fitness || ""),
-        experience: String(source.experience || ""),
-        preference: String(source.preference || ""),
-        practice: String(source.practice || ""),
-        savedAt: new Date().toISOString()
-      };
+      const profile = {};
+      for (const key of Object.keys(PROFILE_FIELDS)) {
+        profile[key] = typeof source?.[key] === "string" ? source[key].trim() : "";
+      }
+      return profile;
     }
 
-    function isProfileRecordComplete(profile){
-      return !!(
-        profile &&
-        normalizeEmail(profile.email) &&
-        String(profile.name || "").trim() &&
-        String(profile.gender || "").trim() &&
-        String(profile.throwing || "").trim() &&
-        String(profile.catch || "").trim() &&
-        String(profile.fitness || "").trim() &&
-        String(profile.experience || "").trim() &&
-        String(profile.preference || "").trim() &&
-        String(profile.practice || "").trim()
-      );
+    function fillProfileForm(profile, { onlyEmpty = false } = {}){
+      let filled = false;
+      for (const [key, id] of Object.entries(PROFILE_FIELDS)) {
+        const field = document.getElementById(id);
+        const value = profile[key];
+        if (!value || (onlyEmpty && field.value)) continue;
+        if (field.tagName === "SELECT" && !Array.from(field.options).some(opt => !opt.disabled && opt.value === value)) continue;
+        field.value = value;
+        filled = true;
+      }
+      return filled;
     }
 
-    function readProfileFromDevice(email){
-      const normalized = normalizeEmail(email);
-      const raw = normalized
-        ? (storageGet(profileStorageKey(normalized)) || storageGet(LS_AUTO_PROFILE))
-        : storageGet(LS_AUTO_PROFILE);
-      if (!raw) return null;
+    function saveProfileToDevice(profile){
+      return storageSet(LS_AUTO_PROFILE, JSON.stringify({
+        ...profileRecordFromSource(profile), savedAt:new Date().toISOString()
+      }));
+    }
 
+    function loadProfileFromDevice({ silent = false, onlyEmpty = false } = {}){
       try{
+        const raw = storageGet(LS_AUTO_PROFILE);
+        if (!raw) {
+          if (!silent) setProfileStatus("No saved profile found on this browser yet.");
+          return false;
+        }
         const parsed = JSON.parse(raw);
-        return profileRecordFromSource({
-          ...parsed,
-          email: normalized || parsed.email || ""
-        });
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Invalid saved profile");
+        const profile = profileRecordFromSource(parsed);
+        const filled = fillProfileForm(profile, { onlyEmpty });
+        if (!silent) setProfileStatus(filled ? "Saved profile loaded from this browser." : "No usable saved fields found.");
+        return filled;
       }catch(_){
-        return null;
-      }
-    }
-
-    function saveProfileToDevice(options = {}){
-      const silent = !!options.silent;
-      const profile = profileRecordFromSource({
-        ...getProfileFormData(),
-        ...(options.profile || {}),
-        email: options.emailOverride || options.profile?.email || profileEmail?.value
-      });
-
-      const okAuto = storageSet(LS_AUTO_PROFILE, JSON.stringify(profile));
-      let okEmail = true;
-      if (profile.email) {
-        const key = profileStorageKey(profile.email);
-        okEmail = key ? storageSet(key, JSON.stringify(profile)) : false;
-        storageSet(LS_LAST_PROFILE_EMAIL, profile.email);
-      }
-
-      if (!silent) {
-        setProfileStatus(
-          (okAuto && okEmail)
-            ? "Profile saved on this browser."
-            : "Profile submitted, but local save is unavailable in this browser."
-        );
-      }
-      return okAuto && okEmail;
-    }
-
-    function loadProfileFromDevice(email, options = {}){
-      const silent = !!options.silent;
-      const normalized = normalizeEmail(email);
-
-      const raw = normalized
-        ? (storageGet(profileStorageKey(normalized)) || storageGet(LS_AUTO_PROFILE))
-        : storageGet(LS_AUTO_PROFILE);
-      if (!raw) {
-        if (!silent) setProfileStatus("No saved profile found on this browser yet.");
-        return false;
-      }
-
-      try{
-        const profile = JSON.parse(raw);
-        if (normalized || profile.email) profileEmail.value = normalized || normalizeEmail(profile.email);
-        fillProfileForm(profile);
-        if (normalized || profile.email) storageSet(LS_LAST_PROFILE_EMAIL, normalized || normalizeEmail(profile.email));
-        if (!silent) setProfileStatus("Saved profile loaded from this browser.");
-        return true;
-      }catch(_){
-        if (!silent) setProfileStatus("Saved profile is unreadable. Please save it again.");
+        if (!silent) setProfileStatus("Saved profile is unreadable. Complete the form to save it again.");
         return false;
       }
     }
 
-    function clearProfileFromDevice(email){
-      const normalized = normalizeEmail(email) || normalizeEmail(storageGet(LS_LAST_PROFILE_EMAIL));
-      if (!normalized) {
-        setProfileStatus("Enter the email of the saved profile you want to remove.");
-        return false;
-      }
-
-      storageRemove(profileStorageKey(normalized));
-      if (normalizeEmail(storageGet(LS_LAST_PROFILE_EMAIL)) === normalized) {
-        storageRemove(LS_LAST_PROFILE_EMAIL);
-      }
-
-      setProfileStatus("Saved profile removed from this browser.");
-      return true;
-    }
-
-    async function postProfileAction(bodyObj){
-      if (!ENDPOINT) {
-        throw new Error("Endpoint is not configured.");
-      }
-
-      const result = await postJsonStrict(ENDPOINT, bodyObj, 12000);
-      if (result.confirmed && result.data?.ok) {
-        return result.data;
-      }
-      throw new Error(result.data?.error || result.error || "Profile request failed.");
-    }
-
-    function decodeBase64Url(value){
-      const normalized = String(value || "")
-        .replace(/-/g, "+")
-        .replace(/_/g, "/");
-      const padded = normalized + "=".repeat((4 - normalized.length % 4) % 4);
-      return atob(padded);
-    }
-
-    function parseJwtPayload(token){
-      try{
-        const parts = String(token || "").split(".");
-        if (parts.length < 2) return null;
-        return JSON.parse(decodeBase64Url(parts[1]));
-      }catch(_){
-        return null;
-      }
-    }
-
-    function readGoogleSession(){
-      const raw = sessionGet(SS_GOOGLE_SESSION);
-      if (!raw) return null;
-
-      try{
-        const parsed = JSON.parse(raw);
-        const payload = parseJwtPayload(parsed?.idToken);
-        if (!payload?.exp || Date.now() >= Number(payload.exp) * 1000) {
-          sessionRemove(SS_GOOGLE_SESSION);
-          return null;
-        }
-
-        return {
-          idToken: parsed.idToken,
-          email: normalizeEmail(parsed.email || payload.email),
-          name: String(parsed.name || payload.name || "").trim(),
-          sub: String(parsed.sub || payload.sub || "").trim(),
-          exp: Number(payload.exp || 0)
-        };
-      }catch(_){
-        sessionRemove(SS_GOOGLE_SESSION);
-        return null;
-      }
-    }
-
-    let googleSession = readGoogleSession();
-
-    function saveGoogleSession(session){
-      googleSession = session ? {
-        idToken: String(session.idToken || "").trim(),
-        email: normalizeEmail(session.email),
-        name: String(session.name || "").trim(),
-        sub: String(session.sub || "").trim(),
-        exp: Number(session.exp || 0)
-      } : null;
-
-      if (!googleSession?.idToken || !googleSession?.email) {
-        sessionRemove(SS_GOOGLE_SESSION);
-        googleSession = null;
-        return null;
-      }
-
-      sessionSet(SS_GOOGLE_SESSION, JSON.stringify(googleSession));
-      return googleSession;
-    }
-
-    function clearGoogleSession(){
-      googleSession = null;
-      sessionRemove(SS_GOOGLE_SESSION);
-    }
-
-    function getGoogleSession(){
-      googleSession = readGoogleSession();
-      return googleSession;
-    }
-
-    function updateGoogleAuthUi(){
-      const session = getGoogleSession();
-
-      if (session) {
-        setGoogleAuthMessage(`Signed in as ${session.email}. Future submissions will also sync your profile to cloud.`);
-        if (googleSignInButton) googleSignInButton.style.display = "none";
-        if (googleSignOutBtn) {
-          googleSignOutBtn.style.display = "inline-flex";
-          googleSignOutBtn.textContent = "Log out";
-        }
-        if (syncProfileBtn) {
-          syncProfileBtn.disabled = false;
-          syncProfileBtn.style.display = "inline-flex";
-        }
-      } else {
-        setGoogleAuthMessage("Google sign-in is optional. This browser saves your profile automatically after signup. Sign in with Google if you also want cloud save/load across devices.");
-        if (googleSignInButton) googleSignInButton.style.display = "";
-        if (googleSignOutBtn) googleSignOutBtn.style.display = "none";
-        if (syncProfileBtn) {
-          syncProfileBtn.disabled = true;
-          syncProfileBtn.style.display = "inline-flex";
-        }
-      }
-    }
-
-    async function handleGoogleCredentialResponse(response){
-      const payload = parseJwtPayload(response?.credential);
-      if (!payload?.email || !payload?.sub) {
-        setProfileStatus("Google sign-in returned an unreadable session. Please try again.");
-        return;
-      }
-
-      saveGoogleSession({
-        idToken: response.credential,
-        email: payload.email,
-        name: payload.name,
-        sub: payload.sub,
-        exp: payload.exp
-      });
-
-      profileEmail.value = normalizeEmail(payload.email);
-      updateGoogleAuthUi();
-
-      try{
-        const currentProfile = profileRecordFromSource({
-          ...getProfileFormData(),
-          email: normalizeEmail(payload.email)
-        });
-
-        if (isProfileRecordComplete(currentProfile)) {
-          saveProfileToDevice({
-            silent:true,
-            emailOverride: normalizeEmail(payload.email),
-            profile: currentProfile
-          });
-          await saveProfileToCloud(currentProfile, {
-            session: getGoogleSession(),
-            emailOverride: normalizeEmail(payload.email)
-          });
-          setProfileStatus("Signed in with Google. Your browser profile was synced to cloud.");
-        } else {
-          const restored = await loadBestProfileForEmail(normalizeEmail(payload.email), {
-            silent:true,
-            allowCloudFallback:true
-          });
-
-          if (restored.loaded && restored.source === "cloud") {
-            setProfileStatus("Cloud profile loaded and saved on this browser.");
-          } else if (restored.loaded && restored.source === "local") {
-            setProfileStatus("Local profile loaded from this browser.");
-          } else {
-            setProfileStatus("Signed in with Google. Your profile will sync after your next successful submit.");
-          }
-        }
-      }catch(err){
-        setProfileStatus(err?.message || "Signed in with Google, but profile restore was unavailable.");
-      }
-    }
-
-    function initializeGoogleIdentity(attemptsLeft = 20){
-      if (!CFG.googleClientId) {
-        setGoogleAuthMessage("Google sign-in is not configured yet. Local save still works on this browser.");
-        return;
-      }
-
-      if (window.google?.accounts?.id && googleSignInButton) {
-        window.google.accounts.id.initialize({
-          client_id: CFG.googleClientId,
-          callback: handleGoogleCredentialResponse,
-          ux_mode: "popup",
-          auto_select: false,
-          cancel_on_tap_outside: true
-        });
-        renderGoogleButton();
-        setTimeout(() => {
-          if (!getGoogleSession() && window.google?.accounts?.id && googleSignInButton) {
-            renderGoogleButton();
-          }
-        }, 120);
-        updateGoogleAuthUi();
-        return;
-      }
-
-      if (attemptsLeft <= 0) {
-        setGoogleAuthMessage("Google sign-in could not load right now. Local save still works on this browser.");
-        return;
-      }
-
-      setTimeout(() => initializeGoogleIdentity(attemptsLeft - 1), 250);
-    }
-
-    window.addEventListener("resize", () => {
-      if (!getGoogleSession() && window.google?.accounts?.id && googleSignInButton) {
-        renderGoogleButton();
-      }
-    });
-
-    function requireGoogleSession(){
-      const session = getGoogleSession();
-      if (!session?.idToken) {
-        throw new Error("Sign in with Google first if you want cloud save/load across devices.");
-      }
-      return session;
-    }
-
-    function buildCloudProfilePayload(options = {}){
-      const session = options.session || getGoogleSession();
-      const sourceProfile = options.profile || getProfileFormData();
-      return profileRecordFromSource({
-        ...sourceProfile,
-        email: options.emailOverride || sourceProfile.email || session?.email || profileEmail?.value
-      });
-    }
-
-    async function loadProfileFromCloudByGoogle(){
-      const session = requireGoogleSession();
-      const data = await postProfileAction({
-        action: "loadGoogleProfile",
-        idToken: session.idToken
-      });
-
-      saveGoogleSession({
-        ...session,
-        ...(data?.google || {})
-      });
-      updateGoogleAuthUi();
-
-      if (!data?.profile) {
-        throw new Error("No cloud profile is saved for this Google account yet.");
-      }
-
-      const preferredEmail = normalizeEmail(data.profile.email || session.email);
-      if (preferredEmail) {
-        profileEmail.value = preferredEmail;
-      }
-
-      fillProfileForm(data.profile);
-      saveProfileToDevice({
-        silent:true,
-        emailOverride: preferredEmail,
-        profile: data.profile
-      });
-      return data.profile;
-    }
-
-    async function saveProfileToCloud(profile, options = {}){
-      const session = options.session || requireGoogleSession();
-      const payload = buildCloudProfilePayload({
-        profile,
-        session,
-        emailOverride: options.emailOverride
-      });
-
-      if (!isProfileRecordComplete(payload)) {
-        throw new Error("Complete the profile form first, then save it to cloud.");
-      }
-
-      const data = await postProfileAction({
-        action: "saveGoogleProfile",
-        idToken: session.idToken,
-        email: payload.email,
-        name: payload.name,
-        gender: payload.gender,
-        throwing: payload.throwing,
-        catch: payload.catch,
-        fitness: payload.fitness,
-        experience: payload.experience,
-        practice: payload.practice,
-        preference: payload.preference
-      });
-
-      saveGoogleSession({
-        ...session,
-        ...(data?.google || {})
-      });
-      updateGoogleAuthUi();
-      return data;
-    }
-
-    async function loadBestProfileForEmail(email, options = {}){
-      const silent = !!options.silent;
-      const allowCloudFallback = options.allowCloudFallback !== false;
-      const session = getGoogleSession();
-      const normalized = normalizeEmail(email) || normalizeEmail(session?.email);
-
-      if (!normalized) {
-        if (!silent) setProfileStatus("Enter your email first. Google sign-in is only needed for cloud save/load across devices.");
-        return { loaded:false, source:"none" };
-      }
-
-      profileEmail.value = normalized;
-
-      if (loadProfileFromDevice(normalized, { silent:true })) {
-        if (!silent) setProfileStatus("Saved profile loaded from this browser.");
-        return { loaded:true, source:"local" };
-      }
-
-      if (allowCloudFallback && shouldTryCloudFallback(normalized, session)) {
-        try{
-          await loadProfileFromCloudByGoogle();
-          if (!silent) setProfileStatus("Cloud profile loaded and saved on this browser.");
-          return { loaded:true, source:"cloud" };
-        }catch(err){
-          if (String(err.message || "").toLowerCase().includes("token")) {
-            clearGoogleSession();
-            updateGoogleAuthUi();
-          }
-          if (!silent) {
-            setProfileStatus(err.message || "No cloud profile was found for this Google account yet.");
-          }
-          return { loaded:false, source:"none", error: err };
-        }
-      }
-
-      if (!silent) {
-        setProfileStatus(
-          session?.idToken
-            ? "No saved profile was found on this browser for that email. Cloud fallback only works for the signed-in Google email."
-            : "No saved profile was found on this browser yet. Google sign-in is optional and only needed for cloud save/load across devices."
-        );
-      }
-      return { loaded:false, source:"none" };
+    function clearProfileFromDevice(){
+      const removed = storageRemove(LS_AUTO_PROFILE);
+      setProfileStatus(removed ? "Saved profile cleared from this browser." : "Unable to clear the saved profile in this browser.");
     }
 
     function appendCacheBust(url){
@@ -1983,38 +1325,14 @@
       return `${url}${sep}_=${Date.now()}`;
     }
 
-    function getCurrentSignupDateKey(){
-      return ymdLocalRiyadh(nextRelevantFridayRiyadh());
-    }
-
-    function getRiyadhDateKey(value){
-      const date = value instanceof Date ? value : new Date(value);
-      if (Number.isNaN(date.getTime())) return "";
-      try{
-        return ymdLocalRiyadh(new Date(
-          date.toLocaleString("en-US", { timeZone: "Asia/Riyadh" })
-        ));
-      }catch(_){
-        return "";
-      }
-    }
-
-    function isStatusForCurrentSignupWindow(data){
-      return getRiyadhDateKey(data?.cutoffIso) === getCurrentSignupDateKey();
-    }
-
-    function readCachedStatus(options = {}){
-      const cached = readCachedObject(
-        LS_STATUS_CACHE,
-        options.maxAgeMs ?? STATUS_CACHE_MAX_AGE_MS
-      );
+    function readCachedStatus(){
+      const cached = readCachedObject(LS_STATUS_CACHE, STATUS_CACHE_MAX_AGE_MS);
       const normalized = normalizeStatus(cached || null);
       const cutoffOk = !!normalized?.cutoffIso && !Number.isNaN(new Date(normalized.cutoffIso).getTime());
       const countOk = Number.isFinite(Number(normalized?.count)) && Number(normalized.count) >= 0;
       const maxOk = Number.isFinite(Number(normalized?.max)) && Number(normalized.max) > 0;
-      const signupWindowOk = cutoffOk && isStatusForCurrentSignupWindow(normalized);
 
-      if (normalized?.ok && cutoffOk && countOk && maxOk && signupWindowOk) {
+      if (normalized?.ok && cutoffOk && countOk && maxOk) {
         return normalized;
       }
 
@@ -2025,7 +1343,7 @@
     function writeCachedStatus(data){
       const normalized = normalizeStatus(data);
       const cutoffOk = !!normalized?.cutoffIso && !Number.isNaN(new Date(normalized.cutoffIso).getTime());
-      if (normalized?.ok && cutoffOk && isStatusForCurrentSignupWindow(normalized)) {
+      if (normalized?.ok && cutoffOk) {
         writeCachedObject(LS_STATUS_CACHE, normalized);
       }
     }
@@ -2034,9 +1352,7 @@
     let aqiGeo = null;
     let aqiPanelOpen = false;
     let latestStatusData = null;
-    const bootAirPolicy = readCachedAirPolicy();
-    let airQualityPolicy = bootAirPolicy || defaultAirPolicy();
-    let airQualityDecisionReady = !!bootAirPolicy;
+    let airQualityPolicy = defaultAirPolicy();
 
     aqiToggleSummary.addEventListener("click", () => {
       setAqiPanelOpen(!aqiPanelOpen);
@@ -2373,84 +1689,6 @@
         scorePercentile: NaN,
         baseline: defaultPmBaseline()
       };
-    }
-
-    function finiteNumberOrNull(value){
-      const n = Number(value);
-      return Number.isFinite(n) ? n : null;
-    }
-
-    function numberOrFallback(value, fallback){
-      const n = Number(value);
-      return Number.isFinite(n) ? n : fallback;
-    }
-
-    function baselineForAirPolicyCache(baseline){
-      const fallback = defaultPmBaseline();
-      const source = baseline || {};
-      return {
-        sampleCount: numberOrFallback(source.sampleCount, fallback.sampleCount),
-        monthWindowLabel: firstText(source.monthWindowLabel, fallback.monthWindowLabel),
-        regularPercentile: numberOrFallback(source.regularPercentile, fallback.regularPercentile),
-        cancelPercentile: numberOrFallback(source.cancelPercentile, fallback.cancelPercentile),
-        requiredMatches: numberOrFallback(source.requiredMatches, fallback.requiredMatches),
-        regularCaps: {
-          pm25: numberOrFallback(source.regularCaps?.pm25, fallback.regularCaps.pm25),
-          pm10: numberOrFallback(source.regularCaps?.pm10, fallback.regularCaps.pm10)
-        },
-        cancelCaps: {
-          pm25: numberOrFallback(source.cancelCaps?.pm25, fallback.cancelCaps.pm25),
-          pm10: numberOrFallback(source.cancelCaps?.pm10, fallback.cancelCaps.pm10)
-        },
-        pm25Samples: [],
-        pm10Samples: []
-      };
-    }
-
-    function cacheableAirPolicy(policy){
-      const source = policy || defaultAirPolicy();
-      const mode = firstText(source.mode, "normal").toLowerCase();
-      const safeMode = ["normal", "modified", "cancelled"].includes(mode) ? mode : "normal";
-      return {
-        mode: safeMode,
-        blocksRegistration: !!source.blocksRegistration,
-        noticeTone: firstText(source.noticeTone),
-        noticeText: firstText(source.noticeText),
-        gameLine1: firstText(source.gameLine1),
-        gameLine2: firstText(source.gameLine2),
-        sourceKind: firstText(source.sourceKind),
-        sourceLabel: firstText(source.sourceLabel),
-        maxPm25: finiteNumberOrNull(source.maxPm25),
-        maxPm10: finiteNumberOrNull(source.maxPm10),
-        pm25Percentile: finiteNumberOrNull(source.pm25Percentile),
-        pm10Percentile: finiteNumberOrNull(source.pm10Percentile),
-        scorePercentile: finiteNumberOrNull(source.scorePercentile),
-        rescueWindow: !!source.rescueWindow,
-        baseline: baselineForAirPolicyCache(source.baseline)
-      };
-    }
-
-    function restoreCachedAirPolicy(policy){
-      if (!policy || typeof policy !== "object") return null;
-      return {
-        ...defaultAirPolicy(),
-        ...cacheableAirPolicy(policy),
-        baseline: baselineForAirPolicyCache(policy.baseline)
-      };
-    }
-
-    function readCachedAirPolicy(){
-      const cached = readCachedObject(LS_AQI_POLICY_CACHE, AQI_POLICY_CACHE_MAX_AGE_MS);
-      if (!cached || cached.targetDate !== getCurrentSignupDateKey()) return null;
-      return restoreCachedAirPolicy(cached.policy);
-    }
-
-    function writeCachedAirPolicy(policy){
-      const cacheable = cacheableAirPolicy(policy);
-      writeCachedObject(LS_AQI_POLICY_CACHE, {
-        targetDate: getCurrentSignupDateKey(),
-        policy: cacheable
-      });
     }
 
     function evaluateAirQualityPolicy(points, options = {}){
@@ -3151,22 +2389,16 @@
     }
 
     async function loadAqi(){
-      const previousPolicy = airQualityPolicy;
-      const hadDecision = airQualityDecisionReady;
-
       try{
-        aqiModeBadge.textContent = hadDecision ? "Updating..." : "Loading...";
-        aqiSummaryInline.textContent = hadDecision ? "Updating PM forecast..." : "Loading PM forecast...";
-        aqiSourceLine.textContent = hadDecision ? "Decision source: updating..." : "Decision source: loading...";
+        aqiModeBadge.textContent = "Loading...";
+        aqiSummaryInline.textContent = "Loading PM forecast...";
+        aqiSourceLine.textContent = "Decision source: loading...";
         aqiToggleSummary.textContent = "Hourly PM";
         setAqiPanelOpen(false);
         aqiDetail.innerHTML = "";
         destroyAqiChart();
         aqiTrendChartCanvas.style.display = "none";
-        if (!hadDecision) {
-          airQualityPolicy = defaultAirPolicy();
-          airQualityDecisionReady = false;
-        }
+        airQualityPolicy = defaultAirPolicy();
 
         const geo = await getThuwalGeo();
         const targetFriday = nextRelevantFridayRiyadh();
@@ -3197,7 +2429,6 @@
 
         const selected = chooseAirQualityDecision(forecastPolicy, localReading, baseline);
         airQualityPolicy = selected.policy;
-        airQualityDecisionReady = true;
         if (hasForecastHourlyWindow) {
           renderAqiFridayWindow(forecast.fridayDateStr, forecast.fridayWindowValid, baseline, selected.policy);
         } else if (forecast?.daily?.length) {
@@ -3212,9 +2443,6 @@
           localReading,
           baseline
         });
-        if (selected.decisionBasis !== "none") {
-          writeCachedAirPolicy(airQualityPolicy);
-        }
         applyAirQualityPolicy();
 
       } catch (e) {
@@ -3226,17 +2454,7 @@
         aqiSourceLine.textContent = "Decision source: no live local source available.";
         aqiToggleSummary.textContent = "Hourly PM";
         aqiDetail.innerHTML = "";
-        const cachedPolicy = readCachedAirPolicy();
-        if (cachedPolicy) {
-          airQualityPolicy = cachedPolicy;
-          airQualityDecisionReady = true;
-        } else if (hadDecision && previousPolicy) {
-          airQualityPolicy = previousPolicy;
-          airQualityDecisionReady = true;
-        } else {
-          airQualityPolicy = defaultAirPolicy();
-          airQualityDecisionReady = true;
-        }
+        airQualityPolicy = defaultAirPolicy();
         applyAirQualityPolicy();
       }
     }
@@ -3249,12 +2467,21 @@
       if(type === "warn") el.classList.add("warnText");
     }
 
-    async function fetchWithTimeout(url, ms=6000, opts={}){
+    async function fetchTextWithTimeout(url, ms=6000, opts={}){
       const controller = new AbortController();
       const t = setTimeout(()=>controller.abort(), ms);
       try{
         const res = await fetch(url, { ...opts, signal: controller.signal });
-        return res;
+        // Keep the deadline active until the response body has also arrived.
+        const text = await res.text();
+        return { res, text };
+      } catch (err) {
+        if (controller.signal.aborted) {
+          const timeout = new Error("The server took too long to respond.");
+          timeout.name = "TimeoutError";
+          throw timeout;
+        }
+        throw err;
       } finally {
         clearTimeout(t);
       }
@@ -3265,6 +2492,7 @@
         ? options.attempts
         : [6000, 9000];
       let lastErr = null;
+      const fetchUrl = options.cacheBust ? appendCacheBust(url) : url;
       const fetchOptions = {
         method:"GET",
         cache:"no-store",
@@ -3274,9 +2502,7 @@
 
       for(const ms of attempts){
         try{
-          const fetchUrl = options.cacheBust ? appendCacheBust(url) : url;
-          const res = await fetchWithTimeout(fetchUrl, ms, fetchOptions);
-          const text = await res.text();
+          const { res, text } = await fetchTextWithTimeout(fetchUrl, ms, fetchOptions);
           const serverError = extractServerErrorText(text);
 
           if (!res.ok) {
@@ -3334,59 +2560,52 @@
       return "";
     }
 
-    async function postJsonStrict(url, bodyObj, ms=12000){
-      const controller = new AbortController();
-      const t = setTimeout(()=>controller.abort(), ms);
-
+    async function postJsonStrict(url, bodyObj, ms=30000){
       try{
-        const res = await fetch(url, {
+        const { res, text } = await fetchTextWithTimeout(url, ms, {
           method: "POST",
           headers: { "Content-Type":"text/plain;charset=utf-8" },
           body: JSON.stringify(bodyObj),
-          signal: controller.signal,
           redirect: "follow"
         });
 
-        let text = "";
-        try{
-          text = await res.text();
-        }catch(_){}
+        let data = null;
+        if(text){
+          try{ data = JSON.parse(text); }catch(_){}
+        }
+        const serverError = extractServerErrorText(text);
 
-          let data = null;
-          if(text){
-            try{ data = JSON.parse(text); }catch(_){}
-          }
-          const serverError = extractServerErrorText(text);
-
-          if(!res.ok){
-            return {
-              confirmed:false,
-              data,
-              error:data?.error || serverError || `HTTP ${res.status}`
-            };
-          }
-
-          if(data && typeof data === "object"){
-            return {
-            confirmed: !!data.ok,
+        if(!res.ok){
+          return {
+            confirmed:false,
             data,
-            error: data.ok ? null : (data.error || "Request failed")
+            error:data?.error || serverError || `HTTP ${res.status}`
           };
         }
 
-          return {
-            confirmed:false,
-            data:null,
-            error:serverError || "Response not readable from browser"
-          };
-        }catch(e){
-          return {
-            confirmed:false,
-            data:null,
-          error:String(e)
+        if (data?.ok === false) {
+          return { confirmed:false, data, error:data.error || "Request failed" };
+        }
+        const validRegId = typeof data?.regId === "string" && data.regId.trim();
+        if (data?.ok === true && (bodyObj.action !== "register" || validRegId)) {
+          return { confirmed:true, data, error:null };
+        }
+
+        return {
+          confirmed:false,
+          data:null,
+          uncertain:true,
+          error:serverError || "The server response could not be read. Check the registered players list before trying again."
         };
-      } finally {
-        clearTimeout(t);
+      }catch(e){
+        return {
+          confirmed:false,
+          data:null,
+          uncertain:true,
+          error: e?.name === "TimeoutError"
+            ? "Confirmation timed out. The request may already have been saved. Check the registered players list before trying again."
+            : "Unable to confirm the request because the connection was interrupted. Check the registered players list before trying again."
+        };
       }
     }
 
@@ -3399,7 +2618,7 @@
       const hasCount = data && Object.prototype.hasOwnProperty.call(data, "count");
       const hasMax = data && Object.prototype.hasOwnProperty.call(data, "max");
       const hasOpen = data && Object.prototype.hasOwnProperty.call(data, "open");
-      const hasCutoff = !!data?.cutoffIso;
+      const hasCutoff = !!data?.cutoffIso && Number.isFinite(Date.parse(data.cutoffIso));
       const openRaw = data?.open;
       const parsedOpen =
         typeof openRaw === "string"
@@ -3411,7 +2630,7 @@
         (hasCount && hasMax) ||
         (hasMax && hasOpen)
       );
-      const open = inferredOpen && !isFull;
+      const open = inferredOpen && !isFull && hasCutoff && !isAfterCutoffFromIso(data.cutoffIso);
       return {
         ...data,
         ok: data?.ok === false ? false : usable,
@@ -3461,51 +2680,22 @@
       return `${minutes}m left`;
     }
 
-    let statusRefreshSeq = 0;
-    let statusRetryTimer = null;
-    let statusRefreshPromise = null;
-
-    function clearStatusRetry(){
-      if (statusRetryTimer) {
-        clearTimeout(statusRetryTimer);
-        statusRetryTimer = null;
-      }
-    }
-
-    function scheduleStatusRetry(delayMs = 15000){
-      clearStatusRetry();
-      statusRetryTimer = setTimeout(() => {
-        statusRetryTimer = null;
-        refresh({ fromRetry: true });
-      }, delayMs);
-    }
-
     async function getStatus() {
       const raw = await safeGetJson(ENDPOINT + "?action=status", {
-        attempts:[3500, 7000, 12000],
+        attempts:[1200, 2400, 4200],
         cacheBust:true
       });
       return normalizeStatus(raw);
     }
 
     function setPills(data) {
+      updateSubmitButton(data);
       const hasUsableCutoff = !!data?.cutoffIso && !Number.isNaN(new Date(data.cutoffIso).getTime());
       if (!data || !hasUsableCutoff) {
-        if (!isRegistrationEnabledByConfig()) {
-          countPill.textContent = `0 / ${getConfiguredMaxPlayers()} registered`;
-          statusPill.textContent = "OFF";
-          statusPill.className = "pill warn";
-          timeLeftPill.textContent = "This Friday off";
-          btn.disabled = true;
-          btn.textContent = "Registration off";
-        } else {
-          countPill.textContent = "Checking status...";
-          statusPill.textContent = "RETRYING";
-          statusPill.className = "pill warn";
-          timeLeftPill.textContent = "";
-          btn.disabled = true;
-          btn.textContent = "Checking status...";
-        }
+        countPill.textContent = `0 / ${getConfiguredMaxPlayers()} registered`;
+        statusPill.textContent = "UNKNOWN";
+        statusPill.className = "pill";
+        timeLeftPill.textContent = "";
         return;
       }
 
@@ -3519,9 +2709,6 @@
       } else if (lowPlayersCancelled) {
         statusPill.textContent = "CANCELLED";
         statusPill.className = "pill bad";
-      } else if (!airQualityDecisionReady && data.open && !data.isFull) {
-        statusPill.textContent = "CHECKING AIR";
-        statusPill.className = "pill warn";
       } else if (airQualityPolicy.mode === "cancelled") {
         statusPill.textContent = "CANCELLED";
         statusPill.className = "pill bad";
@@ -3545,22 +2732,31 @@
           ? "Not enough players"
           : timeLeftText(data.cutoffIso);
 
+    }
+
+    function updateSubmitButton(data = latestStatusData){
+      // Background status/AQI updates must not unlock an active request.
+      if (submitting) return;
+      if (!data?.cutoffIso || Number.isNaN(new Date(data.cutoffIso).getTime())) {
+        btn.disabled = true;
+        btn.textContent = "Checking status...";
+        return;
+      }
+      const registrationDisabledByConfig = !isRegistrationEnabledByConfig();
+      const lowPlayersCancelled = isCancelledForLowPlayers(data);
       if (registrationDisabledByConfig) {
         btn.disabled = true;
         btn.textContent = "Registration off";
       } else if (lowPlayersCancelled) {
         btn.disabled = true;
         btn.textContent = "Game cancelled";
-      } else if (!airQualityDecisionReady && data.open && !data.isFull) {
-        btn.disabled = true;
-        btn.textContent = "Checking air...";
       } else if (airQualityPolicy.blocksRegistration) {
         btn.disabled = true;
         btn.textContent = "Registration unavailable";
       } else if (data.isFull) {
         btn.disabled = true;
         btn.textContent = "Full";
-      } else if (!data.open) {
+      } else if (!data.open || isAfterCutoffFromIso(data.cutoffIso)) {
         btn.disabled = true;
         btn.textContent = "Registration closed";
       } else {
@@ -3569,45 +2765,23 @@
       }
     }
 
-    async function refresh(options = {}) {
-      if (statusRefreshPromise && !options.force) return statusRefreshPromise;
-
-      const work = refreshStatusOnce(options);
-      statusRefreshPromise = work;
-
-      try{
-        return await work;
-      } finally {
-        if (statusRefreshPromise === work) statusRefreshPromise = null;
-      }
-    }
-
-    async function refreshStatusOnce(_options = {}) {
-      const seq = ++statusRefreshSeq;
+    async function refresh() {
       try {
         const data = await getStatus();
-        if (seq !== statusRefreshSeq) return latestStatusData;
         if (data.ok === false) throw new Error(data.error || "status not ok");
 
         latestStatusData = data;
         writeCachedStatus(data);
-        clearStatusRetry();
         setPills(data);
         applySignupVisibility(data);
 
         return data;
       } catch (err) {
-        if (seq !== statusRefreshSeq) return latestStatusData;
-
-        const fallback = latestStatusData || readCachedStatus({
-          maxAgeMs: STATUS_STALE_CACHE_MAX_AGE_MS
-        });
+        const fallback = latestStatusData || readCachedStatus();
         if (fallback) {
           latestStatusData = fallback;
           setPills(fallback);
           applySignupVisibility(fallback);
-          scheduleStatusRetry(15000);
-          console.warn("Status refresh failed, showing saved status:", err);
           return fallback;
         }
 
@@ -3622,32 +2796,35 @@
           latestStatusData = offFallback;
           setPills(offFallback);
           applySignupVisibility(offFallback);
-          scheduleStatusRetry(30000);
           return offFallback;
         }
 
         latestStatusData = null;
-        countPill.textContent = "Checking status...";
-        statusPill.textContent = "RETRYING";
-        statusPill.className = "pill warn";
+        updateSubmitButton();
+        countPill.textContent = "Status unavailable";
+        statusPill.textContent = "UNKNOWN";
+        statusPill.className = "pill";
         timeLeftPill.textContent = "";
         console.error("Status refresh failed:", err);
         applySignupVisibility(null);
-        scheduleStatusRetry(5000);
         return null;
       }
     }
 
     async function refreshVisibleSections(){
-      await refresh({ force: true });
-      await refreshPlayersFast(true, false, { force: true });
+      // Refresh independently; neither request controls submission cleanup.
+      const results = await Promise.allSettled([refresh(), refreshPlayers(true)]);
+      for (const result of results) {
+        if (result.status === "rejected") console.warn("Refresh failed:", result.reason);
+      }
     }
 
-    function readCachedPlayers(options = {}){
-      const data = readCachedObject(
-        LS_PLAYERS_CACHE,
-        options.maxAgeMs ?? PLAYERS_CACHE_MAX_AGE_MS
-      );
+    function refreshAfterMutation(){
+      void refreshVisibleSections().catch(err => console.warn("Refresh failed:", err));
+    }
+
+    function readCachedPlayers(){
+      const data = readCachedObject(LS_PLAYERS_CACHE, PLAYERS_CACHE_MAX_AGE_MS);
       return (data && data.ok && Array.isArray(data.players)) ? data : null;
     }
 
@@ -3668,6 +2845,18 @@
       }
     }
 
+    async function warmPlayersCache(){
+      if (readCachedPlayers()) return;
+      try{
+        const data = await safeGetJson(ENDPOINT + "?action=players", {
+          attempts:[2000, 3500],
+          cacheBust:true
+        });
+        if (data?.ok) writeCachedPlayers(data);
+      }catch(_){
+      }
+    }
+
     async function warmAnalyticsCache(){
       if (readCachedAnalytics()) return;
       try{
@@ -3680,7 +2869,10 @@
       }
     }
 
+    let currentRegId = storageGet(LS_REGID);
+
     function saveLastReg(name, regId) {
+      currentRegId = regId;
       const savedName = storageSet(LS_NAME, name);
       const savedReg = storageSet(LS_REGID, regId);
       cancelName.value = name;
@@ -3691,6 +2883,7 @@
     }
 
     function clearLocalReg(){
+      currentRegId = "";
       storageRemove(LS_NAME);
       storageRemove(LS_REGID);
       cancelName.value = "";
@@ -3781,118 +2974,23 @@
     })();
 
     (function initProfileRestore(){
-      const lastEmail = getLastSavedProfileEmail();
-      if (lastEmail && !normalizeEmail(profileEmail.value)) {
-        profileEmail.value = lastEmail;
-      }
-      if (isProfileFormEmpty()) {
-        if (loadProfileFromDevice(lastEmail, { silent:true }) || loadProfileFromDevice("", { silent:true })) {
-          setProfileStatus("Loaded your last saved profile from this browser.");
-        }
+      saveProfileOpt.checked = getAutoRestoreEnabled();
+      if (saveProfileOpt.checked && loadProfileFromDevice({ silent:true, onlyEmpty:true })) {
+        setProfileStatus("Loaded your saved profile from this browser.");
       }
     })();
 
-    updateGoogleAuthUi();
-    initializeGoogleIdentity();
-
-    (async function initGoogleSessionRestore(){
-      const session = getGoogleSession();
-      if (!session?.idToken) return;
-      if (!isProfileFormEmpty()) return;
-
-      try{
-        const restored = await loadBestProfileForEmail(profileEmail.value || session.email, {
-          silent:true,
-          allowCloudFallback:true
-        });
-        if (restored.loaded && restored.source === "cloud") {
-          setProfileStatus("Cloud profile loaded and saved on this browser.");
-        }
-      }catch(_){
-      }
-    })();
-
-    loadProfileBtn.addEventListener("click", async () => {
-      await loadBestProfileForEmail(profileEmail.value || getPreferredRestoreEmail(), { silent:false, allowCloudFallback:true });
-    });
-
-    clearProfileBtn.addEventListener("click", () => {
-      clearProfileFromDevice(profileEmail.value);
-    });
-
-    syncProfileBtn.addEventListener("click", async () => {
-      syncProfileBtn.disabled = true;
-      try{
-        const activeGoogleSession = getGoogleSession();
-        const emailValue = normalizeEmail(profileEmail.value) || normalizeEmail(activeGoogleSession?.email);
-        if (emailValue && !normalizeEmail(profileEmail.value)) {
-          profileEmail.value = emailValue;
-        }
-
-        if (emailValue) {
-          saveProfileToDevice({
-            silent:true,
-            emailOverride: emailValue
-          });
-        }
-
-        const profile = buildCloudProfilePayload({
-          emailOverride: emailValue,
-          session: activeGoogleSession
-        });
-        const data = await saveProfileToCloud(profile, { session: activeGoogleSession, emailOverride: emailValue });
-
-        saveProfileToDevice({
-          silent:true,
-          emailOverride: normalizeEmail(data?.profile?.email || emailValue),
-          profile: data?.profile || profile
-        });
-
-        setProfileStatus("Profile synced to Google cloud and updated on this browser.");
-      }catch(err){
-        if (String(err.message || "").toLowerCase().includes("token")) {
-          clearGoogleSession();
-          updateGoogleAuthUi();
-        }
-        setProfileStatus(err.message || "Unable to sync profile.");
-      } finally {
-        updateGoogleAuthUi();
-      }
-    });
-
-    googleSignOutBtn.addEventListener("click", () => {
-      clearGoogleSession();
-      try{
-        if (window.google?.accounts?.id?.disableAutoSelect) {
-          window.google.accounts.id.disableAutoSelect();
-        }
-      }catch(_){
-      }
-      updateGoogleAuthUi();
-      setProfileStatus("Google session cleared on this browser. Local saved profiles are unchanged.");
-    });
-
+    loadProfileBtn.addEventListener("click", () => loadProfileFromDevice());
+    clearProfileBtn.addEventListener("click", clearProfileFromDevice);
     saveProfileOpt.addEventListener("change", () => {
-      setAutoRestoreEnabled(!!saveProfileOpt.checked);
-      setProfileStatus(
-        saveProfileOpt.checked
-          ? "This browser will prefill and auto-load your last local profile next time."
-          : "Auto-load is off for future visits. Local saved profiles are still kept until you clear them."
-      );
-    });
-
-    profileEmail.addEventListener("change", async () => {
-      const email = normalizeEmail(profileEmail.value);
-      if (!email) {
-        setProfileStatus("This browser saves your profile automatically after successful signup.");
-        return;
-      }
-
-      await loadBestProfileForEmail(email, { silent:false, allowCloudFallback:true });
+      const saved = setAutoRestoreEnabled(saveProfileOpt.checked);
+      setProfileStatus(saved
+        ? (saveProfileOpt.checked ? "Your saved profile will auto-fill next time." : "Auto-fill is off for future visits.")
+        : "Unable to save this preference in this browser.");
     });
 
     copyRegBtn.addEventListener("click", async () => {
-      const regId = storageGet(LS_REGID);
+      const regId = currentRegId;
       if (!regId) {
         regSavedNote.textContent = "No RegID saved yet.";
         return;
@@ -3903,6 +3001,7 @@
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
+      if (submitting) return;
 
       statusEl.textContent = "";
       statusEl.className = "status";
@@ -3916,6 +3015,12 @@
           "warn"
         );
         applySignupVisibility(latestStatusData);
+        return;
+      }
+
+      updateSubmitButton();
+      if (btn.disabled) {
+        setStatusMessage(statusEl, btn.textContent, "warn");
         return;
       }
 
@@ -3947,75 +3052,31 @@
 
       btn.disabled = true;
       btn.textContent = "Submitting…";
-      showOverlay("Submitting registration…");
-      const activeGoogleSession = getGoogleSession();
-      const profileEmailValue = normalizeEmail(profileEmail.value) || normalizeEmail(activeGoogleSession?.email);
-      if (profileEmailValue && !normalizeEmail(profileEmail.value)) {
-        profileEmail.value = profileEmailValue;
-      }
-      const profileRecord = profileRecordFromSource({
-        email: profileEmailValue,
-        name: payload.name,
-        gender: payload.gender,
-        throwing: payload.throwing,
-        catch: payload.catch,
-        fitness: payload.fitness,
-        experience: payload.experience,
-        practice: payload.practice,
-        preference: payload.preference
-      });
-
-      let submitConfirmed = false;
-
       try {
-        const result = await postJsonStrict(ENDPOINT, payload, 12000);
+        showOverlay("Submitting registration…");
+        const profileRecord = profileRecordFromSource(payload);
+
+        const result = await postJsonStrict(ENDPOINT, payload);
 
         if (result.confirmed && result.data?.ok && result.data?.regId) {
-          submitConfirmed = true;
           const label = result.data.updated ? "Updated" : "Submitted";
           statusEl.innerHTML = `✅ ${label}! RegID: <b>${escapeHtml(result.data.regId)}</b>`;
           statusEl.className = "status okText";
 
           saveLastReg(payload.name, result.data.regId);
-          let cloudSaved = false;
-          saveProfileToDevice({
-            silent:true,
-            emailOverride: profileEmailValue,
-            profile: profileRecord
-          });
-          if (activeGoogleSession?.idToken) {
-            try{
-              await saveProfileToCloud(profileRecord, { session: activeGoogleSession, emailOverride: profileEmailValue });
-              cloudSaved = true;
-            }catch(err){
-              if (String(err.message || "").toLowerCase().includes("token")) {
-                clearGoogleSession();
-                updateGoogleAuthUi();
-              }
-            }
-          }
+          const profileSaved = saveProfileToDevice(profileRecord);
           regTools.style.display = "flex";
-          form.reset();
-          profileEmail.value = profileEmailValue;
-          loadProfileFromDevice(profileEmailValue, { silent:true });
-          if (cloudSaved && profileEmailValue) {
-            setProfileStatus("Profile updated on this browser and synced to Google cloud.");
-          } else if (cloudSaved) {
-            setProfileStatus("Google cloud profile updated.");
-          } else {
-            setProfileStatus(
-              activeGoogleSession?.idToken
-                ? "Profile updated on this browser. Google cloud sync needs a fresh sign-in on this browser."
-                : "Profile saved on this browser. Sign in with Google if you also want cloud save/load across devices."
-            );
-          }
+          // Keep the entered profile and cancellation credentials intact.
+          setProfileStatus(profileSaved
+            ? "Profile saved on this browser."
+            : "Registration confirmed, but this browser could not save your profile. Keep your RegID for cancellation.");
         } else if (result.data && result.data.ok === false) {
           setStatusMessage(statusEl, result.data.error || "Registration failed.", "bad");
         } else {
           setStatusMessage(
             statusEl,
             result.error || "Request was sent, but registration could not be verified from the browser. Please refresh and check before submitting again.",
-            result.error ? "bad" : "warn"
+            result.uncertain ? "warn" : "bad"
           );
         }
       } catch (err) {
@@ -4026,9 +3087,8 @@
         );
       } finally {
         hideOverlay();
-        await refreshVisibleSections();
-        btn.disabled = false;
-        btn.textContent = "Submit";
+        updateSubmitButton();
+        refreshAfterMutation();
       }
     });
 
@@ -4046,6 +3106,7 @@
     }
 
     cancelBtn.addEventListener("click", async () => {
+      if (submitting) return;
       cancelStatus.textContent = "";
       cancelStatus.className = "status";
 
@@ -4060,10 +3121,9 @@
 
       cancelBtn.disabled = true;
       cancelBtn.textContent = "Cancelling…";
-      showOverlay("Cancelling registration…");
-
       try {
-        const result = await postJsonStrict(ENDPOINT, { action:"cancel", name, regId }, 12000);
+        showOverlay("Cancelling registration…");
+        const result = await postJsonStrict(ENDPOINT, { action:"cancel", name, regId });
 
         if (result.confirmed && result.data?.ok) {
           clearLocalReg();
@@ -4074,7 +3134,7 @@
           setStatusMessage(
             cancelStatus,
             result.error || "Cancellation could not be confirmed. Your saved RegID was kept.",
-            result.error ? "bad" : "warn"
+            result.uncertain ? "warn" : "bad"
           );
         }
       } catch (e) {
@@ -4085,28 +3145,19 @@
         );
       } finally {
         hideOverlay();
-        await refreshVisibleSections();
         cancelBtn.disabled = false;
         cancelBtn.textContent = "Cancel my registration";
+        updateSubmitButton();
+        refreshAfterMutation();
       }
     });
 
     let lastPlayersText = "";
-    let playersRefreshPromise = null;
-    let playersRetryTimer = null;
-    let playersLoadSeq = 0;
 
     function setPlayersExpanded(expanded){
       playersArea.style.display = expanded ? "block" : "none";
       togglePlayersBtn.textContent = expanded ? "Hide" : "Show";
       if (!expanded) playersStatus.textContent = "";
-    }
-
-    function setPlayersLoadingMessage(text){
-      const current = playersList.textContent.trim();
-      if (!current || /^Loading/i.test(current) || /^Players are still loading/i.test(current)) {
-        playersList.textContent = text;
-      }
     }
 
     function renderPlayersData(data){
@@ -4131,12 +3182,12 @@
         gender: p?.gender || "-"
       }));
 
-      playersList.innerHTML = lines.length ? lines.map(x => `
+      playersList.innerHTML = lines.map(x => `
         <div class="playerLine">
           <div><b>${x.idx}. ${escapeHtml(x.name)}</b></div>
           <div class="playerMeta">${escapeHtml(x.gender)}</div>
         </div>
-      `).join("") : `<div class="playerMeta" style="margin-top:10px;">No registered players yet.</div>`;
+      `).join("");
 
       lastPlayersText = lines.map(x => `${x.idx}. ${x.name} (${x.gender})`).join("\n");
       copyPlayersBtn.disabled = !lastPlayersText;
@@ -4155,7 +3206,7 @@
 
       try{
         const data = await safeGetJson(ENDPOINT + "?action=players", {
-          attempts:[4500, 9000, 15000],
+          attempts:[1800, 3200],
           cacheBust:true
         });
         if (!data.ok) throw new Error(data.error || "players not ok");
@@ -4175,98 +3226,7 @@
           if (!silent) playersStatus.textContent = "Showing saved list. Refresh later.";
           return true;
         }
-        if (!silent) playersStatus.textContent = "Still loading in background.";
-        return false;
-      }
-    }
-
-    function schedulePlayersRetry(delayMs = 15000){
-      if (playersRetryTimer) clearTimeout(playersRetryTimer);
-      playersRetryTimer = setTimeout(() => {
-        playersRetryTimer = null;
-        loadPlayersData({ render: true }).catch(() => {});
-      }, delayMs);
-    }
-
-    async function fetchPlayersData(){
-      const data = await safeGetJson(ENDPOINT + "?action=players", {
-        attempts:[4500, 9000, 15000],
-        cacheBust:true
-      });
-      if (!data.ok) throw new Error(data.error || "players not ok");
-      return data;
-    }
-
-    async function loadPlayersData(options = {}){
-      if (playersRefreshPromise && !options.force) return playersRefreshPromise;
-
-      const seq = ++playersLoadSeq;
-      const work = (async () => {
-        const data = await fetchPlayersData();
-        if (seq === playersLoadSeq) {
-          writeCachedPlayers(data);
-          if (options.render !== false) renderPlayersData(data);
-        }
-        if (playersRetryTimer) {
-          clearTimeout(playersRetryTimer);
-          playersRetryTimer = null;
-        }
-        return data;
-      })();
-
-      playersRefreshPromise = work;
-      try{
-        return await work;
-      } finally {
-        if (playersRefreshPromise === work) playersRefreshPromise = null;
-      }
-    }
-
-    async function preloadPlayers(options = {}){
-      const cached = readCachedPlayers({ maxAgeMs: PLAYERS_STALE_CACHE_MAX_AGE_MS });
-      if (cached) {
-        renderPlayersData(cached);
-        if (options.autoExpand) setPlayersExpanded(true);
-      }
-
-      try{
-        const data = await loadPlayersData({ render: true });
-        if (options.autoExpand) setPlayersExpanded(true);
-        return data;
-      }catch(e){
-        if (!cached) schedulePlayersRetry(15000);
-        return null;
-      }
-    }
-
-    async function refreshPlayersFast(silent=false, autoExpand=false, options = {}){
-      const cached = readCachedPlayers({ maxAgeMs: PLAYERS_STALE_CACHE_MAX_AGE_MS });
-      if (cached) {
-        renderPlayersData(cached);
-        if (autoExpand) setPlayersExpanded(true);
-        if (!silent) playersStatus.textContent = "Loaded saved list.";
-      } else {
-        copyPlayersBtn.disabled = true;
-        setPlayersLoadingMessage("Loading players...");
-        if (!silent) playersStatus.textContent = playersRefreshPromise ? "Loading in background..." : "Loading players...";
-      }
-
-      try{
-        await loadPlayersData({ force: !!options.force, render: true });
-        if (autoExpand) setPlayersExpanded(true);
-        if (!silent) playersStatus.textContent = cached ? "Updated." : "Loaded.";
-        return true;
-
-      } catch(e){
-        if (cached) {
-          if (autoExpand) setPlayersExpanded(true);
-          if (!silent) playersStatus.textContent = "Showing saved list. Refresh later.";
-          schedulePlayersRetry(15000);
-          return true;
-        }
-        playersList.textContent = "Players are still loading. This section will update automatically.";
-        schedulePlayersRetry(8000);
-        if (!silent) playersStatus.textContent = "Still loading in background.";
+        if (!silent) playersStatus.textContent = "Slow / failed. Tap Show again.";
         return false;
       }
     }
@@ -4278,7 +3238,7 @@
         return;
       }
       setPlayersExpanded(true);
-      await refreshPlayersFast(false);
+      await refreshPlayers(false);
     });
 
     copyPlayersBtn.addEventListener("click", async ()=>{
@@ -4404,7 +3364,7 @@
       setTeamsBtnBeforeCutoff();
 
       const st = latestStatusData || await refresh();
-      await refreshPlayersFast(true);
+      await refreshPlayers(true);
 
       if (!st || !st.ok) {
         setTeamsBtnBeforeCutoff();
@@ -4429,9 +3389,7 @@
       if (loaded) hideTeamsBtn();
     }
 
-    const bootStatus = readCachedStatus({
-      maxAgeMs: STATUS_STALE_CACHE_MAX_AGE_MS
-    });
+    const bootStatus = readCachedStatus();
     if (bootStatus) {
       latestStatusData = bootStatus;
       setPills(bootStatus);
@@ -4455,8 +3413,10 @@
     setInterval(refresh, 60 * 1000);
     loadAqi();
     setInterval(loadAqi, 30 * 60 * 1000);
-    preloadPlayers({ autoExpand: true });
-    setTimeout(warmAnalyticsCache, 1200);
+    setTimeout(async () => {
+      await refreshPlayers(true, true);
+      warmAnalyticsCache();
+    }, 1200);
 
     autoTeamsByCutoff();
     setInterval(autoTeamsByCutoff, 45000);
@@ -4957,7 +3917,9 @@
         return;
       }
 
-      if(hintSuppressed){
+      const formRect = form?.getBoundingClientRect();
+      const mobileFormVisible = window.innerWidth <= 768 && formRect && formRect.top < window.innerHeight && formRect.bottom > 0;
+      if(hintSuppressed || mobileFormVisible){
         scrollHint.style.display = "none";
         return;
       }
