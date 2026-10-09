@@ -3061,6 +3061,22 @@
           const label = result.data.updated ? "Updated" : "Submitted";
           statusEl.innerHTML = `✅ ${label}! RegID: <b>${escapeHtml(result.data.regId)}</b>`;
           statusEl.className = "status okText";
+          const reviewStatus = result.data.ratingReview?.status;
+          let reviewMessage = "";
+          if (reviewStatus === "pending") {
+            reviewMessage = "Your ratings or matching history need an organizer review. Your registration is confirmed. Please tell the organizer if your ability or fitness has recently changed.";
+          } else if (reviewStatus === "insufficient_history") {
+            reviewMessage = "Not enough recent history for a rating comparison. Your registration is confirmed.";
+          } else if (reviewStatus === "unavailable") {
+            reviewMessage = "The historical rating check could not be completed. Your registration is confirmed; please ask the organizer to review your ratings.";
+          }
+          if (reviewMessage) {
+            const note = document.createElement("div");
+            note.className = "hint ratingReviewNote" + (reviewStatus === "insufficient_history" ? "" : " warnText");
+            note.textContent = reviewMessage;
+            statusEl.appendChild(note);
+          }
+
 
           saveLastReg(payload.name, result.data.regId);
           regTools.style.display = "flex";
