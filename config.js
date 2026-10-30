@@ -9,7 +9,7 @@ const signupConfig = {
 
   maxPlayers: 32,
   teamsMinForFour: 24,
-  minimumPlayersToPlay: 16,
+  minimumPlayersToPlay: 14,
 
   registrationEnabled: true,
   registrationOffTitle: "Registration is off this Friday",
